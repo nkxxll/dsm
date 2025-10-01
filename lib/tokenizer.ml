@@ -1,4 +1,5 @@
 open Angstrom
+open Base
 
 module TokenType = struct
   type t =
@@ -7,6 +8,7 @@ module TokenType = struct
     | Times
     | Div
     | Semi
+    | String of string
     | Identifier of string
     | If
     | Return
@@ -38,6 +40,7 @@ module TokenType = struct
     | Write -> "Key Write"
     | Return -> "Key Return"
     | Identifier other -> Printf.sprintf "Ident %s" other
+    | String str -> Printf.sprintf "String %s" str
     | Unknown other -> Printf.sprintf "Unknown %s" other
   ;;
 end
@@ -100,6 +103,33 @@ let parse_times tokenizer =
     }
   in
   { tokenizer with col = tokenizer.col + 1; tokens = token :: tokenizer.tokens }
+;;
+
+let parse_language_string tokenizer =
+  char '"'
+  *> take_while1 (function
+    | '"' -> false
+    | _ -> true)
+  <* char '"'
+  >>| fun str ->
+  let token =
+    { Token.type_ = String str
+    ; literal = Printf.sprintf {|"%s"|} str
+    ; col = tokenizer.col
+    ; row = tokenizer.row
+    ; length = String.length str + 2
+    }
+  in
+  let plus_rows =
+    String.fold str ~init:0 ~f:(fun acc ch ->
+      match ch with
+      | '\n' | '\r' -> acc + 1
+      | _ -> acc)
+  in
+  { col = tokenizer.col + token.length
+  ; row = tokenizer.row + plus_rows
+  ; tokens = token :: tokenizer.tokens
+  }
 ;;
 
 let parse_div tokenizer =
@@ -173,6 +203,7 @@ let parse_language (tokenizer : t) =
        | '/' -> parse_div tok >>= loop
        | ';' -> parse_semi tok >>= loop
        | 'a' .. 'z' | 'A' .. 'Z' | '_' -> parse_ident tok >>= loop
+       | '"' -> parse_language_string tok >>= loop
        | _ ->
          take 1
          >>= fun other ->
@@ -204,25 +235,25 @@ let%test_module "Tokenizer Tests" =
     let print_tokens tokens =
       let s =
         List.map
-          (fun t ->
-             Printf.sprintf
-               "Token { type = %s; literal = \"%s\"; length = %d; row = %d; col = %d }"
-               (token_type_to_string t.type_)
-               t.literal
-               t.length
-               t.row
-               t.col)
+          ~f:(fun t ->
+            Printf.sprintf
+              "Token { type = %s; literal = \"%s\"; length = %d; row = %d; col = %d }"
+              (token_type_to_string t.type_)
+              t.literal
+              t.length
+              t.row
+              t.col)
           tokens
-        |> String.concat "\n"
+        |> String.concat ~sep:"\n"
       in
-      print_endline s
+      Stdio.print_endline s
     ;;
 
     let run_test input =
       let tokenizer = create () in
       match exec tokenizer input with
       | Ok tokens -> print_tokens tokens
-      | Error msg -> print_endline ("Error: " ^ msg)
+      | Error msg -> Stdio.print_endline ("Error: " ^ msg)
     ;;
 
     let%expect_test "simple operators" =
@@ -294,6 +325,15 @@ let%test_module "Tokenizer Tests" =
         Token { type = Op -; literal = "-"; length = 1; row = 0; col = 6 }
         |}]
     ;;
+
+    let%expect_test "unknown characters" =
+      run_test
+        {|"very cool string"
+        "another string" "another very cool string
+        that goes over two lines" If|};
+      [%expect
+        {|
+        |}]
+    ;;
   end)
 ;;
-
