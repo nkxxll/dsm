@@ -1,7 +1,7 @@
 (library
  (name dsm)
- (libraries base angstrom)
+ (libraries base angstrom yojson)
  (preprocess
-  (pps ppx_expect))
+  (pps ppx_expect ppx_yojson_conv))
  (inline_tests))
 
