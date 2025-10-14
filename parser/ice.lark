@@ -1,0 +1,15 @@
+start: day_section+
+
+day_section: NAME ":" NEWLINE item_entry+
+
+item_entry: item_type STRING NUMBER NEWLINE
+
+item_type: "ice" -> ice | "bucket" -> bucket
+
+%import common.CNAME -> NAME
+%import common.ESCAPED_STRING -> STRING
+%import common.NUMBER
+%import common.NEWLINE
+%import common.WS_INLINE
+
+%ignore WS_INLINE

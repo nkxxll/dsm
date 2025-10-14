@@ -1,0 +1,10 @@
+today:
+  ice "strawberry" 1.99
+  ice "blueberry" 1.99
+  ice "pistachio" 2.99
+  bucket "paper" 0.50
+  bucket "waffle" 0.60
+  bucket "none" 0
+tomorrow:
+  ice "chocolate" 2.49
+
