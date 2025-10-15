@@ -1,7 +1,6 @@
 (library
  (name dsm)
- (libraries base angstrom yojson)
+ (libraries base angstrom yojson ctypes ctypes.foreign)
  (preprocess
   (pps ppx_expect ppx_yojson_conv))
  (inline_tests))
-

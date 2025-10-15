@@ -95,11 +95,11 @@ int main(int argc, char* argv[]) {
     ParseFree(pParser, free );
 }
 
-char *parse(char *input) {
+extern "C" const char *parse_to_string(const char *input) {
 	cJSON *root = cJSON_Parse(input);
 
 	if (!root) {
-		cout << "JSON invalid\n";
+		printf("JSON invalid\n");
 		exit(0);
 	}
 
@@ -235,7 +235,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 
 code ::= statementblock(sb) .
 {
-	printf (cJSON_Print(sb));
+	// printf (cJSON_Print(sb));
     res = cJSON_Print(sb);
 }
 

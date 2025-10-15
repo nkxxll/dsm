@@ -910,7 +910,7 @@ static YYACTIONTYPE yy_reduce(
       case 0: /* code ::= statementblock */
 #line 237 "grammar.y"
 {
-	printf (cJSON_Print(yymsp[0].minor.yy0));
+	// printf (cJSON_Print(yymsp[0].minor.yy0));
     res = cJSON_Print(yymsp[0].minor.yy0);
 }
 #line 916 "grammar.c"
@@ -1422,11 +1422,11 @@ int main(int argc, char* argv[]) {
     ParseFree(pParser, free );
 }
 
-char *parse(char *input) {
+extern "C" const char *parse_to_string(const char *input) {
 	cJSON *root = cJSON_Parse(input);
 
 	if (!root) {
-		cout << "JSON invalid\n";
+		printf("JSON invalid\n");
 		exit(0);
 	}
 
