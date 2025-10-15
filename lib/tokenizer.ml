@@ -51,7 +51,8 @@ module TokenType = struct
     | UNKNOWN of string
   [@@deriving yojson]
 
-  let token_type_from_string = function
+  let token_type_from_string str =
+    match String.uppercase str with
     | "READ" -> READ
     | "WRITE" -> WRITE
     | "IF" -> IF
@@ -96,10 +97,10 @@ module TokenType = struct
     | GTEQ -> "GTEQ"
     | EQ -> "EQ"
     | NEQ -> "NEQ"
-    | IDENTIFIER s -> Printf.sprintf "IDENTIFIER %s" s
-    | STRTOKEN s -> Printf.sprintf "STRTOKEN %s" s
-    | NUMTOKEN n -> Printf.sprintf "NUMTOKEN %f" n
-    | TIMETOKEN t -> Printf.sprintf "TIMETOKEN %s" t
+    | IDENTIFIER _ -> "IDENTIFIER"
+    | STRTOKEN _ -> "STRTOKEN"
+    | NUMTOKEN _ -> "NUMTOKEN"
+    | TIMETOKEN _ -> "TIMETOKEN"
     | READ -> "READ"
     | WRITE -> "WRITE"
     | IF -> "IF"
@@ -146,7 +147,7 @@ type t =
   ; row : int
   }
 
-let create () = { col = 0; row = 0; tokens = [] }
+let create () = { col = 1; row = 1; tokens = [] }
 let to_list t = List.map t.tokens ~f:Token.to_list
 
 let is_digit = function
@@ -350,53 +351,55 @@ let%test_module "Tokenizer Tests" =
       run_test "+-*/;:=,()[]&<><=>=<>";
       [%expect
         {|
-        Token { type = PLUS; literal = "+"; length = 1; row = 0; col = 0 }
-        Token { type = MINUS; literal = "-"; length = 1; row = 0; col = 1 }
-        Token { type = TIMES; literal = "*"; length = 1; row = 0; col = 2 }
-        Token { type = DIVIDE; literal = "/"; length = 1; row = 0; col = 3 }
-        Token { type = SEMICOLON; literal = ";"; length = 1; row = 0; col = 4 }
-        Token { type = ASSIGN; literal = ":="; length = 2; row = 0; col = 5 }
-        Token { type = COMMA; literal = ","; length = 1; row = 0; col = 7 }
-        Token { type = LPAR; literal = "("; length = 1; row = 0; col = 8 }
-        Token { type = RPAR; literal = ")"; length = 1; row = 0; col = 9 }
-        Token { type = LSPAR; literal = "["; length = 1; row = 0; col = 10 }
-        Token { type = RSPAR; literal = "]"; length = 1; row = 0; col = 11 }
-        Token { type = AMPERSAND; literal = "&"; length = 1; row = 0; col = 12 }
-        Token { type = NEQ; literal = "<>"; length = 2; row = 0; col = 13 }
-        Token { type = LTEQ; literal = "<="; length = 2; row = 0; col = 15 }
-        Token { type = GTEQ; literal = ">="; length = 2; row = 0; col = 17 }
-        Token { type = NEQ; literal = "<>"; length = 2; row = 0; col = 19 }
+        Token { type = PLUS; literal = "+"; length = 1; row = 1; col = 1 }
+        Token { type = MINUS; literal = "-"; length = 1; row = 1; col = 2 }
+        Token { type = TIMES; literal = "*"; length = 1; row = 1; col = 3 }
+        Token { type = DIVIDE; literal = "/"; length = 1; row = 1; col = 4 }
+        Token { type = SEMICOLON; literal = ";"; length = 1; row = 1; col = 5 }
+        Token { type = ASSIGN; literal = ":="; length = 2; row = 1; col = 6 }
+        Token { type = COMMA; literal = ","; length = 1; row = 1; col = 8 }
+        Token { type = LPAR; literal = "("; length = 1; row = 1; col = 9 }
+        Token { type = RPAR; literal = ")"; length = 1; row = 1; col = 10 }
+        Token { type = LSPAR; literal = "["; length = 1; row = 1; col = 11 }
+        Token { type = RSPAR; literal = "]"; length = 1; row = 1; col = 12 }
+        Token { type = AMPERSAND; literal = "&"; length = 1; row = 1; col = 13 }
+        Token { type = NEQ; literal = "<>"; length = 2; row = 1; col = 14 }
+        Token { type = LTEQ; literal = "<="; length = 2; row = 1; col = 16 }
+        Token { type = GTEQ; literal = ">="; length = 2; row = 1; col = 18 }
+        Token { type = NEQ; literal = "<>"; length = 2; row = 1; col = 20 }
         |}]
     ;;
 
     let%expect_test "operators with whitespace" =
       run_test "  + -   * /    ;";
       [%expect
-        {| 
-        Token { type = PLUS; literal = "+"; length = 1; row = 0; col = 2 }
-        Token { type = MINUS; literal = "-"; length = 1; row = 0; col = 4 }
-        Token { type = TIMES; literal = "*"; length = 1; row = 0; col = 8 }
-        Token { type = DIVIDE; literal = "/"; length = 1; row = 0; col = 10 }
-        Token { type = SEMICOLON; literal = ";"; length = 1; row = 0; col = 15 } |}]
+        {|
+        Token { type = PLUS; literal = "+"; length = 1; row = 1; col = 3 }
+        Token { type = MINUS; literal = "-"; length = 1; row = 1; col = 5 }
+        Token { type = TIMES; literal = "*"; length = 1; row = 1; col = 9 }
+        Token { type = DIVIDE; literal = "/"; length = 1; row = 1; col = 11 }
+        Token { type = SEMICOLON; literal = ";"; length = 1; row = 1; col = 16 }
+        |}]
     ;;
 
     let%expect_test "operators with newlines" =
       run_test "+\n-\n\n*";
       [%expect
-        {| 
-        Token { type = PLUS; literal = "+"; length = 1; row = 0; col = 0 }
-        Token { type = MINUS; literal = "-"; length = 1; row = 1; col = 0 }
-        Token { type = TIMES; literal = "*"; length = 1; row = 3; col = 0 } |}]
+        {|
+        Token { type = PLUS; literal = "+"; length = 1; row = 1; col = 1 }
+        Token { type = MINUS; literal = "-"; length = 1; row = 2; col = 0 }
+        Token { type = TIMES; literal = "*"; length = 1; row = 4; col = 0 }
+        |}]
     ;;
 
     let%expect_test "identifiers and keywords" =
       run_test "If foo FOR bar";
       [%expect
         {|
-        Token { type = IF; literal = "If"; length = 2; row = 0; col = 0 }
-        Token { type = IDENTIFIER FOO; literal = "foo"; length = 3; row = 0; col = 3 }
-        Token { type = FOR; literal = "FOR"; length = 3; row = 0; col = 7 }
-        Token { type = IDENTIFIER BAR; literal = "bar"; length = 3; row = 0; col = 11 }
+        Token { type = IF; literal = "If"; length = 2; row = 1; col = 1 }
+        Token { type = IDENTIFIER; literal = "foo"; length = 3; row = 1; col = 4 }
+        Token { type = FOR; literal = "FOR"; length = 3; row = 1; col = 8 }
+        Token { type = IDENTIFIER; literal = "bar"; length = 3; row = 1; col = 12 }
         |}]
     ;;
 
@@ -404,24 +407,25 @@ let%test_module "Tokenizer Tests" =
       run_test "IF + foo;\n  WRITE - bar";
       [%expect
         {|
-        Token { type = IF; literal = "IF"; length = 2; row = 0; col = 0 }
-        Token { type = PLUS; literal = "+"; length = 1; row = 0; col = 3 }
-        Token { type = IDENTIFIER FOO; literal = "foo"; length = 3; row = 0; col = 5 }
-        Token { type = SEMICOLON; literal = ";"; length = 1; row = 0; col = 8 }
-        Token { type = WRITE; literal = "WRITE"; length = 5; row = 1; col = 2 }
-        Token { type = MINUS; literal = "-"; length = 1; row = 1; col = 8 }
-        Token { type = IDENTIFIER BAR; literal = "bar"; length = 3; row = 1; col = 10 }
+        Token { type = IF; literal = "IF"; length = 2; row = 1; col = 1 }
+        Token { type = PLUS; literal = "+"; length = 1; row = 1; col = 4 }
+        Token { type = IDENTIFIER; literal = "foo"; length = 3; row = 1; col = 6 }
+        Token { type = SEMICOLON; literal = ";"; length = 1; row = 1; col = 9 }
+        Token { type = WRITE; literal = "WRITE"; length = 5; row = 2; col = 2 }
+        Token { type = MINUS; literal = "-"; length = 1; row = 2; col = 8 }
+        Token { type = IDENTIFIER; literal = "bar"; length = 3; row = 2; col = 10 }
         |}]
     ;;
 
     let%expect_test "unknown characters" =
       run_test "+ # @ -";
       [%expect
-        {| 
-        Token { type = PLUS; literal = "+"; length = 1; row = 0; col = 0 }
-        Token { type = UNKNOWN #; literal = "#"; length = 1; row = 0; col = 2 }
-        Token { type = UNKNOWN @; literal = "@"; length = 1; row = 0; col = 4 }
-        Token { type = MINUS; literal = "-"; length = 1; row = 0; col = 6 } |}]
+        {|
+        Token { type = PLUS; literal = "+"; length = 1; row = 1; col = 1 }
+        Token { type = UNKNOWN #; literal = "#"; length = 1; row = 1; col = 3 }
+        Token { type = UNKNOWN @; literal = "@"; length = 1; row = 1; col = 5 }
+        Token { type = MINUS; literal = "-"; length = 1; row = 1; col = 7 }
+        |}]
     ;;
 
     let%expect_test "strings" =
@@ -430,23 +434,23 @@ let%test_module "Tokenizer Tests" =
 that goes over two lines" IF|};
       [%expect
         {|
-        Token { type = STRTOKEN very cool string; literal = " "very cool string" "; length = 20; row = 0; col = 1 }
-        Token { type = STRTOKEN another string; literal = " "another string" "; length = 18; row = 0; col = 22 }
-        Token { type = STRTOKEN another very cool string
-        that goes over two lines; literal = " "another very cool string
-        that goes over two lines" "; length = 53; row = 0; col = 41 }
-        Token { type = IF; literal = "IF"; length = 2; row = 1; col = 95 }
+        Token { type = STRTOKEN; literal = " "very cool string" "; length = 20; row = 1; col = 2 }
+        Token { type = STRTOKEN; literal = " "another string" "; length = 18; row = 1; col = 23 }
+        Token { type = STRTOKEN; literal = " "another very cool string
+        that goes over two lines" "; length = 53; row = 1; col = 42 }
+        Token { type = IF; literal = "IF"; length = 2; row = 2; col = 96 }
         |}]
     ;;
 
     let%expect_test "numbers and time" =
       run_test "123 123.45 12:34 12:34:56";
       [%expect
-        {| 
-        Token { type = NUMTOKEN 123.000000; literal = "123"; length = 3; row = 0; col = 0 }
-        Token { type = NUMTOKEN 123.450000; literal = "123.45"; length = 6; row = 0; col = 4 }
-        Token { type = TIMETOKEN 12:34; literal = "12:34"; length = 5; row = 0; col = 11 }
-        Token { type = TIMETOKEN 12:34:56; literal = "12:34:56"; length = 8; row = 0; col = 17 } |}]
+        {|
+        Token { type = NUMTOKEN; literal = "123"; length = 3; row = 1; col = 1 }
+        Token { type = NUMTOKEN; literal = "123.45"; length = 6; row = 1; col = 5 }
+        Token { type = TIMETOKEN; literal = "12:34"; length = 5; row = 1; col = 12 }
+        Token { type = TIMETOKEN; literal = "12:34:56"; length = 8; row = 1; col = 18 }
+        |}]
     ;;
 
     let%expect_test "json list output" =
@@ -455,9 +459,91 @@ that goes over two lines" IF|};
       match exec tokenizer input with
       | Ok tokens ->
         yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
-        |> Yojson.Safe.to_string
+        |> Yojson.Safe.pretty_to_string
         |> Stdio.print_endline
-      | Error msg -> Stdio.print_endline ("Error: " ^ msg)
+      | Error msg ->
+        Stdio.print_endline ("Error: " ^ msg);
+        [%expect.unreachable];
+        [%expect.unreachable];
+        [%expect.unreachable];
+        [%expect.unreachable];
+      [%expect {| [["1","IF","IF"],["1","PLUS","+"],["1","IDENTIFIER","foo"],["1","SEMICOLON",";"],["2","WRITE","WRITE"],["2","MINUS","-"],["2","IDENTIFIER","bar"]] |}]
+    ;;
+
+    let%expect_test "power times power times" =
+      let input =
+        {|WRITE 1 ** 1;
+        WRITE 1 * 1;
+        WRITE 1 *** 1;|}
+      in
+      let tokenizer = create () in
+      match exec tokenizer input with
+      | Ok tokens ->
+        yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
+        |> Yojson.Safe.pretty_to_string
+        |> Stdio.print_endline;
+        [%expect
+          {|
+          [
+            [ "1", "WRITE", "WRITE" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "POWER", "**" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "SEMICOLON", ";" ],
+            [ "2", "WRITE", "WRITE" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "TIMES", "*" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "SEMICOLON", ";" ],
+            [ "3", "WRITE", "WRITE" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "POWER", "**" ],
+            [ "3", "TIMES", "*" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "SEMICOLON", ";" ]
+          ]
+          |}]
+      | Error msg ->
+        Stdio.print_endline ("Error: " ^ msg);
+        [%expect.unreachable]
+    ;;
+
+    let%expect_test "weird keyword capitalization" =
+      let input =
+        {|wRite 1 ** 1;
+         thEN 1 * 1;
+         Identifier 1 *** 1;|}
+      in
+      let tokenizer = create () in
+      match exec tokenizer input with
+      | Ok tokens ->
+        yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
+        |> Yojson.Safe.pretty_to_string
+        |> Stdio.print_endline;
+        [%expect
+          {|
+          [
+            [ "1", "WRITE", "wRite" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "POWER", "**" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "SEMICOLON", ";" ],
+            [ "2", "THEN", "thEN" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "TIMES", "*" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "SEMICOLON", ";" ],
+            [ "3", "IDENTIFIER", "Identifier" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "POWER", "**" ],
+            [ "3", "TIMES", "*" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "SEMICOLON", ";" ]
+          ]
+          |}]
+      | Error msg ->
+        Stdio.print_endline ("Error: " ^ msg);
+        [%expect.unreachable]
     ;;
   end)
 ;;
