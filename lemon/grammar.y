@@ -7,9 +7,17 @@
 #include <stdio.h>
 #include "cjson.h"
 
+#define DEBUG
+#ifdef DEBUG
 #define DEBUG_PRINT(fmt, ...) \
     fprintf(stderr, "[DEBUG] %s:%d:%s(): " fmt "\n", \
             __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...) \
+    do { } while (0)
+#endif
+
+typedef struct { cJSON *cjson_ptr; } State;
 
 int get_token_id (char*);
 const char *getValue (cJSON *token);
@@ -22,7 +30,6 @@ char *curtoken;
 char *curtype;
 char *res;
 }
-
 
 %code {
 
@@ -46,7 +53,7 @@ const char * getLine (cJSON* token) {
 
 
 int main(int argc, char* argv[]) {
-    DEBUG_PRINT("starting main...");
+    DEBUG_PRINT("Starting main function");
     size_t capacity = 1024;
     size_t size = 0;
     char *buffer = malloc(capacity);
@@ -54,6 +61,7 @@ int main(int argc, char* argv[]) {
         perror("Could not allocate buffer with capacity");
         exit(EXIT_FAILURE);
     }
+    DEBUG_PRINT("Initial buffer allocated");
 
     int c;
     while ((c = fgetc(stdin)) != EOF) {
@@ -71,7 +79,7 @@ int main(int argc, char* argv[]) {
     }
 
     buffer[size] = '\0'; // null-terminate
-    DEBUG_PRINT("After reading stdin, stdin is %s", buffer);
+    DEBUG_PRINT("Stdin read. Content: %s", buffer);
 
 	cJSON *root = cJSON_Parse(buffer);
 
@@ -79,7 +87,9 @@ int main(int argc, char* argv[]) {
 		perror("JSON invalid\n");
 		exit(EXIT_FAILURE);
 	}
+    DEBUG_PRINT("JSON input parsed");
 
+    State state;
 	void* pParser = ParseAlloc (malloc);
 	int num = cJSON_GetArraySize (root);
 
@@ -105,16 +115,19 @@ int main(int argc, char* argv[]) {
 		if (strcmp(type, "MCOMMENT") == 0) continue;
 
 		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok);
+		Parse (pParser, tokenid, tok, &state);
 
 	}
-	Parse (pParser, 0, 0);
+	Parse (pParser, 0, 0, &state);
     ParseFree(pParser, free );
+    // print the cjson structure
+    printf("RESULT:\n%s\n", cJSON_Print(state.cjson_ptr));
     return EXIT_SUCCESS;
 }
 
 char *parse_to_string(char *input) {
 	cJSON *root = cJSON_Parse(input);
+    State state;
 
 	if (!root) {
 		printf("JSON invalid\n");
@@ -146,12 +159,12 @@ char *parse_to_string(char *input) {
 		if (strcmp(type, "MCOMMENT") == 0) continue;
 
 		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok);
+		Parse (pParser, tokenid, tok, &state);
 
 	}
-	Parse (pParser, 0, 0);
+	Parse (pParser, 0, 0, &state);
     ParseFree(pParser, free );
-    return res;
+    return cJSON_Print(state.cjson_ptr);
 }
 
 
@@ -224,6 +237,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
   exit(0);
 }
 
+%extra_argument { State *state }
 %token_type {cJSON *}
 %default_type {cJSON *}
 
@@ -243,8 +257,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 
 code ::= statementblock(sb) .
 {
-	printf (cJSON_Print(sb));
-    res = cJSON_Print(sb);
+    state->cjson_ptr = sb;
 }
 
 ///////////////////////

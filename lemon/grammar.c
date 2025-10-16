@@ -33,9 +33,17 @@
 #include <stdio.h>
 #include "cjson.h"
 
+#define DEBUG
+#ifdef DEBUG
 #define DEBUG_PRINT(fmt, ...) \
     fprintf(stderr, "[DEBUG] %s:%d:%s(): " fmt "\n", \
             __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...) \
+    do { } while (0)
+#endif
+
+typedef struct { cJSON *cjson_ptr; } State;
 
 int get_token_id (char*);
 const char *getValue (cJSON *token);
@@ -47,7 +55,7 @@ char *linenumber;
 char *curtoken;
 char *curtype;
 char *res;
-#line 51 "grammar.c"
+#line 59 "grammar.c"
 /**************** End of %include directives **********************************/
 /* These constants specify the various numeric values for terminal symbols.
 ***************** Begin token definitions *************************************/
@@ -138,11 +146,11 @@ typedef union {
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 100
 #endif
-#define ParseARG_SDECL
-#define ParseARG_PDECL
-#define ParseARG_PARAM
-#define ParseARG_FETCH
-#define ParseARG_STORE
+#define ParseARG_SDECL  State *state ;
+#define ParseARG_PDECL , State *state 
+#define ParseARG_PARAM ,state 
+#define ParseARG_FETCH  State *state =yypParser->state ;
+#define ParseARG_STORE yypParser->state =state ;
 #define YYREALLOC realloc
 #define YYFREE free
 #define YYDYNSTACK 0
@@ -909,15 +917,14 @@ static YYACTIONTYPE yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* code ::= statementblock */
-#line 245 "grammar.y"
+#line 259 "grammar.y"
 {
-	printf (cJSON_Print(yymsp[0].minor.yy0));
-    res = cJSON_Print(yymsp[0].minor.yy0);
+    state->cjson_ptr = yymsp[0].minor.yy0;
 }
-#line 917 "grammar.c"
+#line 924 "grammar.c"
         break;
       case 1: /* statementblock ::= */
-#line 255 "grammar.y"
+#line 268 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "STATEMENTBLOCK");
@@ -925,58 +932,58 @@ static YYACTIONTYPE yy_reduce(
 	cJSON_AddItemToObject(res, "statements", arg);
 	yymsp[1].minor.yy0 = res;
 }
-#line 928 "grammar.c"
+#line 935 "grammar.c"
         break;
       case 2: /* statementblock ::= statementblock statement */
-#line 264 "grammar.y"
+#line 277 "grammar.y"
 {
 	cJSON_AddItemToArray(cJSON_GetObjectItem ( yymsp[-1].minor.yy0, "statements"), yymsp[0].minor.yy0);
 	yylhsminor.yy0 = yymsp[-1].minor.yy0;
 }
-#line 936 "grammar.c"
+#line 943 "grammar.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 3: /* statement ::= WRITE ex SEMICOLON */
-#line 274 "grammar.y"
+#line 287 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "WRITE");
 	cJSON_AddItemToObject(res, "arg", yymsp[-1].minor.yy0);
 	yymsp[-2].minor.yy0 = res;
 }
-#line 947 "grammar.c"
+#line 954 "grammar.c"
         break;
       case 4: /* ex ::= LPAR ex RPAR */
-#line 282 "grammar.y"
+#line 295 "grammar.y"
 {
 	yymsp[-2].minor.yy0 = yymsp[-1].minor.yy0;
 }
-#line 954 "grammar.c"
+#line 961 "grammar.c"
         break;
       case 5: /* ex ::= NUMTOKEN */
-#line 288 "grammar.y"
+#line 301 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "NUMBER");
 	cJSON_AddStringToObject(res, "value", getValue(yymsp[0].minor.yy0));
 	yylhsminor.yy0 = res;
 }
-#line 964 "grammar.c"
+#line 971 "grammar.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 6: /* ex ::= STRTOKEN */
-#line 297 "grammar.y"
+#line 310 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "STRTOKEN");
 	cJSON_AddStringToObject(res, "value", getValue(yymsp[0].minor.yy0));
 	yylhsminor.yy0 = res;
 }
-#line 975 "grammar.c"
+#line 982 "grammar.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 7: /* ex ::= IDENTIFIER */
-#line 306 "grammar.y"
+#line 319 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "VARIABLE");
@@ -984,37 +991,37 @@ static YYACTIONTYPE yy_reduce(
 	cJSON_AddStringToObject(res, "line", getLine(yymsp[0].minor.yy0));
 	yylhsminor.yy0 = res;
 }
-#line 987 "grammar.c"
+#line 994 "grammar.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 8: /* ex ::= ex PLUS ex */
-#line 318 "grammar.y"
+#line 331 "grammar.y"
 {yylhsminor.yy0 = binary ("PLUS", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
-#line 993 "grammar.c"
+#line 1000 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 9: /* ex ::= ex MINUS ex */
-#line 321 "grammar.y"
+#line 334 "grammar.y"
 {yylhsminor.yy0 = binary ("MINUS", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
-#line 999 "grammar.c"
+#line 1006 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 10: /* ex ::= ex TIMES ex */
-#line 324 "grammar.y"
+#line 337 "grammar.y"
 {yylhsminor.yy0 = binary ("TIMES", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
-#line 1005 "grammar.c"
+#line 1012 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 11: /* ex ::= ex DIVIDE ex */
-#line 327 "grammar.y"
+#line 340 "grammar.y"
 {yylhsminor.yy0 = binary ("DIVIDE", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
-#line 1011 "grammar.c"
+#line 1018 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 12: /* ex ::= ex POWER ex */
-#line 330 "grammar.y"
+#line 343 "grammar.y"
 {yylhsminor.yy0 = binary ("POWER", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
-#line 1017 "grammar.c"
+#line 1024 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       default:
@@ -1077,11 +1084,11 @@ static void yy_syntax_error(
   ParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 222 "grammar.y"
+#line 235 "grammar.y"
 
   printf ("{\"error\" : true, \"message\": \"Syntax Error: Compiler reports unexpected token \\\"%s\\\" of type \\\"%s\\\" in line %s\"}\n", curtoken, curtype, linenumber);
   exit(0);
-#line 1084 "grammar.c"
+#line 1091 "grammar.c"
 /************ End %syntax_error code ******************************************/
   ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
   ParseCTX_STORE
@@ -1350,7 +1357,7 @@ int ParseFallback(int iToken){
   return 0;
 #endif
 }
-#line 27 "grammar.y"
+#line 34 "grammar.y"
 
 
 typedef struct {char *value; int line;} token;
@@ -1373,7 +1380,7 @@ const char * getLine (cJSON* token) {
 
 
 int main(int argc, char* argv[]) {
-    DEBUG_PRINT("starting main...");
+    DEBUG_PRINT("Starting main function");
     size_t capacity = 1024;
     size_t size = 0;
     char *buffer = malloc(capacity);
@@ -1381,6 +1388,7 @@ int main(int argc, char* argv[]) {
         perror("Could not allocate buffer with capacity");
         exit(EXIT_FAILURE);
     }
+    DEBUG_PRINT("Initial buffer allocated");
 
     int c;
     while ((c = fgetc(stdin)) != EOF) {
@@ -1398,7 +1406,7 @@ int main(int argc, char* argv[]) {
     }
 
     buffer[size] = '\0'; // null-terminate
-    DEBUG_PRINT("After reading stdin, stdin is %s", buffer);
+    DEBUG_PRINT("Stdin read. Content: %s", buffer);
 
 	cJSON *root = cJSON_Parse(buffer);
 
@@ -1406,7 +1414,9 @@ int main(int argc, char* argv[]) {
 		perror("JSON invalid\n");
 		exit(EXIT_FAILURE);
 	}
+    DEBUG_PRINT("JSON input parsed");
 
+    State state;
 	void* pParser = ParseAlloc (malloc);
 	int num = cJSON_GetArraySize (root);
 
@@ -1432,16 +1442,19 @@ int main(int argc, char* argv[]) {
 		if (strcmp(type, "MCOMMENT") == 0) continue;
 
 		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok);
+		Parse (pParser, tokenid, tok, &state);
 
 	}
-	Parse (pParser, 0, 0);
+	Parse (pParser, 0, 0, &state);
     ParseFree(pParser, free );
+    // print the cjson structure
+    printf("RESULT:\n%s\n", cJSON_Print(state.cjson_ptr));
     return EXIT_SUCCESS;
 }
 
 char *parse_to_string(char *input) {
 	cJSON *root = cJSON_Parse(input);
+    State state;
 
 	if (!root) {
 		printf("JSON invalid\n");
@@ -1473,12 +1486,12 @@ char *parse_to_string(char *input) {
 		if (strcmp(type, "MCOMMENT") == 0) continue;
 
 		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok);
+		Parse (pParser, tokenid, tok, &state);
 
 	}
-	Parse (pParser, 0, 0);
+	Parse (pParser, 0, 0, &state);
     ParseFree(pParser, free );
-    return res;
+    return cJSON_Print(state.cjson_ptr);
 }
 
 
@@ -1544,4 +1557,4 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 	return res;
 }
 
-#line 1547 "grammar.c"
+#line 1560 "grammar.c"
