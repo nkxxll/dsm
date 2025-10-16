@@ -460,14 +460,22 @@ that goes over two lines" IF|};
       | Ok tokens ->
         yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
         |> Yojson.Safe.pretty_to_string
-        |> Stdio.print_endline
+        |> Stdio.print_endline;
+        [%expect
+          {|
+        [
+          [ "1", "IF", "IF" ],
+          [ "1", "PLUS", "+" ],
+          [ "1", "IDENTIFIER", "foo" ],
+          [ "1", "SEMICOLON", ";" ],
+          [ "2", "WRITE", "WRITE" ],
+          [ "2", "MINUS", "-" ],
+          [ "2", "IDENTIFIER", "bar" ]
+        ]
+        |}]
       | Error msg ->
         Stdio.print_endline ("Error: " ^ msg);
-        [%expect.unreachable];
-        [%expect.unreachable];
-        [%expect.unreachable];
-        [%expect.unreachable];
-      [%expect {| [["1","IF","IF"],["1","PLUS","+"],["1","IDENTIFIER","foo"],["1","SEMICOLON",";"],["2","WRITE","WRITE"],["2","MINUS","-"],["2","IDENTIFIER","bar"]] |}]
+        [%expect.unreachable]
     ;;
 
     let%expect_test "power times power times" =

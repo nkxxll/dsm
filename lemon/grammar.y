@@ -1,12 +1,13 @@
 %include {
 
+#include "cjson.h"
 #include "grammar.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "cjson.h"
 
+/** start: what should be the header file */
 #define DEBUG
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, ...) \
@@ -18,6 +19,7 @@
 #endif
 
 typedef struct { cJSON *cjson_ptr; } State;
+typedef struct {char *value; int line;} token;
 
 int get_token_id (char*);
 const char *getValue (cJSON *token);
@@ -25,15 +27,14 @@ const char *getLine (cJSON *token);
 cJSON *unary (char *fname, cJSON *a);
 cJSON *binary (char *fname, cJSON *a, cJSON *b);
 cJSON *ternary (char *fname, cJSON *a, cJSON *b, cJSON *c);
+/** end: what should be the header file */
+
 char *linenumber;
 char *curtoken;
 char *curtype;
-char *res;
 }
 
 %code {
-
-typedef struct {char *value; int line;} token;
 
 token* create_token (char *value, int line) {
 	token *t = (token*) malloc (sizeof (token));
@@ -51,79 +52,6 @@ const char * getLine (cJSON* token) {
 	return cJSON_GetObjectItem (token, "line")->valuestring;
 }
 
-
-int main(int argc, char* argv[]) {
-    DEBUG_PRINT("Starting main function");
-    size_t capacity = 1024;
-    size_t size = 0;
-    char *buffer = malloc(capacity);
-    if (!buffer) {
-        perror("Could not allocate buffer with capacity");
-        exit(EXIT_FAILURE);
-    }
-    DEBUG_PRINT("Initial buffer allocated");
-
-    int c;
-    while ((c = fgetc(stdin)) != EOF) {
-        if (size + 1 >= capacity) {
-            capacity *= 2;
-            char *newbuf = realloc(buffer, capacity);
-            if (!newbuf) {
-                free(buffer);
-                perror("Could not reallocate buffer with capacity");
-                exit(EXIT_FAILURE);
-            }
-            buffer = newbuf;
-        }
-        buffer[size++] = (char)c;
-    }
-
-    buffer[size] = '\0'; // null-terminate
-    DEBUG_PRINT("Stdin read. Content: %s", buffer);
-
-	cJSON *root = cJSON_Parse(buffer);
-
-	if (!root) {
-		perror("JSON invalid\n");
-		exit(EXIT_FAILURE);
-	}
-    DEBUG_PRINT("JSON input parsed");
-
-    State state;
-	void* pParser = ParseAlloc (malloc);
-	int num = cJSON_GetArraySize (root);
-
-	for (int i = 0; i < num; i++ ) {
-
-		// Knoten im Token-Stream auslesen
-		cJSON *node = cJSON_GetArrayItem(root,i);
-
-		char *line = cJSON_GetArrayItem(node,0)->valuestring;
-		char *type = cJSON_GetArrayItem(node,1)->valuestring;
-		char *value = cJSON_GetArrayItem(node,2)->valuestring;
-
-		cJSON *tok = cJSON_CreateObject();
-		cJSON_AddStringToObject(tok, "value", value);
-		cJSON_AddStringToObject(tok, "line", line);
-
-		linenumber = line;
-		curtoken = value;
-		curtype = type;
-		// THE und Kommentare werden ueberlesen
-		if (strcmp(type, "THE") == 0) continue;
-		if (strcmp(type, "COMMENT") == 0) continue;
-		if (strcmp(type, "MCOMMENT") == 0) continue;
-
-		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok, &state);
-
-	}
-	Parse (pParser, 0, 0, &state);
-    ParseFree(pParser, free );
-    // print the cjson structure
-    printf("RESULT:\n%s\n", cJSON_Print(state.cjson_ptr));
-    return EXIT_SUCCESS;
-}
 
 char *parse_to_string(char *input) {
 	cJSON *root = cJSON_Parse(input);

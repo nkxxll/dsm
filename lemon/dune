@@ -1,0 +1,6 @@
+(library
+ (name lemon)
+ (foreign_stubs
+  (language c)
+  (names cjson grammar grammar_stubs))
+ (libraries ctypes))

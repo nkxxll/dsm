@@ -16,7 +16,23 @@ let%test_module "Tokenizer Tests" =
             [ "1", "SEMICOLON", ";" ]]|}
       in
       parse input |> Stdio.print_endline;
-      [%expect {| |}]
+      [%expect {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "POWER",
+                "arg": [
+                  { "type": "NUMBER", "value": "1" },
+                  { "type": "NUMBER", "value": "1" }
+                ]
+              }
+            }
+          ]
+        }
+        |}]
     ;;
   end)
 ;;
