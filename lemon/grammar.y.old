@@ -4,13 +4,12 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <string>
+#include <iostream>
 #include "cjson.h"
 
-#define DEBUG_PRINT(fmt, ...) \
-    fprintf(stderr, "[DEBUG] %s:%d:%s(): " fmt "\n", \
-            __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
+using namespace std;
 int get_token_id (char*);
 const char *getValue (cJSON *token);
 const char *getLine (cJSON *token);
@@ -26,6 +25,7 @@ char *res;
 
 %code {
 
+using namespace std;
 typedef struct {char *value; int line;} token;
 
 token* create_token (char *value, int line) {
@@ -46,38 +46,21 @@ const char * getLine (cJSON* token) {
 
 
 int main(int argc, char* argv[]) {
-    DEBUG_PRINT("starting main...");
-    size_t capacity = 1024;
-    size_t size = 0;
-    char *buffer = malloc(capacity);
-    if (!buffer) {
-        perror("Could not allocate buffer with capacity");
-        exit(EXIT_FAILURE);
+	std::string line;
+	std::string input = "";
+	while (std::getline(std::cin, line)) {
+      input += line + "\n";
     }
+	if (input == "") {
+		cout << "Empty input";
+		exit(0);
+	}
 
-    int c;
-    while ((c = fgetc(stdin)) != EOF) {
-        if (size + 1 >= capacity) {
-            capacity *= 2;
-            char *newbuf = realloc(buffer, capacity);
-            if (!newbuf) {
-                free(buffer);
-                perror("Could not reallocate buffer with capacity");
-                exit(EXIT_FAILURE);
-            }
-            buffer = newbuf;
-        }
-        buffer[size++] = (char)c;
-    }
-
-    buffer[size] = '\0'; // null-terminate
-    DEBUG_PRINT("After reading stdin, stdin is %s", buffer);
-
-	cJSON *root = cJSON_Parse(buffer);
+	cJSON *root = cJSON_Parse(input.c_str());
 
 	if (!root) {
-		perror("JSON invalid\n");
-		exit(EXIT_FAILURE);
+		cout << "JSON invalid\n";
+		exit(0);
 	}
 
 	void* pParser = ParseAlloc (malloc);
@@ -110,10 +93,9 @@ int main(int argc, char* argv[]) {
 	}
 	Parse (pParser, 0, 0);
     ParseFree(pParser, free );
-    return EXIT_SUCCESS;
 }
 
-char *parse_to_string(char *input) {
+extern "C" const char *parse_to_string(const char *input) {
 	cJSON *root = cJSON_Parse(input);
 
 	if (!root) {
@@ -205,6 +187,8 @@ cJSON* binary (char *fname, cJSON *a, cJSON *b)
 	return res;
 }
 
+
+
 cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 {
 	cJSON *res = cJSON_CreateObject();
@@ -216,6 +200,8 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 	cJSON_AddItemToObject(res, "arg", arg);
 	return res;
 }
+
+
 
 }
 
@@ -233,23 +219,32 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
+
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
 %right     POWER .
+
+
+
 
 ///////////////////////
 // CODE
 ///////////////////////
 
+
+
 code ::= statementblock(sb) .
 {
-	printf (cJSON_Print(sb));
+	// printf (cJSON_Print(sb));
     res = cJSON_Print(sb);
 }
+
+
 
 ///////////////////////
 // STATEMENTBLOCK
 ///////////////////////
+
 
 statementblock(sb) ::= .
 {
@@ -260,11 +255,15 @@ statementblock(sb) ::= .
 	sb = res;
 }
 
+
 statementblock(sb) ::= statementblock(a) statement(b) .
 {
 	cJSON_AddItemToArray(cJSON_GetObjectItem ( a, "statements"), b);
 	sb = a;
 }
+
+
+
 
 ///////////////////////////
 // WRITE
@@ -277,6 +276,25 @@ statement(r) ::= WRITE ex(e) SEMICOLON .
 	cJSON_AddItemToObject(res, "arg", e);
 	r = res;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ex(r) ::= LPAR ex(a) RPAR .
 {
@@ -328,4 +346,10 @@ ex(r) ::= ex(a) DIVIDE ex(b) .
 
 ex(r) ::= ex(a) POWER ex(b) .
 {r = binary ("POWER", a, b); }
+
+
+
+
+
+
 

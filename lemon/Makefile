@@ -3,7 +3,7 @@ OBJECTS = grammar.o cjson.o lemon.o
 CC = gcc
 CXX = g++
 CFLAGS = -Wall
-CXXFLAGS = -Wall
+CCFLAGS = -Wall
 
 all: $(TARGETS)
 
@@ -14,21 +14,24 @@ grammar.c grammar.h: grammar.y lemon
 	./lemon grammar.y
 
 grammar.o: grammar.c grammar.h
-	$(CXX) $(CXXFLAGS) -c grammar.c -o $@
+	$(CC) $(CFLAGS) -c grammar.c -o $@
 
 cjson.o: cjson.c cjson.h
-	$(CXX) $(CXXFLAGS) -c cjson.c -o $@
+	$(CC) $(CFLAGS) -c cjson.c -o $@
 
 grammar: grammar.o cjson.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 grammar.so: grammar.y lemon
 	./lemon grammar.y
-	$(CXX) $(BUILDF) -fPIC -c grammar.c -o grammar.o
-	$(CXX) $(BUILDF) -fPIC -c cjson.c -o cjson.o
-	$(CXX) -shared grammar.o cjson.o -o grammar.so
+	$(CC) $(BUILDF) -fPIC -c grammar.c -o grammar.o
+	$(CC) $(BUILDF) -fPIC -c cjson.c -o cjson.o
+	$(CC) -shared grammar.o cjson.o -o grammar.so
 
-.PHONY: clean
+.PHONY: clean runmain
+
+runmain:
+	./grammar < ./tokenstream.txt
 
 clean:
 	rm -f $(TARGETS) $(OBJECTS) grammar.c grammar.h
