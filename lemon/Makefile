@@ -11,7 +11,7 @@ lemon: lemon.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 grammar.c: grammar.y lemon
-	./lemon grammar.y
+	./lemon -s grammar.y
 
 grammar.o: grammar.c grammar.h
 	$(CC) $(CFLAGS) -c grammar.c -o $@

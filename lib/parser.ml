@@ -5,11 +5,9 @@ let parse_to_yojson_pretty_string tokens_str =
   tokens_str |> Binding.parse |> Yojson.Safe.from_string |> Yojson.Safe.pretty_to_string
 ;;
 
-let parse tokens_str =
-  tokens_str |> Binding.parse |> Yojson.Safe.from_string
-;;
+let parse tokens_str = tokens_str |> Binding.parse |> Yojson.Safe.from_string
 
-let%test_module "Tokenizer Tests" =
+let%test_module "Parser tests" =
   (module struct
     let%expect_test "parse simple" =
       let input =
@@ -20,7 +18,8 @@ let%test_module "Tokenizer Tests" =
             [ "1", "SEMICOLON", ";" ]]|}
       in
       parse_to_yojson_pretty_string input |> Stdio.print_endline;
-      [%expect {|
+      [%expect
+        {|
         {
           "type": "STATEMENTBLOCK",
           "statements": [
@@ -29,8 +28,67 @@ let%test_module "Tokenizer Tests" =
               "arg": {
                 "type": "POWER",
                 "arg": [
-                  { "type": "NUMBER", "value": "1" },
-                  { "type": "NUMBER", "value": "1" }
+                  { "type": "NUMTOKEN", "value": "1" },
+                  { "type": "NUMTOKEN", "value": "1" }
+                ]
+              }
+            }
+          ]
+        }
+        |}]
+    ;;
+
+    let%expect_test "parse some other stuff" =
+      let input =
+        {|WRITE "hello";
+        WRITE 1 + 1;
+      WRITE 1 - 1;
+        WRITE 1 * 1;
+      |}
+      in
+      let output = Tokenizer.tokenize input in
+      let res =
+        match output with
+        | Ok out -> parse_to_yojson_pretty_string out
+        | Error err -> err
+      in
+      Stdio.print_endline res;
+      [%expect
+        {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [
+            {
+              "type": "WRITE",
+              "arg": { "type": "STRTOKEN", "value": " \"hello\" " }
+            },
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "PLUS",
+                "arg": [
+                  { "type": "NUMTOKEN", "value": "1" },
+                  { "type": "NUMTOKEN", "value": "1" }
+                ]
+              }
+            },
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "MINUS",
+                "arg": [
+                  { "type": "NUMTOKEN", "value": "1" },
+                  { "type": "NUMTOKEN", "value": "1" }
+                ]
+              }
+            },
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "TIMES",
+                "arg": [
+                  { "type": "NUMTOKEN", "value": "1" },
+                  { "type": "NUMTOKEN", "value": "1" }
                 ]
               }
             }

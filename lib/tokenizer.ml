@@ -318,6 +318,14 @@ let exec (tokenizer : t) (input : string) =
   | Error msg -> Error msg
 ;;
 
+let tokenize input =
+  let tokenizer = create () in
+  exec tokenizer input
+  |> Result.map ~f:(fun tokens ->
+    yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
+    |> Yojson.Safe.pretty_to_string)
+;;
+
 let%test_module "Tokenizer Tests" =
   (module struct
     open Token
@@ -552,6 +560,38 @@ that goes over two lines" IF|};
       | Error msg ->
         Stdio.print_endline ("Error: " ^ msg);
         [%expect.unreachable]
+    ;;
+
+    let%expect_test "with tokenize keyword capitalization" =
+      let input =
+        {|wRite 1 ** 1;
+         thEN 1 * 1;
+         Identifier 1 *** 1;|}
+      in
+      (match tokenize input with
+       | Ok out -> Stdio.print_endline out
+       | Error msg -> Stdio.print_endline ("error " ^ msg));
+      [%expect
+        {|
+          [
+            [ "1", "WRITE", "wRite" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "POWER", "**" ],
+            [ "1", "NUMTOKEN", "1" ],
+            [ "1", "SEMICOLON", ";" ],
+            [ "2", "THEN", "thEN" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "TIMES", "*" ],
+            [ "2", "NUMTOKEN", "1" ],
+            [ "2", "SEMICOLON", ";" ],
+            [ "3", "IDENTIFIER", "Identifier" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "POWER", "**" ],
+            [ "3", "TIMES", "*" ],
+            [ "3", "NUMTOKEN", "1" ],
+            [ "3", "SEMICOLON", ";" ]
+          ]
+          |}]
     ;;
   end)
 ;;

@@ -1,18 +1,11 @@
 let () =
   let input =
-    {|[[ "1", "WRITE", "wRite" ],
-            [ "1", "NUMTOKEN", "1" ],
-            [ "1", "POWER", "**" ],
-            [ "1", "NUMTOKEN", "1" ],
-            [ "1", "SEMICOLON", ";" ]]|}
+    {|WRITE 1 * 1;
+    WRITE 1 / 1;
+    |}
   in
-  Dsm.Parser.parse_to_yojson_pretty_string input |> Stdio.print_endline;
-  let input =
-    {|[[ "1", "WRITE", "wRite" ],
-            [ "1", "NUMTOKEN", "1" ],
-            [ "1", "POWER", "**" ],
-            [ "1", "NUMTOKEN", "1" ],
-            [ "1", "SEMICOLON", ";" ]]|}
-  in
-  Dsm.Parser.parse_to_yojson_pretty_string input |> Stdio.print_endline
+  let res = Dsm.Tokenizer.tokenize input in
+  match res with
+  | Ok r -> Dsm.Parser.parse_to_yojson_pretty_string r |> Stdio.print_endline
+  | Error err -> Stdio.print_endline err
 ;;

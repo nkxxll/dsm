@@ -105,7 +105,9 @@ const char *parse_to_string(const char *input) {
 ///////////////////////
 
 int get_token_id (char *token) {
+	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
+	if (strcmp(token, "TIMES") == 0) return TIMES;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
 	if (strcmp(token, "RPAR") == 0) return RPAR;
@@ -175,7 +177,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%left 	   PLUS MINUS .
+%left 	   PLUS MINUS AMPERSAND .
 %left 	   TIMES DIVIDE .
 %right     POWER .
 
@@ -228,7 +230,7 @@ ex(r) ::= LPAR ex(a) RPAR .
 ex(r) ::= NUMTOKEN (a).
 {
 	cJSON *res = cJSON_CreateObject();
-	cJSON_AddStringToObject(res, "type", "NUMBER");
+	cJSON_AddStringToObject(res, "type", "NUMTOKEN");
 	cJSON_AddStringToObject(res, "value", getValue(a));
 	r = res;
 }
@@ -254,6 +256,8 @@ ex(r) ::= IDENTIFIER(a) .
 
 
 
+ex(r) ::= ex(a) AMPERSAND ex(b) .
+{r = binary ("AMPERSAND", a, b); }
 
 ex(r) ::= ex(a) PLUS ex(b) .
 {r = binary ("PLUS", a, b); }
