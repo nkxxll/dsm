@@ -65,6 +65,12 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
+    // Link against your static library
+    exe.addObjectFile(b.path("../lemon/libgrammar.a"));
+
+    // Optionally link C runtime if needed
+    exe.linkLibC();
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).

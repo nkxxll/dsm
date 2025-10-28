@@ -1,4 +1,4 @@
-TARGETS = lemon main grammar.so
+TARGETS = lemon main grammar.so libgrammar.a
 OBJECTS = grammar.o cjson.o lemon.o
 CC = gcc
 CXX = g++
@@ -30,6 +30,9 @@ grammar.so: grammar.y lemon
 	$(CC) $(BUILDF) -fPIC -c grammar.c -o grammar.o
 	$(CC) $(BUILDF) -fPIC -c cjson.c -o cjson.o
 	$(CC) -shared grammar.o cjson.o -o grammar.so
+
+libgrammar.a: grammar.o cjson.o
+	ar rcs $@ $^
 
 .PHONY: clean runmain
 

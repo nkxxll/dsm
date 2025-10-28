@@ -1,8 +1,12 @@
 open Base
 module Binding = Binding
 
-let parse tokens_str =
+let parse_to_yojson_pretty_string tokens_str =
   tokens_str |> Binding.parse |> Yojson.Safe.from_string |> Yojson.Safe.pretty_to_string
+;;
+
+let parse tokens_str =
+  tokens_str |> Binding.parse |> Yojson.Safe.from_string
 ;;
 
 let%test_module "Tokenizer Tests" =
@@ -15,7 +19,7 @@ let%test_module "Tokenizer Tests" =
             [ "1", "NUMTOKEN", "1" ],
             [ "1", "SEMICOLON", ";" ]]|}
       in
-      parse input |> Stdio.print_endline;
+      parse_to_yojson_pretty_string input |> Stdio.print_endline;
       [%expect {|
         {
           "type": "STATEMENTBLOCK",

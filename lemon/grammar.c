@@ -1380,7 +1380,7 @@ const char * getLine (cJSON* token) {
 }
 
 
-char *parse_to_string(char *input) {
+const char *parse_to_string(const char *input) {
 	cJSON *root = cJSON_Parse(input);
     State state;
 

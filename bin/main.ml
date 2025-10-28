@@ -6,7 +6,7 @@ let () =
             [ "1", "NUMTOKEN", "1" ],
             [ "1", "SEMICOLON", ";" ]]|}
   in
-  Dsm.Parser.parse input |> Stdio.print_endline;
+  Dsm.Parser.parse_to_yojson_pretty_string input |> Stdio.print_endline;
   let input =
     {|[[ "1", "WRITE", "wRite" ],
             [ "1", "NUMTOKEN", "1" ],
@@ -14,5 +14,5 @@ let () =
             [ "1", "NUMTOKEN", "1" ],
             [ "1", "SEMICOLON", ";" ]]|}
   in
-  Dsm.Parser.parse input |> Stdio.print_endline
+  Dsm.Parser.parse_to_yojson_pretty_string input |> Stdio.print_endline
 ;;

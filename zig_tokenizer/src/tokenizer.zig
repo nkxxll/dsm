@@ -170,6 +170,11 @@ pub const Token = struct {
         return Pos{ .row = line_idx + 1, .col = col + 1 };
     }
 
+    pub fn debug(self: Token, input: [:0]u8, offsets: []usize) void {
+        const pos = self.position(offsets);
+        std.debug.print("Token: {s}, \"{s}\", at s:{d} e:{d} row:{d} col:{d}", .{ @tagName(self.tag), input[self.loc.start..self.loc.end], self.loc.start, self.loc.end, pos.row, pos.col });
+    }
+
     pub fn toString(self: Token, input: [:0]const u8, offsets: []usize, allocator: Allocator) ![]u8 {
         const literal = input[self.loc.start..self.loc.end];
         return try allocPrint(allocator, "[\"{d}\", \"{s}\", \"{s}\"]", .{ self.position(offsets).row, @tagName(self.tag), literal });
@@ -478,6 +483,6 @@ test "to string" {
     const string = try res.toOwnedSlice(allocator);
     defer allocator.free(string);
     try testing.expectEqualStrings(
-    \\[["1", "IF", "IF"],["1", "IDENTIFIER", "x"],["1", "GT", ">"],["1", "NUMTOKEN", "10"],["1", "THEN", "THEN"],["1", "WRITE", "WRITE"],["1", "STRTOKEN", "greater"],["1", "SEMICOLON", ";"],["1", "ENDIF", "ENDIF"]]
+        \\[["1", "IF", "IF"],["1", "IDENTIFIER", "x"],["1", "GT", ">"],["1", "NUMTOKEN", "10"],["1", "THEN", "THEN"],["1", "WRITE", "WRITE"],["1", "STRTOKEN", "greater"],["1", "SEMICOLON", ";"],["1", "ENDIF", "ENDIF"]]
     , string);
 }
