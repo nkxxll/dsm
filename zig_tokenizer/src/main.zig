@@ -3,6 +3,8 @@
 //! is to delete this file and start with root.zig instead.
 const std = @import("std");
 const parser = @import("./parser.zig");
+const interpreter = @import("./interpreter.zig");
+const tokenizer = @import("./tokenizer.zig");
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.stderr`)
@@ -22,8 +24,7 @@ pub fn main() !void {
 }
 
 test {
-    const tokenizer = @import("./tokenizer.zig");
-    const parser_test = @import("./parser.zig");
     _ = tokenizer;
-    _ = parser_test;
+    _ = parser;
+    _ = interpreter;
 }

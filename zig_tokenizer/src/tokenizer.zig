@@ -338,6 +338,26 @@ pub const Tokenizer = struct {
     }
 };
 
+/// Convert tokens to JSON string for parser
+pub fn tokensToJson(allocator: std.mem.Allocator, input: [:0]const u8, offsets: []usize) ![]u8 {
+    var tokenizer = Tokenizer.init(input);
+    var list = try std.ArrayList(u8).initCapacity(allocator, 32);
+    defer list.deinit(allocator);
+    try list.appendSlice(allocator, "[");
+
+    var tok = tokenizer.next();
+    var first = true;
+    while (tok.tag != .eof) : (tok = tokenizer.next()) {
+        if (!first) try list.appendSlice(allocator, ",");
+        first = false;
+        const json_str = try tok.toString(input, offsets, allocator);
+        defer allocator.free(json_str);
+        try list.appendSlice(allocator, json_str);
+    }
+    try list.appendSlice(allocator, "]");
+    return list.toOwnedSlice(allocator);
+}
+
 test "simple tokens" {
     const testing = std.testing;
     var tokenizer = Tokenizer.init("+-/();,=& ");
