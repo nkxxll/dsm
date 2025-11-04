@@ -1,6 +1,3 @@
-  gutter": {
-    "line_numbers": false
-  },
 const std = @import("std");
 const json = std.json;
 const Env = std.StringHashMap(Value);
@@ -15,6 +12,7 @@ const parseJsonToAst = @import("parser.zig").parseJsonToAst;
 pub const Value = union(enum) {
     number: f64,
     string: []const u8,
+    bool: bool,
     unit,
 
     pub fn deinit(self: *const Value, allocator: std.mem.Allocator) void {
@@ -121,6 +119,9 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
         },
         .strtoken => |s| return Value{ .string = try allocator.dupe(u8, s) },
         .numtoken => |n| return Value{ .number = n },
+        .null => return Value.unit,
+        .true => return Value{ .bool = true },
+        .false => return Value{ .bool = false },
     }
 }
 
@@ -136,7 +137,13 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) !
             _ = try writer.write(s);
             _ = try writer.write("\n");
         },
-        .unit => {},
+        .bool => |b| {
+            const str = if (b) "true\n" else "false\n";
+            _ = try writer.write(str);
+        },
+        .unit => {
+            _ = try writer.write("null\n");
+        },
     }
 }
 
@@ -189,5 +196,25 @@ test "simple write" {
     // Anyway, for now, assume correct is "Hello world\n5.52\nHello World\n"
 
     const expected = "Hello world\n5.52\nHello World\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "null true false" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE null;
+        \\WRITE true;
+        \\WRITE false;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 32);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "null\ntrue\nfalse\n";
     try testing.expectEqualStrings(expected, output);
 }

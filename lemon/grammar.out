@@ -19,11 +19,17 @@ State 1:
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
           ex ::= ex POWER * ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        15     
 
 State 2:
@@ -38,11 +44,17 @@ State 2:
           ex ::= * ex DIVIDE ex
           ex ::= ex DIVIDE * ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        16     
 
 State 3:
@@ -57,11 +69,17 @@ State 3:
           ex ::= ex TIMES * ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        17     
 
 State 4:
@@ -76,11 +94,17 @@ State 4:
           ex ::= * ex TIMES ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        13     
 
 State 5:
@@ -95,11 +119,17 @@ State 5:
           ex ::= * ex TIMES ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        14     
 
 State 6:
@@ -114,11 +144,17 @@ State 6:
           ex ::= * ex TIMES ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        10     
 
 State 7:
@@ -133,11 +169,17 @@ State 7:
           ex ::= * ex TIMES ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        12     
 
 State 8:
@@ -152,11 +194,17 @@ State 8:
           ex ::= * ex TIMES ex
           ex ::= * ex DIVIDE ex
           ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
 
                           LPAR shift        6      
                       NUMTOKEN shift-reduce 5      ex ::= NUMTOKEN
                       STRTOKEN shift-reduce 6      ex ::= STRTOKEN
                     IDENTIFIER shift-reduce 7      ex ::= IDENTIFIER
+                       NULLTOK shift-reduce 14     ex ::= NULLTOK
+                          TRUE shift-reduce 15     ex ::= TRUE
+                         FALSE shift-reduce 16     ex ::= FALSE
                             ex shift        11     
 
 State 9:
@@ -298,15 +346,19 @@ The first-set of non-terminals is shown after the name.
    11: NUMTOKEN
    12: STRTOKEN
    13: IDENTIFIER
-   14: code: <lambda> WRITE
-   15: statementblock: <lambda> WRITE
-   16: statement: WRITE
-   17: ex: LPAR NUMTOKEN STRTOKEN IDENTIFIER
+   14: NULLTOK
+   15: TRUE
+   16: FALSE
+   17: code: <lambda> WRITE
+   18: statementblock: <lambda> WRITE
+   19: statement: WRITE
+   20: ex: LPAR NUMTOKEN STRTOKEN IDENTIFIER NULLTOK TRUE FALSE
 ----------------------------------------------------
 Syntax-only Symbols:
 The following symbols never carry semantic content.
 
-$ PLUS MINUS AMPERSAND TIMES DIVIDE POWER WRITE SEMICOLON LPAR RPAR code
+$ PLUS MINUS AMPERSAND TIMES DIVIDE POWER WRITE SEMICOLON LPAR RPAR NULLTOK
+TRUE FALSE code
 ----------------------------------------------------
 Rules:
    0: code ::= statementblock.
@@ -323,3 +375,6 @@ Rules:
   11: ex ::= ex TIMES ex. [TIMES precedence=2]
   12: ex ::= ex DIVIDE ex. [DIVIDE precedence=2]
   13: ex ::= ex POWER ex. [POWER precedence=3]
+  14: ex ::= NULLTOK.
+  15: ex ::= TRUE.
+  16: ex ::= FALSE.

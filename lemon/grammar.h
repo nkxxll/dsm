@@ -11,3 +11,6 @@
 #define NUMTOKEN                        11
 #define STRTOKEN                        12
 #define IDENTIFIER                      13
+#define NULLTOK                         14
+#define TRUE                            15
+#define FALSE                           16

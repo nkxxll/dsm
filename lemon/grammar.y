@@ -118,8 +118,11 @@ int get_token_id (char *token) {
 	if (strcmp(token, "SEMICOLON") == 0) return SEMICOLON;
 	if (strcmp(token, "STRTOKEN") == 0) return STRTOKEN;
 	if (strcmp(token, "WRITE") == 0) return WRITE;
+	if (strcmp(token, "NULL") == 0) return NULLTOK;
+ 	if (strcmp(token, "TRUE") == 0) return TRUE;
+ 	if (strcmp(token, "FALSE") == 0) return FALSE;
 
-	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
+ 	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
 	exit(0);
 }
 
@@ -274,3 +277,23 @@ ex(r) ::= ex(a) DIVIDE ex(b) .
 ex(r) ::= ex(a) POWER ex(b) .
 {r = binary ("POWER", a, b); }
 
+ex(r) ::= NULLTOK .
+{
+cJSON *res = cJSON_CreateObject();
+cJSON_AddStringToObject(res, "type", "NULL");
+r = res;
+}
+
+ex(r) ::= TRUE .
+{
+ 	cJSON *res = cJSON_CreateObject();
+ 	cJSON_AddStringToObject(res, "type", "TRUE");
+ 	r = res;
+}
+
+ex(r) ::= FALSE .
+{
+ 	cJSON *res = cJSON_CreateObject();
+ 	cJSON_AddStringToObject(res, "type", "FALSE");
+ 	r = res;
+}

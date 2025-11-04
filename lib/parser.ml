@@ -96,5 +96,49 @@ let%test_module "Parser tests" =
         }
         |}]
     ;;
+
+    let%expect_test "parse null" =
+      let input =
+        {|WRITE null;|}
+      in
+      let output = Tokenizer.tokenize input in
+      let res =
+        match output with
+        | Ok out -> parse_to_yojson_pretty_string out
+        | Error err -> err
+      in
+      Stdio.print_endline res;
+      [%expect
+        {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [ { "type": "WRITE", "arg": { "type": "NULL" } } ]
+        }
+        |}]
+    ;;
+
+    let%expect_test "parse booleans" =
+      let input =
+        {|WRITE true;
+        WRITE false;|}
+      in
+      let output = Tokenizer.tokenize input in
+      let res =
+        match output with
+        | Ok out -> parse_to_yojson_pretty_string out
+        | Error err -> err
+      in
+      Stdio.print_endline res;
+      [%expect
+        {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [
+            { "type": "WRITE", "arg": { "type": "TRUE" } },
+            { "type": "WRITE", "arg": { "type": "FALSE" } }
+          ]
+        }
+        |}]
+    ;;
   end)
 ;;

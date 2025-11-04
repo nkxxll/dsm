@@ -59,8 +59,11 @@ pub const LangTag = enum {
     AVERAGE,
     EARLIEST,
     LATEST,
-    invalid,
-    eof,
+    NULL,
+    TRUE,
+     FALSE,
+     invalid,
+     eof,
 };
 
 pub const Token = struct {
@@ -99,6 +102,9 @@ pub const Token = struct {
         .{ "AVERAGE", .AVERAGE },
         .{ "EARLIEST", .EARLIEST },
         .{ "LATEST", .LATEST },
+        .{ "NULL", .NULL },
+        .{ "TRUE", .TRUE },
+        .{ "FALSE", .FALSE },
     });
 
     pub fn getKeyword(bytes: []const u8) ?Tag {
@@ -136,7 +142,10 @@ pub const Token = struct {
             .AVERAGE,
             .EARLIEST,
             .LATEST,
-            => null,
+            .NULL,
+             .TRUE,
+             .FALSE,
+             => null,
 
             .SEMICOLON => ";",
             .ASSIGN => ":=",

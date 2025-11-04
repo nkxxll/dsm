@@ -12,6 +12,9 @@ pub const AstNode = union(enum) {
     ampersand: struct { left: *const AstNode, right: *const AstNode },
     strtoken: []const u8,
     numtoken: f64,
+    null,
+    true,
+    false,
 
     pub fn deinit(self: *AstNode, allocator: std.mem.Allocator) void {
         switch (self.*) {
@@ -57,6 +60,9 @@ pub const AstNode = union(enum) {
             },
             .strtoken => |s| allocator.free(s),
             .numtoken => {},
+            .null => {},
+            .true => {},
+            .false => {},
         }
     }
 };
@@ -135,8 +141,14 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
         const owned = try allocator.dupe(u8, val);
         return AstNode{ .strtoken = owned };
     } else if (std.mem.eql(u8, node_type, "NUMTOKEN")) {
-        const val = try std.fmt.parseFloat(f64, obj.get("value").?.string);
-        return AstNode{ .numtoken = val };
+    const val = try std.fmt.parseFloat(f64, obj.get("value").?.string);
+    return AstNode{ .numtoken = val };
+    } else if (std.mem.eql(u8, node_type, "NULL")) {
+    return AstNode.null;
+    } else if (std.mem.eql(u8, node_type, "TRUE")) {
+        return AstNode.true;
+    } else if (std.mem.eql(u8, node_type, "FALSE")) {
+        return AstNode.false;
     } else {
         return error.InvalidType;
     }

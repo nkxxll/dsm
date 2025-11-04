@@ -48,7 +48,10 @@ module TokenType = struct
     | AVERAGE
     | EARLIEST
     | LATEST
-    | UNKNOWN of string
+    | NULL
+    | TRUE
+     | FALSE
+     | UNKNOWN of string
   [@@deriving yojson]
 
   let token_type_from_string str =
@@ -74,7 +77,10 @@ module TokenType = struct
     | "AVERAGE" -> AVERAGE
     | "EARLIEST" -> EARLIEST
     | "LATEST" -> LATEST
-    | other -> IDENTIFIER other
+    | "NULL" -> NULL
+    | "TRUE" -> TRUE
+     | "FALSE" -> FALSE
+     | other -> IDENTIFIER other
   ;;
 
   let token_type_to_string = function
@@ -122,7 +128,10 @@ module TokenType = struct
     | AVERAGE -> "AVERAGE"
     | EARLIEST -> "EARLIEST"
     | LATEST -> "LATEST"
-    | UNKNOWN s -> Printf.sprintf "UNKNOWN %s" s
+    | NULL -> "NULL"
+    | TRUE -> "TRUE"
+     | FALSE -> "FALSE"
+     | UNKNOWN s -> Printf.sprintf "UNKNOWN %s" s
   ;;
 end
 
