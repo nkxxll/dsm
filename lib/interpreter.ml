@@ -214,7 +214,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (eval env p)
        | Error err -> Stdio.print_endline err);
       [%expect {| 20. |}]
-     ;;
+    ;;
 
     let%expect_test "test string concatenation with number (string & number)" =
       let input = {|WRITE "Value: " & 42;|} in
@@ -224,7 +224,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (eval env p)
        | Error err -> Stdio.print_endline err);
       [%expect {| "Value: " 42. |}]
-     ;;
+    ;;
 
     let%expect_test "test string concatenation with number (number & string)" =
       let input = {|WRITE 42 & " is the answer";|} in
@@ -234,7 +234,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (eval env p)
        | Error err -> Stdio.print_endline err);
       [%expect {| 42. " is the answer" |}]
-     ;;
+    ;;
 
     let%expect_test "test string concatenation with multiple numbers" =
       let input = {|WRITE "Result: " & 10 + 5 & " total";|} in
@@ -244,6 +244,19 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (eval env p)
        | Error err -> Stdio.print_endline err);
       [%expect {| "Result: " 15. " total" |}]
-     ;;
-    end)
     ;;
+
+    let%expect_test "test the write and expression thing" =
+      let input =
+        {|x := 1447 + 2;
+         Write x + 100;|}
+      in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| 1549. |}]
+    ;;
+  end)
+;;
