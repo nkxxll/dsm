@@ -1,7 +1,7 @@
 let () =
   let input =
-    {|WRITE 1 * 1;
-    WRITE 1 / 1;
+    {|x := 10;
+    WRITE x;
     |}
   in
   let res = Dsm.Tokenizer.tokenize input in

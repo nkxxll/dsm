@@ -106,6 +106,7 @@ const char *parse_to_string(const char *input) {
 
 int get_token_id (char *token) {
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
+	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
 	if (strcmp(token, "TIMES") == 0) return TIMES;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
@@ -180,7 +181,8 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%left 	   PLUS MINUS AMPERSAND .
+%left      AMPERSAND .
+%left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
 %right     POWER .
 
@@ -220,6 +222,19 @@ statement(r) ::= WRITE ex(e) SEMICOLON .
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "WRITE");
+	cJSON_AddItemToObject(res, "arg", e);
+	r = res;
+}
+
+///////////////////////////
+// ASSIGNMENT
+///////////////////////////
+
+statement(r) ::= IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "ASSIGN");
+	cJSON_AddStringToObject(res, "ident", getValue(i));
 	cJSON_AddItemToObject(res, "arg", e);
 	r = res;
 }

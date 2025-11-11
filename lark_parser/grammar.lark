@@ -1,0 +1,44 @@
+start: code
+
+code: statementblock
+
+statementblock: statement*
+
+statement: write_stmt
+         | assign_stmt
+
+write_stmt: WRITE ex SEMICOLON
+
+assign_stmt: IDENTIFIER ":=" ex SEMICOLON
+
+?ex: ex AMPERSAND ex    -> ampersand
+   | ex PLUS ex         -> plus
+   | ex MINUS ex        -> minus
+   | ex TIMES ex        -> times
+   | ex DIVIDE ex       -> divide
+   | ex POWER ex        -> power
+   | NUMTOKEN           -> num
+   | STRTOKEN           -> str
+   | IDENTIFIER         -> var
+   | NULLTOK            -> null_val
+   | TRUE               -> true_val
+   | FALSE              -> false_val
+   | "(" ex ")"
+
+NUMTOKEN: /\d+/
+STRTOKEN: /"[^"]*"/
+IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+
+WRITE: "write"
+NULLTOK: "null"
+TRUE: "true"
+FALSE: "false"
+
+SEMICOLON: ";"
+
+%import common.WS
+%ignore WS
+
+%left PLUS MINUS AMPERSAND
+%left TIMES DIVIDE
+%right POWER

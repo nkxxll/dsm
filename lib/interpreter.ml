@@ -37,6 +37,16 @@ let get_value node =
   node |> member "value" |> to_string
 ;;
 
+let get_ident node =
+  let open Yojson.Safe.Util in
+  node |> member "ident" |> to_string
+;;
+
+let get_name node =
+  let open Yojson.Safe.Util in
+  node |> member "name" |> to_string
+;;
+
 let rec eval (env : (string, value) Hashtbl.t) yojson_ast : value =
   let type_ = get_type yojson_ast in
   match type_ with
@@ -47,6 +57,17 @@ let rec eval (env : (string, value) Hashtbl.t) yojson_ast : value =
   | "WRITE" ->
     let arg = get_arg yojson_ast in
     eval env arg |> write_value
+  | "ASSIGN" ->
+    let ident = get_ident yojson_ast in
+    let arg = get_arg yojson_ast in
+    let val_ = eval env arg in
+    Hashtbl.set env ~key:ident ~data:val_;
+    Unit
+  | "VARIABLE" ->
+    let name = get_name yojson_ast in
+    (match Hashtbl.find env name with
+     | Some v -> v
+     | None -> failwith ("Undefined variable: " ^ name))
   | "PLUS" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval env in
@@ -81,6 +102,8 @@ let rec eval (env : (string, value) Hashtbl.t) yojson_ast : value =
     let rval = List.nth_exn args 1 |> eval env in
     (match rval, lval with
      | StringLiteral r, StringLiteral l -> StringLiteral (l ^ r)
+     | NumberLiteral r, StringLiteral l -> StringLiteral (l ^ Float.to_string r)
+     | StringLiteral r, NumberLiteral l -> StringLiteral (Float.to_string l ^ r)
      | _, _ -> failwith "should never happen")
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
@@ -153,5 +176,74 @@ let%test_module "Parser tests" =
         false
         |}]
     ;;
-  end)
-;;
+
+    let%expect_test "test assignment and variable read" =
+      let input =
+        {|x := 42;
+    WRITE x;|}
+      in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| 42. |}]
+    ;;
+
+    let%expect_test "test assignment with string and variable read" =
+      let input =
+        {|msg := "Hello";
+    WRITE msg;|}
+      in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "Hello" |}]
+    ;;
+
+    let%expect_test "test assignment with arithmetic expression" =
+      let input =
+        {|result := 10 + 5 * 2;
+     WRITE result;|}
+      in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| 20. |}]
+     ;;
+
+    let%expect_test "test string concatenation with number (string & number)" =
+      let input = {|WRITE "Value: " & 42;|} in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "Value: " 42. |}]
+     ;;
+
+    let%expect_test "test string concatenation with number (number & string)" =
+      let input = {|WRITE 42 & " is the answer";|} in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| 42. " is the answer" |}]
+     ;;
+
+    let%expect_test "test string concatenation with multiple numbers" =
+      let input = {|WRITE "Result: " & 10 + 5 & " total";|} in
+      let env = Hashtbl.create (module String) in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (eval env p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "Result: " 15. " total" |}]
+     ;;
+    end)
+    ;;

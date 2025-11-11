@@ -5,6 +5,8 @@ const json = std.json;
 pub const AstNode = union(enum) {
     statementblock: struct { statements: []const AstNode },
     write: struct { arg: *const AstNode },
+    assign: struct { ident: []const u8, arg: *const AstNode },
+    variable: []const u8,
     plus: struct { left: *const AstNode, right: *const AstNode },
     minus: struct { left: *const AstNode, right: *const AstNode },
     times: struct { left: *const AstNode, right: *const AstNode },
@@ -28,6 +30,12 @@ pub const AstNode = union(enum) {
                 @constCast(w.arg).deinit(allocator);
                 allocator.destroy(@constCast(w.arg));
             },
+            .assign => |a| {
+                allocator.free(a.ident);
+                @constCast(a.arg).deinit(allocator);
+                allocator.destroy(@constCast(a.arg));
+            },
+            .variable => |v| allocator.free(v),
             .plus => |op| {
                 @constCast(op.left).deinit(allocator);
                 allocator.destroy(@constCast(op.left));
@@ -101,6 +109,17 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
         const arg = try allocator.create(AstNode);
         arg.* = try jsonValueToAst(allocator, arg_json);
         return AstNode{ .write = .{ .arg = arg } };
+    } else if (std.mem.eql(u8, node_type, "ASSIGN")) {
+        const ident = obj.get("ident").?.string;
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        const ident_dup = try allocator.dupe(u8, ident);
+        return AstNode{ .assign = .{ .ident = ident_dup, .arg = arg } };
+    } else if (std.mem.eql(u8, node_type, "VARIABLE")) {
+        const name = obj.get("name").?.string;
+        const name_dup = try allocator.dupe(u8, name);
+        return AstNode{ .variable = name_dup };
     } else if (std.mem.eql(u8, node_type, "PLUS")) {
         const args = obj.get("arg").?.array.items;
         const left = try allocator.create(AstNode);

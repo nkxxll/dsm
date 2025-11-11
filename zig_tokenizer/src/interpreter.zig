@@ -46,6 +46,18 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             val.deinit(allocator);
             return Value.unit;
         },
+        .assign => |a| {
+            const val = try eval(allocator, env, a.arg, writer);
+            try env.put(a.ident, val);
+            return Value.unit;
+        },
+        .variable => |name| {
+            if (env.get(name)) |val| {
+                return val;
+            } else {
+                return error.InvalidType;
+            }
+        },
         .plus => |op| {
             const left = try eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
@@ -110,6 +122,21 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
                 .string => |l| switch (right) {
                     .string => |r| {
                         const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ l, r });
+                        return Value{ .string = concatenated };
+                    },
+                    .number => |n| {
+                        const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+                        const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ l, num_str });
+                        allocator.free(num_str);
+                        return Value{ .string = concatenated };
+                    },
+                    else => return error.InvalidType,
+                },
+                .number => |n| switch (right) {
+                    .string => |r| {
+                        const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+                        const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ num_str, r });
+                        allocator.free(num_str);
                         return Value{ .string = concatenated };
                     },
                     else => return error.InvalidType,
@@ -216,5 +243,171 @@ test "null true false" {
 
     const output = buffer.items;
     const expected = "null\ntrue\nfalse\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "assignment and variable read" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 42;
+        \\WRITE x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 32);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "42\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "assignment with string and variable read" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\msg := "Hello";
+        \\WRITE msg;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 32);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Hello\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "assignment with arithmetic and variable read" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\result := 10 + 5 * 2;
+        \\WRITE result;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 32);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "20\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "string concatenation with number (string & number)" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE "Value: " & 42;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Value: 42\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "string concatenation with number (number & string)" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE 42 & " is the answer";
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "42 is the answer\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "string concatenation with float number" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE "Pi is " & 3.14159;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Pi is 3.14159\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "string concatenation with arithmetic expression" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE "Result: " & (10 + 5);
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Result: 15\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "chained string concatenation with numbers" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE "The answer is " & 42 & "!";
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "The answer is 42!\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "number variable concatenation with string" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 100;
+        \\WRITE "Value is " & x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Value is 100\n";
     try testing.expectEqualStrings(expected, output);
 }
