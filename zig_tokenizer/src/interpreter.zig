@@ -14,10 +14,17 @@ pub const Value = union(enum) {
     string: []const u8,
     bool: bool,
     unit,
+    list: std.ArrayList(Value),
 
     pub fn deinit(self: *const Value, allocator: std.mem.Allocator) void {
         switch (self.*) {
             .string => |s| allocator.free(s),
+            .list => |l| {
+                for (l.items) |item| {
+                    item.deinit(allocator);
+                }
+                l.deinit(allocator);
+            },
             else => {},
         }
     }
@@ -149,6 +156,14 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
         .null => return Value.unit,
         .true => return Value{ .bool = true },
         .false => return Value{ .bool = false },
+        .list => |lst| {
+            var items = std.ArrayList(Value).init(allocator);
+            for (lst.items) |item| {
+                const val = try eval(allocator, env, &item, writer);
+                try items.append(val);
+            }
+            return Value{ .list = items };
+        },
     }
 }
 
@@ -170,6 +185,35 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) !
         },
         .unit => {
             _ = try writer.write("null\n");
+        },
+        .list => |lst| {
+            _ = try writer.write("[");
+            for (lst.items, 0..) |item, i| {
+                if (i > 0) {
+                    _ = try writer.write(", ");
+                }
+                switch (item) {
+                    .number => |n| {
+                        const str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+                        defer allocator.free(str);
+                        _ = try writer.write(str);
+                    },
+                    .string => |s| {
+                        _ = try writer.write(s);
+                    },
+                    .bool => |b| {
+                        const str = if (b) "true" else "false";
+                        _ = try writer.write(str);
+                    },
+                    .unit => {
+                        _ = try writer.write("null");
+                    },
+                    .list => {
+                        _ = try writer.write("[...]");
+                    },
+                }
+            }
+            _ = try writer.write("]\n");
         },
     }
 }
@@ -409,5 +453,78 @@ test "number variable concatenation with string" {
 
     const output = buffer.items;
     const expected = "Value is 100\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "list of numbers" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE [1, 2, 3];
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "[1, 2, 3]\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "list of strings" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE ["a", "b"];
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "[a, b]\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "empty list" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE [];
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "[]\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "list with mixed types and variable" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := "hello";
+        \\WRITE [1, 2, 3, x];
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "[1, 2, 3, hello]\n";
     try testing.expectEqualStrings(expected, output);
 }

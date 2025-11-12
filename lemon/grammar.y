@@ -107,13 +107,18 @@ const char *parse_to_string(const char *input) {
 int get_token_id (char *token) {
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
+	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
 	if (strcmp(token, "TIMES") == 0) return TIMES;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
 	if (strcmp(token, "RPAR") == 0) return RPAR;
+	if (strcmp(token, "LSPAR") == 0) return LSPAR;
+	if (strcmp(token, "RSPAR") == 0) return RSPAR;
 	if (strcmp(token, "MINUS") == 0) return MINUS;
+	if (strcmp(token, "TIME") == 0) return TIME;
 	if (strcmp(token, "NUMTOKEN") == 0) return NUMTOKEN;
+	if (strcmp(token, "TIMETOKEN") == 0) return TIMETOKEN;
 	if (strcmp(token, "PLUS") == 0) return PLUS;
 	if (strcmp(token, "POWER") == 0) return POWER;
 	if (strcmp(token, "SEMICOLON") == 0) return SEMICOLON;
@@ -122,6 +127,8 @@ int get_token_id (char *token) {
 	if (strcmp(token, "NULL") == 0) return NULLTOK;
  	if (strcmp(token, "TRUE") == 0) return TRUE;
  	if (strcmp(token, "FALSE") == 0) return FALSE;
+ 	if (strcmp(token, "NOW") == 0) return NOW;
+ 	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
 
  	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
 	exit(0);
@@ -181,6 +188,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
+%left      TIME .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
@@ -239,6 +247,30 @@ statement(r) ::= IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
 	r = res;
 }
 
+// TIME ASSIGNMENT
+statement(r) ::= TIME IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "TIMEASSIGN");
+	cJSON_AddStringToObject(res, "ident", getValue(i));
+	cJSON_AddItemToObject(res, "arg", e);
+	r = res;
+}
+
+ex(r) ::= NOW .
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "NOW");
+	r = res;
+}
+
+ex(r) ::= CURRENTTIME .
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "CURRENTTIME");
+	r = res;
+}
+
 ex(r) ::= LPAR ex(a) RPAR .
 {
 	r = a;
@@ -249,6 +281,14 @@ ex(r) ::= NUMTOKEN (a).
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "NUMTOKEN");
+	cJSON_AddStringToObject(res, "value", getValue(a));
+	r = res;
+}
+
+ex(r) ::= TIMETOKEN (a).
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "TIMETOKEN");
 	cJSON_AddStringToObject(res, "value", getValue(a));
 	r = res;
 }
@@ -272,7 +312,8 @@ ex(r) ::= IDENTIFIER(a) .
 	r = res;
 }
 
-
+ex(r) ::= TIME ex(a) .
+{ r = unary("TIME", a); }
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }
@@ -311,4 +352,33 @@ ex(r) ::= FALSE .
  	cJSON *res = cJSON_CreateObject();
  	cJSON_AddStringToObject(res, "type", "FALSE");
  	r = res;
+}
+
+ex(r) ::= LSPAR RSPAR .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "EMPTYLIST");
+    r = res;
+}
+
+
+ex(r) ::= LSPAR exlist(a) RSPAR .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "LIST");
+    cJSON_AddItemToObject(res, "items", a);
+    r = res;
+}
+
+exlist(r) ::= ex(a) .
+{
+    cJSON *arg = cJSON_CreateArray();
+    cJSON_AddItemToArray(arg, a);
+    r = arg;
+}
+
+exlist(r) ::= exlist(a) COMMA ex(b) .
+{
+    cJSON_AddItemToArray(a,b);
+    r = a;
 }

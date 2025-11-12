@@ -167,3 +167,32 @@ class TestErrorHandling:
         ast = parse('write 5 & "hello";')
         with pytest.raises(TypeError):
             interpret(ast)
+
+
+class TestLists:
+    """Tests for list operations"""
+
+    def test_list_of_numbers(self):
+        ast = parse("write [1, 2, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "[1, 2, 3]"
+
+    def test_list_of_strings(self):
+        ast = parse('write ["a", "b"];')
+        output = capture_output(ast)
+        assert output.strip() == "[a, b]"
+
+    def test_empty_list(self):
+        ast = parse("write [];")
+        output = capture_output(ast)
+        assert output.strip() == "[]"
+
+    def test_list_with_mixed_types(self):
+        ast = parse('x := "hello"; write [1, 2, 3, x];')
+        output = capture_output(ast)
+        assert output.strip() == "[1, 2, 3, hello]"
+
+    def test_list_with_expressions(self):
+        ast = parse("write [1 + 1, 2 * 3];")
+        output = capture_output(ast)
+        assert output.strip() == "[2, 6]"

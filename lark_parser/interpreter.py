@@ -38,6 +38,14 @@ class UnitValue(Value):
         return "UnitValue()"
 
 
+class ListValue(Value):
+    def __init__(self, items: list):
+        self.items = items
+
+    def __repr__(self):
+        return f"ListValue({self.items})"
+
+
 def eval_node(
     node: Union[Dict[str, Any], Tree], env: Optional[Dict[str, Value]] = None
 ) -> Value:
@@ -128,10 +136,6 @@ def eval_node(
         right = eval_node(args[1], env)
         if isinstance(left, StringValue) and isinstance(right, StringValue):
             return StringValue(left.value + right.value)
-        elif isinstance(left, StringValue) and isinstance(right, NumberValue):
-            return StringValue(left.value + str(int(right.value) if right.value == int(right.value) else right.value))
-        elif isinstance(left, NumberValue) and isinstance(right, StringValue):
-            return StringValue((str(int(left.value) if left.value == int(left.value) else left.value)) + right.value)
         raise TypeError(
             f"Cannot concatenate {type(left).__name__} and {type(right).__name__}"
         )
@@ -159,6 +163,11 @@ def eval_node(
     elif node_type == "FALSE":
         return BoolValue(False)
 
+    elif node_type == "LIST":
+        items = node.get("arg", [])
+        evaluated_items = [eval_node(item, env) for item in items]
+        return ListValue(evaluated_items)
+
     else:
         raise ValueError(f"Unknown node type: {node_type}")
 
@@ -177,6 +186,20 @@ def write_value(value: Value) -> None:
         print("true" if value.value else "false")
     elif isinstance(value, UnitValue):
         print("null")
+    elif isinstance(value, ListValue):
+        formatted_items = []
+        for item in value.items:
+            if isinstance(item, NumberValue):
+                formatted_items.append(str(item.value))
+            elif isinstance(item, StringValue):
+                formatted_items.append(item.value)
+            elif isinstance(item, BoolValue):
+                formatted_items.append("true" if item.value else "false")
+            elif isinstance(item, UnitValue):
+                formatted_items.append("null")
+            elif isinstance(item, ListValue):
+                formatted_items.append("[...]")
+        print("[" + ", ".join(formatted_items) + "]")
     else:
         raise TypeError(f"Unknown value type: {type(value).__name__}")
 

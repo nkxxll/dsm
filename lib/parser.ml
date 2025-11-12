@@ -98,9 +98,7 @@ let%test_module "Parser tests" =
     ;;
 
     let%expect_test "parse null" =
-      let input =
-        {|WRITE null;|}
-      in
+      let input = {|WRITE null;|} in
       let output = Tokenizer.tokenize input in
       let res =
         match output with
@@ -136,6 +134,50 @@ let%test_module "Parser tests" =
           "statements": [
             { "type": "WRITE", "arg": { "type": "TRUE" } },
             { "type": "WRITE", "arg": { "type": "FALSE" } }
+          ]
+        }
+        |}]
+    ;;
+
+    let%expect_test "parse lists" =
+      let input =
+        {|WRITE [1, 2, 3];
+        WRITE ["a", "b"];
+        Write [];|}
+      in
+      let output = Tokenizer.tokenize input in
+      let res =
+        match output with
+        | Ok out -> parse_to_yojson_pretty_string out
+        | Error err -> err
+      in
+      Stdio.print_endline res;
+      [%expect {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "LIST",
+                "items": [
+                  { "type": "NUMTOKEN", "value": "1" },
+                  { "type": "NUMTOKEN", "value": "2" },
+                  { "type": "NUMTOKEN", "value": "3" }
+                ]
+              }
+            },
+            {
+              "type": "WRITE",
+              "arg": {
+                "type": "LIST",
+                "items": [
+                  { "type": "STRTOKEN", "value": " \"a\" " },
+                  { "type": "STRTOKEN", "value": " \"b\" " }
+                ]
+              }
+            },
+            { "type": "WRITE", "arg": { "type": "EMPTYLIST" } }
           ]
         }
         |}]

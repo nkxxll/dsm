@@ -1,7 +1,6 @@
 import pytest
-from io import StringIO
-import sys
-from interpreter import eval_node, write_value, StringValue, NumberValue, BoolValue, UnitValue
+
+from interpreter import NumberValue, StringValue, eval_node
 
 
 class TestStringConcatenationWithNumbers:
@@ -13,8 +12,8 @@ class TestStringConcatenationWithNumbers:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "STRTOKEN", "value": "Value: "},
-                {"type": "NUMTOKEN", "value": "42"}
-            ]
+                {"type": "NUMTOKEN", "value": "42"},
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -27,8 +26,8 @@ class TestStringConcatenationWithNumbers:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "NUMTOKEN", "value": "42"},
-                {"type": "STRTOKEN", "value": " is the answer"}
-            ]
+                {"type": "STRTOKEN", "value": " is the answer"},
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -41,8 +40,8 @@ class TestStringConcatenationWithNumbers:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "STRTOKEN", "value": "Pi is approximately "},
-                {"type": "NUMTOKEN", "value": "3.14159"}
-            ]
+                {"type": "NUMTOKEN", "value": "3.14159"},
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -59,10 +58,10 @@ class TestStringConcatenationWithNumbers:
                     "type": "PLUS",
                     "arg": [
                         {"type": "NUMTOKEN", "value": "10"},
-                        {"type": "NUMTOKEN", "value": "5"}
-                    ]
-                }
-            ]
+                        {"type": "NUMTOKEN", "value": "5"},
+                    ],
+                },
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -78,11 +77,11 @@ class TestStringConcatenationWithNumbers:
                     "type": "AMPERSAND",
                     "arg": [
                         {"type": "STRTOKEN", "value": "The answer is "},
-                        {"type": "NUMTOKEN", "value": "42"}
-                    ]
+                        {"type": "NUMTOKEN", "value": "42"},
+                    ],
                 },
-                {"type": "STRTOKEN", "value": "!"}
-            ]
+                {"type": "STRTOKEN", "value": "!"},
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -95,8 +94,8 @@ class TestStringConcatenationWithNumbers:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "NUMTOKEN", "value": "2.5"},
-                {"type": "STRTOKEN", "value": " meters"}
-            ]
+                {"type": "STRTOKEN", "value": " meters"},
+            ],
         }
         env = {}
         result = eval_node(node, env)
@@ -107,10 +106,7 @@ class TestStringConcatenationWithNumbers:
         """Test that concatenating non-string/number types throws error"""
         node = {
             "type": "AMPERSAND",
-            "arg": [
-                {"type": "TRUE"},
-                {"type": "NUMTOKEN", "value": "42"}
-            ]
+            "arg": [{"type": "TRUE"}, {"type": "NUMTOKEN", "value": "42"}],
         }
         env = {}
         with pytest.raises(TypeError):
@@ -120,10 +116,7 @@ class TestStringConcatenationWithNumbers:
         """Test that concatenating incompatible types throws error"""
         node = {
             "type": "AMPERSAND",
-            "arg": [
-                {"type": "STRTOKEN", "value": "hello"},
-                {"type": "TRUE"}
-            ]
+            "arg": [{"type": "STRTOKEN", "value": "hello"}, {"type": "TRUE"}],
         }
         env = {}
         with pytest.raises(TypeError):
@@ -140,8 +133,8 @@ class TestStringConcatenationWithVariables:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "STRTOKEN", "value": "x = "},
-                {"type": "VARIABLE", "name": "x"}
-            ]
+                {"type": "VARIABLE", "name": "x"},
+            ],
         }
         result = eval_node(node, env)
         assert isinstance(result, StringValue)
@@ -154,8 +147,8 @@ class TestStringConcatenationWithVariables:
             "type": "AMPERSAND",
             "arg": [
                 {"type": "VARIABLE", "name": "num"},
-                {"type": "STRTOKEN", "value": " percent"}
-            ]
+                {"type": "STRTOKEN", "value": " percent"},
+            ],
         }
         result = eval_node(node, env)
         assert isinstance(result, StringValue)
