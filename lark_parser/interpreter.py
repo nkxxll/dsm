@@ -128,10 +128,6 @@ def eval_node(
         right = eval_node(args[1], env)
         if isinstance(left, StringValue) and isinstance(right, StringValue):
             return StringValue(left.value + right.value)
-        elif isinstance(left, StringValue) and isinstance(right, NumberValue):
-            return StringValue(left.value + str(int(right.value) if right.value == int(right.value) else right.value))
-        elif isinstance(left, NumberValue) and isinstance(right, StringValue):
-            return StringValue((str(int(left.value) if left.value == int(left.value) else left.value)) + right.value)
         raise TypeError(
             f"Cannot concatenate {type(left).__name__} and {type(right).__name__}"
         )
