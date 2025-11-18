@@ -108,10 +108,14 @@ pub fn build(b: *std.Build) void {
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const exe_unit_tests = b.addTest(.{
-        .root_module = exe_mod,
-    });
-
-    const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
+         .root_module = exe_mod,
+     });
+    
+     // Link parser library for tests
+     exe_unit_tests.addObjectFile(b.path("../lemon/libgrammar.a"));
+     exe_unit_tests.linkLibC();
+    
+     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
     // Similar to creating the run step earlier, this exposes a `test` step to
     // the `zig build --help` menu, providing a way for the user to request

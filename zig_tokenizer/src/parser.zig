@@ -6,6 +6,7 @@ pub const AstNode = union(enum) {
     statementblock: struct { statements: []const AstNode },
     write: struct { arg: *const AstNode },
     assign: struct { ident: []const u8, arg: *const AstNode },
+    timeassign: struct { ident: []const u8, arg: *const AstNode },
     variable: []const u8,
     plus: struct { left: *const AstNode, right: *const AstNode },
     minus: struct { left: *const AstNode, right: *const AstNode },
@@ -14,9 +15,14 @@ pub const AstNode = union(enum) {
     ampersand: struct { left: *const AstNode, right: *const AstNode },
     strtoken: []const u8,
     numtoken: f64,
+    timetoken: []const u8,
+    list: []const AstNode,
     null,
     true,
     false,
+    now,
+    currenttime,
+    time: *const AstNode,
 
     pub fn deinit(self: *AstNode, allocator: std.mem.Allocator) void {
         switch (self.*) {
@@ -34,6 +40,11 @@ pub const AstNode = union(enum) {
                 allocator.free(a.ident);
                 @constCast(a.arg).deinit(allocator);
                 allocator.destroy(@constCast(a.arg));
+            },
+            .timeassign => |ta| {
+                allocator.free(ta.ident);
+                @constCast(ta.arg).deinit(allocator);
+                allocator.destroy(@constCast(ta.arg));
             },
             .variable => |v| allocator.free(v),
             .plus => |op| {
@@ -68,9 +79,22 @@ pub const AstNode = union(enum) {
             },
             .strtoken => |s| allocator.free(s),
             .numtoken => {},
+            .timetoken => |t| allocator.free(t),
+            .list => |l| {
+                for (l) |*item| {
+                    @constCast(item).deinit(allocator);
+                }
+                allocator.free(l);
+            },
             .null => {},
             .true => {},
             .false => {},
+            .now => {},
+            .currenttime => {},
+            .time => |t| {
+                @constCast(t).deinit(allocator);
+                allocator.destroy(@constCast(t));
+            },
         }
     }
 };
@@ -116,6 +140,13 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
         arg.* = try jsonValueToAst(allocator, arg_json);
         const ident_dup = try allocator.dupe(u8, ident);
         return AstNode{ .assign = .{ .ident = ident_dup, .arg = arg } };
+    } else if (std.mem.eql(u8, node_type, "TIMEASSIGN")) {
+        const ident = obj.get("ident").?.string;
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        const ident_dup = try allocator.dupe(u8, ident);
+        return AstNode{ .timeassign = .{ .ident = ident_dup, .arg = arg } };
     } else if (std.mem.eql(u8, node_type, "VARIABLE")) {
         const name = obj.get("name").?.string;
         const name_dup = try allocator.dupe(u8, name);
@@ -162,12 +193,32 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
     } else if (std.mem.eql(u8, node_type, "NUMTOKEN")) {
     const val = try std.fmt.parseFloat(f64, obj.get("value").?.string);
     return AstNode{ .numtoken = val };
+    } else if (std.mem.eql(u8, node_type, "TIMETOKEN")) {
+        const val = obj.get("value").?.string;
+        const owned = try allocator.dupe(u8, val);
+        return AstNode{ .timetoken = owned };
+    } else if (std.mem.eql(u8, node_type, "LIST")) {
+        const items_json = obj.get("items").?.array;
+        var items = try allocator.alloc(AstNode, items_json.items.len);
+        for (items_json.items, 0..) |item_json, i| {
+            items[i] = try jsonValueToAst(allocator, item_json);
+        }
+        return AstNode{ .list = items };
     } else if (std.mem.eql(u8, node_type, "NULL")) {
     return AstNode.null;
     } else if (std.mem.eql(u8, node_type, "TRUE")) {
         return AstNode.true;
     } else if (std.mem.eql(u8, node_type, "FALSE")) {
         return AstNode.false;
+    } else if (std.mem.eql(u8, node_type, "NOW")) {
+        return AstNode.now;
+    } else if (std.mem.eql(u8, node_type, "CURRENTTIME")) {
+        return AstNode.currenttime;
+    } else if (std.mem.eql(u8, node_type, "TIME")) {
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        return AstNode{ .time = arg };
     } else {
         return error.InvalidType;
     }

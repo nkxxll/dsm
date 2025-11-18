@@ -28,6 +28,19 @@ module InterpreterData = struct
   let create () = { now = Unix.gettimeofday (); env = Hashtbl.create (module String) }
 end
 
+let timestamp_to_iso_string time_float =
+  let sec = time_float /. 1000.0 in
+  let tm = Unix.gmtime sec in
+  Printf.sprintf
+    "%04d-%02d-%02dT%02d:%02d:%02dZ"
+    (tm.tm_year + 1900)
+    (tm.tm_mon + 1)
+    tm.tm_mday
+    tm.tm_hour
+    tm.tm_min
+    tm.tm_sec
+;;
+
 (* Convert HH:MM or HH:MM:SS time string to unix timestamp (today's date) *)
 let time_string_to_float time_str =
   let parts = String.split_on_chars time_str ~on:[ ':' ] in
@@ -208,14 +221,26 @@ and write_value (expr : value) =
         | { type_ = BoolLiteral b; _ } -> Bool.to_string b
         | { type_ = Unit; _ } -> "null"
         | { type_ = List _; _ } -> "[...]"
-        | { type_ = TimeLiteral t; _ } -> Float.to_string t)
+        | { type_ = TimeLiteral t; _ } -> timestamp_to_iso_string t)
       |> String.concat ~sep:", "
     in
     Stdio.print_endline ("[" ^ formatted ^ "]");
     ()
   | TimeLiteral t ->
-    Stdio.print_endline (Float.to_string t);
+    Stdio.print_endline (timestamp_to_iso_string t);
     ()
+;;
+
+let timestamp_to_iso_string ts =
+  let tm = Unix.gmtime ts in
+  Printf.sprintf
+    "%04d-%02d-%02dT%02d:%02d:%02dZ"
+    (tm.tm_year + 1900)
+    (tm.tm_mon + 1)
+    tm.tm_mday
+    tm.tm_hour
+    tm.tm_min
+    tm.tm_sec
 ;;
 
 let interpret yojson_ast : value =
@@ -360,8 +385,7 @@ let%test_module "Parser tests" =
         |}]
     ;;
 
-    let censor_digits s =
-      String.map s ~f:(fun c -> if Char.is_digit c then 'X' else c)
+    let censor_digits s = String.map s ~f:(fun c -> if Char.is_digit c then 'X' else c)
 
     let%expect_test "test now write" =
       let input = {| write now; |} in
@@ -370,7 +394,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| XXXXXXXXXX.XXXXXX |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test currenttime write" =
@@ -380,7 +404,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| XXXXXXXXXX.XXXXXXX |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time literal parsing" =
@@ -390,7 +414,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| XXXXXXXXXX. |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time literal with seconds" =
@@ -400,7 +424,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| XXXXXXXXXX. |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time variable assignment" =
@@ -415,7 +439,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| XXXXXXXXXX. |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time in list" =
@@ -429,7 +453,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| [XXXXXXXXXX., XXXXXXXXXX.,  "meeting" ] |}]
+      [%expect {| [XXXX-XX-XXTXX:XX:XXZ, XXXX-XX-XXTXX:XX:XXZ,  "meeting" ] |}]
     ;;
 
     let%expect_test "test now in list" =
@@ -443,7 +467,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| [XXXXXXXXXX.XXXXXX,  "timestamp" ] |}]
+      [%expect {| [XXXX-XX-XXTXX:XX:XXZ,  "timestamp" ] |}]
     ;;
 
     let%expect_test "test multiple times" =
@@ -462,8 +486,8 @@ let%test_module "Parser tests" =
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
-        XXXXXXXXXX.
-        XXXXXXXXXX.
+        XXXX-XX-XXTXX:XX:XXZ
+        XXXX-XX-XXTXX:XX:XXZ
         |}]
     ;;
   end)

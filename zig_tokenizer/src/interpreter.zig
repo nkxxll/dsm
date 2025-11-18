@@ -8,12 +8,102 @@ const tokensToJson = @import("tokenizer.zig").tokensToJson;
 const parseToString = @import("parser.zig").parse;
 const parseJsonToAst = @import("parser.zig").parseJsonToAst;
 
+/// Check if year is a leap year
+fn isLeapYear(year: i32) bool {
+    return (@mod(year, 400) == 0) or (@mod(year, 4) == 0 and @mod(year, 100) != 0);
+}
+
+/// Convert unix timestamp to ISO 8601 string
+fn timestampToIsoString(allocator: std.mem.Allocator, timestamp: f64) ![]const u8 {
+    const secs: i64 = @intFromFloat(timestamp);
+    
+    // Calculate date components
+    const days_since_epoch = @divFloor(secs, 86400);
+    
+    // Unix epoch is 1970-01-01
+    var year: i32 = 1970;
+    var remaining_days = days_since_epoch;
+    
+    // Add years
+    while (true) {
+        const days_in_year: i64 = if (isLeapYear(year)) 366 else 365;
+        if (remaining_days < days_in_year) break;
+        remaining_days -= days_in_year;
+        year += 1;
+    }
+    
+    // Calculate month and day
+    const is_leap = isLeapYear(year);
+    const days_in_months = [_]i32{ 31, if (is_leap) 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    
+    var month: i32 = 1;
+    var day_in_month = remaining_days;
+    
+    for (days_in_months) |days_in_month_val| {
+        if (day_in_month < days_in_month_val) {
+            break;
+        }
+        day_in_month -= days_in_month_val;
+        month += 1;
+    }
+    
+    const day = day_in_month + 1;
+    
+    // Calculate time components
+    const secs_today = @mod(secs, 86400);
+    const hour = @divFloor(secs_today, 3600);
+    const minute = @divFloor(@mod(secs_today, 3600), 60);
+    const second = @mod(secs_today, 60);
+    
+    return try std.fmt.allocPrint(allocator, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{ year, month, day, hour, minute, second });
+}
+
+/// Convert HH:MM or HH:MM:SS time string to unix timestamp
+fn timeStringToFloat(time_str: []const u8) !f64 {
+    var parts: [3]i32 = .{ 0, 0, 0 };
+    var part_idx: usize = 0;
+    var current_num: i32 = 0;
+    
+    for (time_str) |char| {
+        if (char == ':') {
+            if (part_idx < 2) {
+                parts[part_idx] = current_num;
+                part_idx += 1;
+                current_num = 0;
+            }
+        } else if (char >= '0' and char <= '9') {
+            current_num = current_num * 10 + (char - '0');
+        } else {
+            return error.InvalidTimeFormat;
+        }
+    }
+    parts[part_idx] = current_num;
+    
+    const hours = parts[0];
+    const minutes = parts[1];
+    const seconds = parts[2];
+    
+    if (hours < 0 or hours >= 24 or minutes < 0 or minutes >= 60 or seconds < 0 or seconds >= 60) {
+        return error.InvalidTimeFormat;
+    }
+    
+    // Get today's date and create timestamp
+    const now = std.time.timestamp();
+    const secs_today = @mod(now, 86400);
+    const today_start = now - secs_today;
+    
+    const time_secs = @as(i64, hours) * 3600 + @as(i64, minutes) * 60 + @as(i64, seconds);
+    
+    return @floatFromInt(today_start + time_secs);
+}
+
 /// Runtime values
 pub const Value = union(enum) {
     number: f64,
     string: []const u8,
     bool: bool,
     unit,
+    time: f64,
     list: std.ArrayList(Value),
 
     pub fn deinit(self: *const Value, allocator: std.mem.Allocator) void {
@@ -23,7 +113,7 @@ pub const Value = union(enum) {
                 for (l.items) |item| {
                     item.deinit(allocator);
                 }
-                l.deinit(allocator);
+                @constCast(&l).deinit(allocator);
             },
             else => {},
         }
@@ -35,6 +125,7 @@ pub const EvalError = error{
     InvalidType,
     DivisionByZero,
     OutOfMemory,
+    InvalidTimeFormat,
 };
 
 /// Evaluate AST node
@@ -56,6 +147,15 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
         .assign => |a| {
             const val = try eval(allocator, env, a.arg, writer);
             try env.put(a.ident, val);
+            return Value.unit;
+        },
+        .timeassign => |ta| {
+            const val = try eval(allocator, env, ta.arg, writer);
+            if (val == .time) {
+                try env.put(ta.ident, val);
+            } else {
+                return error.InvalidType;
+            }
             return Value.unit;
         },
         .variable => |name| {
@@ -157,12 +257,32 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
         .true => return Value{ .bool = true },
         .false => return Value{ .bool = false },
         .list => |lst| {
-            var items = std.ArrayList(Value).init(allocator);
-            for (lst.items) |item| {
+            var items = try std.ArrayList(Value).initCapacity(allocator, lst.len);
+            for (lst) |item| {
                 const val = try eval(allocator, env, &item, writer);
-                try items.append(val);
+                try items.append(allocator, val);
             }
             return Value{ .list = items };
+        },
+        .timetoken => |t| {
+            const timestamp = try timeStringToFloat(t);
+            return Value{ .time = timestamp };
+        },
+        .now => {
+            const now_secs = std.time.timestamp();
+            return Value{ .time = @floatFromInt(now_secs) };
+        },
+        .currenttime => {
+            const now_secs = std.time.timestamp();
+            return Value{ .time = @floatFromInt(now_secs) };
+        },
+        .time => |t| {
+            const val = try eval(allocator, env, t, writer);
+            if (val == .time) {
+                return val;
+            } else {
+                return Value.unit;
+            }
         },
     }
 }
@@ -186,6 +306,12 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) !
         .unit => {
             _ = try writer.write("null\n");
         },
+        .time => |t| {
+            const iso_str = try timestampToIsoString(allocator, t);
+            defer allocator.free(iso_str);
+            _ = try writer.write(iso_str);
+            _ = try writer.write("\n");
+        },
         .list => |lst| {
             _ = try writer.write("[");
             for (lst.items, 0..) |item, i| {
@@ -207,6 +333,11 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) !
                     },
                     .unit => {
                         _ = try writer.write("null");
+                    },
+                    .time => |t| {
+                        const iso_str = try timestampToIsoString(allocator, t);
+                        defer allocator.free(iso_str);
+                        _ = try writer.write(iso_str);
                     },
                     .list => {
                         _ = try writer.write("[...]");
@@ -511,20 +642,220 @@ test "empty list" {
 }
 
 test "list with mixed types and variable" {
-    const testing = std.testing;
-    const allocator = testing.allocator;
+     const testing = std.testing;
+     const allocator = testing.allocator;
+ 
+     const input: [:0]const u8 =
+         \\x := "hello";
+         \\WRITE [1, 2, 3, x];
+     ;
+ 
+     var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+     defer buffer.deinit(allocator);
+ 
+     try interpret(allocator, input, buffer.writer(allocator));
+ 
+     const output = buffer.items;
+     const expected = "[1, 2, 3, hello]\n";
+     try testing.expectEqualStrings(expected, output);
+}
 
-    const input: [:0]const u8 =
-        \\x := "hello";
-        \\WRITE [1, 2, 3, x];
-    ;
+test "leap year check - regular year" {
+     const testing = std.testing;
+     try testing.expect(!isLeapYear(2021));
+}
 
-    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
-    defer buffer.deinit(allocator);
+test "leap year check - divisible by 4" {
+     const testing = std.testing;
+     try testing.expect(isLeapYear(2020));
+}
 
-    try interpret(allocator, input, buffer.writer(allocator));
+test "leap year check - divisible by 100 but not 400" {
+     const testing = std.testing;
+     try testing.expect(!isLeapYear(1900));
+}
 
-    const output = buffer.items;
-    const expected = "[1, 2, 3, hello]\n";
-    try testing.expectEqualStrings(expected, output);
+test "leap year check - divisible by 400" {
+     const testing = std.testing;
+     try testing.expect(isLeapYear(2000));
+}
+
+test "leap year check - year 2024" {
+     const testing = std.testing;
+     try testing.expect(isLeapYear(2024));
+}
+
+test "time string parsing HH:MM" {
+     const testing = std.testing;
+     const result = try timeStringToFloat("14:30");
+     const hours: f64 = 14 * 3600;
+     const minutes: f64 = 30 * 60;
+     const expected_offset = hours + minutes;
+     
+     // Check that the result is approximately correct (within seconds of today's start + offset)
+     const now = std.time.timestamp();
+     const secs_today = @mod(now, 86400);
+     const today_start: f64 = @floatFromInt(now - secs_today);
+     const expected = today_start + expected_offset;
+     
+     try testing.expect(@abs(result - expected) < 1.0);
+}
+
+test "time string parsing HH:MM:SS" {
+     const testing = std.testing;
+     const result = try timeStringToFloat("09:15:45");
+     const hours: f64 = 9 * 3600;
+     const minutes: f64 = 15 * 60;
+     const seconds: f64 = 45;
+     const expected_offset = hours + minutes + seconds;
+     
+     const now = std.time.timestamp();
+     const secs_today = @mod(now, 86400);
+     const today_start: f64 = @floatFromInt(now - secs_today);
+     const expected = today_start + expected_offset;
+     
+     try testing.expect(@abs(result - expected) < 1.0);
+}
+
+test "time string parsing midnight" {
+     const testing = std.testing;
+     const result = try timeStringToFloat("00:00:00");
+     
+     const now = std.time.timestamp();
+     const secs_today = @mod(now, 86400);
+     const today_start: f64 = @floatFromInt(now - secs_today);
+     
+     try testing.expect(@abs(result - today_start) < 1.0);
+}
+
+test "time string parsing invalid - hours >= 24" {
+     const testing = std.testing;
+     const result = timeStringToFloat("25:00:00");
+     try testing.expectError(error.InvalidTimeFormat, result);
+}
+
+test "time string parsing invalid - minutes >= 60" {
+     const testing = std.testing;
+     const result = timeStringToFloat("12:75:00");
+     try testing.expectError(error.InvalidTimeFormat, result);
+}
+
+test "time string parsing invalid - seconds >= 60" {
+     const testing = std.testing;
+     const result = timeStringToFloat("12:30:75");
+     try testing.expectError(error.InvalidTimeFormat, result);
+}
+
+test "time string parsing invalid - non-numeric characters" {
+     const testing = std.testing;
+     const result = timeStringToFloat("12:30:ab");
+     try testing.expectError(error.InvalidTimeFormat, result);
+}
+
+test "timestamp to ISO string - epoch start" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     const timestamp: f64 = 0;
+     const iso_str = try timestampToIsoString(allocator, timestamp);
+     defer allocator.free(iso_str);
+     
+     try testing.expectEqualStrings("1970-01-01T00:00:00Z", iso_str);
+}
+
+test "timestamp to ISO string - specific date" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     // 1970-01-02 00:00:00 UTC = 86400 seconds
+     const timestamp: f64 = 86400;
+     const iso_str = try timestampToIsoString(allocator, timestamp);
+     defer allocator.free(iso_str);
+     
+     try testing.expectEqualStrings("1970-01-02T00:00:00Z", iso_str);
+}
+
+test "timestamp to ISO string - with time offset" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     // 1970-01-01 12:30:45 UTC
+     const timestamp: f64 = (12 * 3600) + (30 * 60) + 45;
+     const iso_str = try timestampToIsoString(allocator, timestamp);
+     defer allocator.free(iso_str);
+     
+     try testing.expectEqualStrings("1970-01-01T12:30:45Z", iso_str);
+}
+
+test "timestamp to ISO string - leap year date" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     // 1972-02-29 (leap year)
+     // Days from 1970-01-01 to 1972-02-29:
+     // 1970: 365 days, 1971: 365 days, 1972-01-01 to 1972-02-29: 31+29 = 60 days
+     // Total: 365 + 365 + 60 = 790 days
+     const days = 790;
+     const timestamp: f64 = @floatFromInt(days * 86400);
+     const iso_str = try timestampToIsoString(allocator, timestamp);
+     defer allocator.free(iso_str);
+     
+     try testing.expectEqualStrings("1972-02-29T00:00:00Z", iso_str);
+}
+
+test "now and currenttime keywords" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     const input: [:0]const u8 =
+         \\WRITE now;
+     ;
+     
+     var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+     defer buffer.deinit(allocator);
+     
+     try interpret(allocator, input, buffer.writer(allocator));
+     
+     const output = buffer.items;
+     // Just verify output is valid ISO 8601 format (contains T and Z)
+     try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+     try testing.expect(std.mem.containsAtLeast(u8, output, 1, "Z"));
+}
+
+test "time assignment to variable" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     const input: [:0]const u8 =
+         \\t::= 14:30:00;
+         \\WRITE t;
+     ;
+     
+     var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+     defer buffer.deinit(allocator);
+     
+     try interpret(allocator, input, buffer.writer(allocator));
+     
+     const output = buffer.items;
+     // Should output a valid ISO 8601 timestamp
+     try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+     try testing.expect(std.mem.containsAtLeast(u8, output, 1, "Z"));
+}
+
+test "list with time values" {
+     const testing = std.testing;
+     const allocator = testing.allocator;
+     
+     const input: [:0]const u8 =
+         \\WRITE [1, 2, 3];
+     ;
+     
+     var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+     defer buffer.deinit(allocator);
+     
+     try interpret(allocator, input, buffer.writer(allocator));
+     
+     const output = buffer.items;
+     const expected = "[1, 2, 3]\n";
+     try testing.expectEqualStrings(expected, output);
 }

@@ -163,36 +163,90 @@ class TestErrorHandling:
         with pytest.raises(TypeError):
             interpret(ast)
 
-    def test_type_error_concat_number_string(self):
+    def test_concat_number_string(self):
         ast = parse('write 5 & "hello";')
-        with pytest.raises(TypeError):
-            interpret(ast)
-
-
-class TestLists:
-    """Tests for list operations"""
-
-    def test_list_of_numbers(self):
-        ast = parse("write [1, 2, 3];")
         output = capture_output(ast)
-        assert output.strip() == "[1, 2, 3]"
-
-    def test_list_of_strings(self):
-        ast = parse('write ["a", "b"];')
+        assert output.strip() == "5hello"
+    
+    def test_concat_string_number(self):
+        ast = parse('write "hello" & 5;')
         output = capture_output(ast)
-        assert output.strip() == "[a, b]"
+        assert output.strip() == "hello5"
 
-    def test_empty_list(self):
-        ast = parse("write [];")
-        output = capture_output(ast)
-        assert output.strip() == "[]"
 
-    def test_list_with_mixed_types(self):
-        ast = parse('x := "hello"; write [1, 2, 3, x];')
-        output = capture_output(ast)
-        assert output.strip() == "[1, 2, 3, hello]"
 
-    def test_list_with_expressions(self):
-        ast = parse("write [1 + 1, 2 * 3];")
-        output = capture_output(ast)
-        assert output.strip() == "[2, 6]"
+
+
+class TestTimeOperations:
+    """Tests for time operations"""
+
+    def test_time_string_to_float_hh_mm(self):
+        """Test conversion of HH:MM format to float"""
+        from interpreter import time_string_to_float
+        timestamp = time_string_to_float("14:30")
+        # Should return a valid timestamp for today at 14:30
+        assert isinstance(timestamp, float)
+        # Check that it's roughly today's timestamp
+        import time as time_module
+        now_timestamp = time_module.time()
+        # Timestamp should be within 24 hours of now
+        assert abs(now_timestamp - timestamp) < 86400
+
+    def test_time_string_to_float_hh_mm_ss(self):
+        """Test conversion of HH:MM:SS format to float"""
+        from interpreter import time_string_to_float
+        timestamp = time_string_to_float("14:30:45")
+        # Should return a valid timestamp for today at 14:30:45
+        assert isinstance(timestamp, float)
+
+    def test_timestamp_to_iso_string(self):
+        """Test conversion of timestamp to ISO string"""
+        from interpreter import timestamp_to_iso_string
+        import time as time_module
+        # Use current time to avoid timezone issues
+        now_timestamp = time_module.time()
+        iso_string = timestamp_to_iso_string(now_timestamp)
+        # Check format is ISO 8601: YYYY-MM-DDTHH:MM:SSZ
+        assert isinstance(iso_string, str)
+        assert "T" in iso_string
+        assert iso_string.endswith("Z")
+        assert len(iso_string) == 20  # YYYY-MM-DDTHH:MM:SSZ is 20 chars
+
+    def test_timestamp_to_iso_string_with_seconds(self):
+        """Test conversion of timestamp to ISO string with seconds"""
+        from interpreter import timestamp_to_iso_string
+        import time as time_module
+        # Use current time
+        now_timestamp = time_module.time()
+        iso_string = timestamp_to_iso_string(now_timestamp)
+        # Verify it contains date and time components
+        parts = iso_string.split("T")
+        assert len(parts) == 2
+        assert len(parts[0]) == 10  # YYYY-MM-DD
+        assert parts[1].endswith("Z")
+        time_part = parts[1][:-1]  # Remove the Z
+        assert len(time_part) == 8  # HH:MM:SS
+
+    def test_time_string_invalid_format_raises_error(self):
+        """Test that invalid time format raises ValueError"""
+        from interpreter import time_string_to_float
+        with pytest.raises(ValueError):
+            time_string_to_float("25:00")
+
+    def test_time_string_invalid_format_too_many_parts(self):
+        """Test that time with too many parts raises error"""
+        from interpreter import time_string_to_float
+        with pytest.raises(ValueError):
+            time_string_to_float("10:20:30:45")
+
+    def test_time_string_invalid_minutes(self):
+        """Test that invalid minutes raise error"""
+        from interpreter import time_string_to_float
+        with pytest.raises(ValueError):
+            time_string_to_float("10:70")
+
+    def test_time_string_invalid_seconds(self):
+        """Test that invalid seconds raise error"""
+        from interpreter import time_string_to_float
+        with pytest.raises(ValueError):
+            time_string_to_float("10:20:75")

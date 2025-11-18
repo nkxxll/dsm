@@ -1,3 +1,5 @@
+import time
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
 from lark import Tree
@@ -46,6 +48,40 @@ class ListValue(Value):
         return f"ListValue({self.items})"
 
 
+class TimeValue(Value):
+    def __init__(self, timestamp: float):
+        self.timestamp = timestamp
+
+    def __repr__(self):
+        return f"TimeValue({self.timestamp})"
+
+
+def timestamp_to_iso_string(timestamp: float) -> str:
+    """Convert unix timestamp to ISO 8601 string (UTC)"""
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def time_string_to_float(time_str: str) -> float:
+    """Convert HH:MM or HH:MM:SS time string to unix timestamp (today's date)"""
+    parts = time_str.split(":")
+    try:
+        if len(parts) == 2:
+            hours, minutes = int(parts[0]), int(parts[1])
+            seconds = 0
+        elif len(parts) == 3:
+            hours, minutes, seconds = int(parts[0]), int(parts[1]), int(parts[2])
+        else:
+            raise ValueError(f"Invalid time format: {time_str}")
+
+        # Get today's date and create datetime with the specified time
+        now = datetime.now()
+        dt = now.replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
+        return dt.timestamp()
+    except (ValueError, IndexError) as e:
+        raise ValueError(f"Invalid time format: {time_str}") from e
+
+
 def eval_node(
     node: Union[Dict[str, Any], Tree], env: Optional[Dict[str, Value]] = None
 ) -> Value:
@@ -78,6 +114,17 @@ def eval_node(
         arg = node.get("arg")
         value = eval_node(arg, env)
         env[ident] = value
+        return UnitValue()
+
+    elif node_type == "TIMEASSIGN":
+        ident = node.get("ident", "")
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if isinstance(value, TimeValue):
+            # Store the time value in the environment
+            env[ident] = value
+        else:
+            raise TypeError("TIMEASSIGN requires a time value")
         return UnitValue()
 
     elif node_type == "PLUS":
@@ -136,6 +183,14 @@ def eval_node(
         right = eval_node(args[1], env)
         if isinstance(left, StringValue) and isinstance(right, StringValue):
             return StringValue(left.value + right.value)
+        elif isinstance(left, StringValue) and isinstance(right, NumberValue):
+            # Convert number to string for concatenation
+            num_str = str(int(right.value)) if right.value == int(right.value) else str(right.value)
+            return StringValue(left.value + num_str)
+        elif isinstance(left, NumberValue) and isinstance(right, StringValue):
+            # Convert number to string for concatenation
+            num_str = str(int(left.value)) if left.value == int(left.value) else str(left.value)
+            return StringValue(num_str + right.value)
         raise TypeError(
             f"Cannot concatenate {type(left).__name__} and {type(right).__name__}"
         )
@@ -168,6 +223,25 @@ def eval_node(
         evaluated_items = [eval_node(item, env) for item in items]
         return ListValue(evaluated_items)
 
+    elif node_type == "TIMETOKEN":
+        time_str = node.get("value", "")
+        timestamp = time_string_to_float(time_str)
+        return TimeValue(timestamp)
+
+    elif node_type == "NOW":
+        return TimeValue(time.time())
+
+    elif node_type == "CURRENTTIME":
+        return TimeValue(time.time())
+
+    elif node_type == "TIME":
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if isinstance(value, TimeValue):
+            return value
+        else:
+            return UnitValue()
+
     else:
         raise ValueError(f"Unknown node type: {node_type}")
 
@@ -186,6 +260,8 @@ def write_value(value: Value) -> None:
         print("true" if value.value else "false")
     elif isinstance(value, UnitValue):
         print("null")
+    elif isinstance(value, TimeValue):
+        print(timestamp_to_iso_string(value.timestamp))
     elif isinstance(value, ListValue):
         formatted_items = []
         for item in value.items:
@@ -197,6 +273,8 @@ def write_value(value: Value) -> None:
                 formatted_items.append("true" if item.value else "false")
             elif isinstance(item, UnitValue):
                 formatted_items.append("null")
+            elif isinstance(item, TimeValue):
+                formatted_items.append(timestamp_to_iso_string(item.timestamp))
             elif isinstance(item, ListValue):
                 formatted_items.append("[...]")
         print("[" + ", ".join(formatted_items) + "]")
