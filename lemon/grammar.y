@@ -153,6 +153,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "POWER") == 0) return POWER;
 	if (strcmp(token, "SEMICOLON") == 0) return SEMICOLON;
 	if (strcmp(token, "STRTOKEN") == 0) return STRTOKEN;
+	if (strcmp(token, "TRACE") == 0) return TRACE;
 	if (strcmp(token, "WRITE") == 0) return WRITE;
 	if (strcmp(token, "NULL") == 0) return NULLTOK;
  	if (strcmp(token, "TRUE") == 0) return TRUE;
@@ -275,6 +276,15 @@ statement(r) ::= WRITE ex(e) SEMICOLON .
 	cJSON_AddStringToObject(res, "type", "WRITE");
 	cJSON_AddItemToObject(res, "arg", e);
 	r = res;
+}
+
+statement(r) ::= TRACE(t) ex(e) SEMICOLON .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "TRACE");
+    cJSON_AddStringToObject(res, "line", getLine(t));
+    cJSON_AddItemToObject(res, "arg", e);
+    r = res;
 }
 
 ///////////////////////////

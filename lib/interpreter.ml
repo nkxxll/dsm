@@ -78,6 +78,11 @@ let get_statements node =
   node |> member "statements" |> to_list
 ;;
 
+let get_line node =
+  let open Yojson.Safe.Util in
+  node |> member "line" |> to_string
+;;
+
 let get_type node =
   let open Yojson.Safe.Util in
   node |> member "type" |> to_string
@@ -138,6 +143,13 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "WRITE" ->
     let arg = get_arg yojson_ast in
     eval interp_data arg |> write_value;
+    { type_ = Unit; time = None }
+  | "TRACE" ->
+    let line = get_line yojson_ast in
+    let arg = get_arg yojson_ast in
+    let val_ = eval interp_data arg in
+    Stdio.printf "Line %s: " line;
+    write_value val_;
     { type_ = Unit; time = None }
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
@@ -699,6 +711,12 @@ let%test_module "Parser tests" =
         4.
         5.
         |}]
+    ;;
+
+    let%expect_test "test trace" =
+      let input = {|TRACE "foo";|} in
+      input |> interpret;
+      [%expect {| Line 1:  "foo"  |}]
     ;;
   end)
 ;;

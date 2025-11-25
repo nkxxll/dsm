@@ -198,5 +198,28 @@ let%test_module "Parser tests" =
         }
         |}]
     ;;
+    let%expect_test "parse trace" =
+      let input = {|TRACE "foo";|} in
+      let output = Tokenizer.tokenize input in
+      let res =
+        match output with
+        | Ok out -> parse_to_yojson_pretty_string out
+        | Error err -> err
+      in
+      Stdio.print_endline res;
+      [%expect
+        {|
+        {
+          "type": "STATEMENTBLOCK",
+          "statements": [
+            {
+              "type": "TRACE",
+              "line": "1",
+              "arg": { "type": "STRTOKEN", "value": " \"foo\" " }
+            }
+          ]
+        }
+        |}]
+    ;;
   end)
 ;;

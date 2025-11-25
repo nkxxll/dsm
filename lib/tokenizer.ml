@@ -51,6 +51,7 @@ module TokenType = struct
     | TIME
     | TIMES
     | TIMETOKEN of string
+    | TRACE
     | TRUE
     | UPPERCASE
     | WRITE
@@ -83,6 +84,7 @@ module TokenType = struct
     | "SUM" -> SUM
     | "THEN" -> THEN
     | "TIME" -> TIME
+    | "TRACE" -> TRACE
     | "TRUE" -> TRUE
     | "UPPERCASE" -> UPPERCASE
     | "WRITE" -> WRITE
@@ -137,6 +139,7 @@ module TokenType = struct
     | TIME -> "TIME"
     | TIMES -> "TIMES"
     | TIMETOKEN _ -> "TIMETOKEN"
+    | TRACE -> "TRACE"
     | TRUE -> "TRUE"
     | UPPERCASE -> "UPPERCASE"
     | WRITE -> "WRITE"
