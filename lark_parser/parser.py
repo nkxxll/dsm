@@ -1,4 +1,4 @@
-from lark import Lark, Transformer, v_args, Tree
+from lark import Lark, Transformer, Tree, v_args
 
 # Grammar definition with proper operator precedence hierarchy
 # Precedence (lowest to highest): ampersand, additive, multiplicative, power, atom
@@ -15,20 +15,20 @@ statement: write_stmt
          | if_stmt
          | for_stmt
 
-write_stmt: WRITE ampersand ";"
+write_stmt: WRITE expr ";"
 
-assign_stmt: IDENTIFIER ":=" ampersand ";"
+assign_stmt: IDENTIFIER ":=" expr ";"
 
-trace_stmt: TRACE ampersand ";"
+trace_stmt: TRACE expr ";"
 
-if_stmt: IF ampersand THEN statementblock else_part? ENDIF ";"
+if_stmt: IF expr THEN statementblock else_part? ENDIF ";"
 
 else_part: ELSE statementblock
 
-for_stmt: FOR IDENTIFIER IN ampersand DO statementblock ENDDO ";"
+for_stmt: FOR IDENTIFIER IN expr DO statementblock ENDDO ";"
 
-?ampersand: ampersand "&" additive -> ampersand_op
-          | additive
+?expr: expr "&" additive -> ampersand_op
+     | additive
 
 ?additive: additive "+" multiplicative -> plus
          | additive "-" multiplicative -> minus
@@ -52,16 +52,16 @@ for_stmt: FOR IDENTIFIER IN ampersand DO statementblock ENDDO ";"
      | CURRENTTIME -> currenttime_op
      | TIMETOKEN -> time_token
      | "[" "]" -> empty_list
-     | "[" ampersand list_rest "]" -> non_empty_list
-     | "(" ampersand ")"
+     | "[" expr list_rest "]" -> non_empty_list
+     | "(" expr ")"
 
-function_call: UPPERCASE ampersand -> uppercase_op
-             | MAXIMUM ampersand -> maximum_op
-             | AVERAGE ampersand -> average_op
-             | INCREASE ampersand -> increase_op
-             | TIME ampersand -> time_op
+function_call: UPPERCASE expr -> uppercase_op
+             | MAXIMUM expr -> maximum_op
+             | AVERAGE expr -> average_op
+             | INCREASE expr -> increase_op
+             | TIME expr -> time_op
 
-list_rest: ("," ampersand)*
+list_rest: ("," expr)*
 
 NUMTOKEN: /\d+(\.\d+)?/
 STRTOKEN: /"[^"]*"|'[^']*'/
@@ -90,7 +90,7 @@ TIMETOKEN: /\d{1,2}:\d{2}(:\d{2})?/
 """
 
 
-class JsonTransformer(Transformer):
+class Transformer(Transformer):
     """Transform parse tree into JSON structure"""
 
     @v_args(inline=True)
@@ -210,16 +210,20 @@ class JsonTransformer(Transformer):
         # Extract line number from TRACE token and expression from dict
         trace_token = None
         expr = None
-        
+
         for item in items:
             if isinstance(item, dict):
                 expr = item
-            elif hasattr(item, 'type') and item.type == 'TRACE':
+            elif hasattr(item, "type") and item.type == "TRACE":
                 trace_token = item
-        
+
         # Get line number from TRACE token's position
-        line_num = str(trace_token.line) if trace_token and hasattr(trace_token, 'line') else "0"
-        
+        line_num = (
+            str(trace_token.line)
+            if trace_token and hasattr(trace_token, "line")
+            else "0"
+        )
+
         return {"type": "TRACE", "line": line_num, "arg": expr}
 
     @v_args(inline=True)
@@ -235,12 +239,14 @@ class JsonTransformer(Transformer):
             # print(f"  item {i}: {type(item).__name__} = {item if isinstance(item, dict) else str(item)[:20]}")
             if isinstance(item, dict):
                 dicts.append(item)
-        
+
         condition = dicts[0]
         thenbranch = dicts[1]
         # else_part will be the 3rd dict if it exists
-        elsebranch = dicts[2] if len(dicts) > 2 else {"type": "STATEMENTBLOCK", "statements": []}
-        
+        elsebranch = (
+            dicts[2] if len(dicts) > 2 else {"type": "STATEMENTBLOCK", "statements": []}
+        )
+
         return {
             "type": "IF",
             "condition": condition,
@@ -259,11 +265,11 @@ class JsonTransformer(Transformer):
         varname = None
         dicts_only = []
         for item in items:
-            if hasattr(item, 'type') and item.type == 'IDENTIFIER':
+            if hasattr(item, "type") and item.type == "IDENTIFIER":
                 varname = str(item)
             elif isinstance(item, dict):
                 dicts_only.append(item)
-        
+
         expression = dicts_only[0]
         statements = dicts_only[1]
         return {
@@ -283,7 +289,7 @@ class JsonTransformer(Transformer):
     def code(self, items):
         # items[0] should be the statementblock dict
         return items[0]
-    
+
     def start(self, items):
         # start wraps the code
         return items[0]
@@ -291,7 +297,7 @@ class JsonTransformer(Transformer):
 
 def parse(input_text):
     """Parse input text and return Python dict"""
-    parser = Lark(grammar, parser="lalr", transformer=JsonTransformer())
+    parser = Lark(grammar, parser="lalr", transformer=Transformer())
     try:
         result = parser.parse(input_text)
         return result
