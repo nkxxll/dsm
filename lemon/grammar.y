@@ -127,13 +127,25 @@ int get_token_id (char *token) {
 	if (strcmp(token, "NULL") == 0) return NULLTOK;
  	if (strcmp(token, "TRUE") == 0) return TRUE;
  	if (strcmp(token, "FALSE") == 0) return FALSE;
+ 	if (strcmp(token, "FOR") == 0) return FOR;
  	if (strcmp(token, "NOW") == 0) return NOW;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
  	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
  	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
  	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
+ 	if (strcmp(token, "IN") == 0) return IN;
+ 	if (strcmp(token, "IF") == 0) return IF;
+ 	if (strcmp(token, "THEN") == 0) return THEN;
+ 	if (strcmp(token, "ENDIF") == 0) return ENDIF;
+ 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
+ 	if (strcmp(token, "DO") == 0) return DO;
+ 	if (strcmp(token, "ENDIF") == 0) return ENDIF;
+ 	if (strcmp(token, "THEN") == 0) return THEN;
+ 	if (strcmp(token, "IF") == 0) return IF;
+ 	if (strcmp(token, "IN") == 0) return IN;
 
+ 	if (strcmp(token, "IN") == 0) return IN;
  	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
 	exit(0);
 }
@@ -247,6 +259,47 @@ statement(r) ::= IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
 	cJSON_AddStringToObject(res, "ident", getValue(i));
 	cJSON_AddItemToObject(res, "arg", e);
 	r = res;
+}
+
+// if statement
+statement(r) ::= IF if_then_else(a) .
+{r = a;}
+
+if_then_else(r) ::= ex(a) THEN statementblock(b) elseif(c) .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "IF");
+    cJSON_AddItemToObject(res, "condition", a);
+    cJSON_AddItemToObject(res, "thenbranch", (b));
+    cJSON_AddItemToObject(res, "elsebranch", (c));
+    r = res;
+}
+
+// else if
+elseif(r) ::= ENDIF SEMICOLON .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "STATEMENTBLOCK");
+    cJSON *arg = cJSON_CreateArray();
+    cJSON_AddItemToObject(res, "statements", arg);
+    r = res;
+}
+
+elseif(r) ::= ELSE statementblock(a) ENDIF SEMICOLON .
+{r = a;}
+
+elseif(r) ::= ELSEIF if_then_else(a) .
+{r = a;}
+
+// for statement
+statement(r) ::= FOR IDENTIFIER(i) IN ex(e) DO statementblock(sb) ENDDO SEMICOLON .
+{
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddStringToObject(res, "type", "FOR");
+    cJSON_AddStringToObject(res, "varname", getValue(i));
+    cJSON_AddItemToObject(res, "expression", e);
+    cJSON_AddItemToObject(res, "statements", sb);
+    r = res;
 }
 
 // TIME ASSIGNMENT

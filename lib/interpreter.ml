@@ -98,6 +98,31 @@ let get_name node =
   node |> member "name" |> to_string
 ;;
 
+let get_condition node =
+  let open Yojson.Safe.Util in
+  node |> member "condition"
+;;
+
+let get_thenbranch node =
+  let open Yojson.Safe.Util in
+  node |> member "thenbranch"
+;;
+
+let get_elsebranch node =
+  let open Yojson.Safe.Util in
+  node |> member "elsebranch"
+;;
+
+let get_varname node =
+  let open Yojson.Safe.Util in
+  node |> member "varname" |> to_string
+;;
+
+let get_expression node =
+  let open Yojson.Safe.Util in
+  node |> member "expression"
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   let type_ = get_type yojson_ast in
   match type_ with
@@ -243,6 +268,30 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
           let avg = sum /. Float.of_int (List.length lst) in
           { type_ = NumberLiteral avg; time = None })
      | _ -> failwith "AVERAGE expects a list")
+  | "IF" ->
+    let condition = get_condition yojson_ast in
+    let thenbranch = get_thenbranch yojson_ast in
+    let elsebranch = get_elsebranch yojson_ast in
+    let cond_val = eval interp_data condition in
+    (match cond_val.type_ with
+     | BoolLiteral true -> eval interp_data thenbranch
+     | BoolLiteral false -> eval interp_data elsebranch
+     | _ -> failwith "IF condition must evaluate to a boolean")
+  | "FOR" ->
+    let varname = get_varname yojson_ast in
+    let expression = get_expression yojson_ast in
+    let statements = get_statements yojson_ast in
+    let iter_val = eval interp_data expression in
+    (match iter_val.type_ with
+     | List items ->
+       let _ =
+         List.map items ~f:(fun item ->
+           Hashtbl.set interp_data.env ~key:varname ~data:item;
+           let _ = statements |> List.map ~f:(eval interp_data) in
+           ())
+       in
+       { type_ = Unit; time = None }
+     | _ -> failwith "FOR loop requires a list to iterate over")
   | "INCREASE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
@@ -611,5 +660,129 @@ let%test_module "Parser tests" =
         [XXX., -XX.]
         |}]
     ;;
-  end)
-;;
+
+    let%expect_test "test if statement with true condition" =
+      let input = {|IF true THEN WRITE "yes"; ENDIF;|} in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "yes" |}]
+    ;;
+
+    let%expect_test "test if statement with false condition" =
+      let input = {|IF false THEN WRITE "yes"; ENDIF;|} in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| |}]
+    ;;
+
+    let%expect_test "test if statement with else branch" =
+      let input = {|IF false THEN WRITE "yes"; ELSE WRITE "no"; ENDIF;|} in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "no" |}]
+    ;;
+
+    let%expect_test "test if statement with variable condition" =
+      let input =
+        {|x := 42;
+          IF x THEN WRITE "x is truthy"; ENDIF;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "x is truthy" |}]
+    ;;
+
+    let%expect_test "test for loop with list" =
+      let input =
+        {|FOR i IN [1, 2, 3] DO
+          WRITE i;
+        ENDDO;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect
+        {|
+        1.
+        2.
+        3.
+        |}]
+    ;;
+
+    let%expect_test "test for loop with string list" =
+      let input =
+        {|FOR name IN ["Alice", "Bob", "Charlie"] DO
+          WRITE name;
+        ENDDO;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect
+        {|
+        "Alice"
+        "Bob"
+        "Charlie"
+        |}]
+    ;;
+
+    let%expect_test "test for loop with accumulation" =
+      let input =
+        {|sum := 0;
+          FOR i IN [10, 20, 30] DO
+            sum := sum + i;
+          ENDDO;
+          WRITE sum;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| 60. |}]
+    ;;
+
+    let%expect_test "test nested if statements" =
+      let input =
+        {|x := 5;
+          IF true THEN
+            IF x THEN WRITE "nested"; ENDIF;
+          ENDIF;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect {| "nested" |}]
+    ;;
+
+    let%expect_test "test for loop with if statement inside" =
+      let input =
+        {|FOR i IN [1, 2, 3, 4, 5] DO
+          IF i THEN WRITE i; ENDIF;
+        ENDDO;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect
+        {|
+        1.
+        2.
+        3.
+        4.
+        5.
+        |}]
+    ;;
+    end)
+    ;;

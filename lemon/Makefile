@@ -1,46 +1,50 @@
-TARGETS = lemon main grammar.so libgrammar.a
-OBJECTS = grammar.o cjson.o lemon.o
+BIN_DIR = bin
+TARGETS = $(BIN_DIR)/lemon $(BIN_DIR)/main $(BIN_DIR)/grammar.so $(BIN_DIR)/libgrammar.a
+OBJECTS = $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o $(BIN_DIR)/lemon.o
 CC = gcc
 CXX = g++
 CFLAGS = -Wall
 CCFLAGS = -Wall
 
-all: $(TARGETS)
+all: $(BIN_DIR) $(TARGETS)
 
-lemon: lemon.c
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+$(BIN_DIR)/lemon: lemon.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
-grammar.c: grammar.y lemon
-	./lemon -s grammar.y
+grammar.c: grammar.y $(BIN_DIR)/lemon
+	./$(BIN_DIR)/lemon -s grammar.y
 
-grammar.o: grammar.c grammar.h
+$(BIN_DIR)/grammar.o: grammar.c grammar.h | $(BIN_DIR)
 	$(CC) $(CFLAGS) -c grammar.c -o $@
 
-cjson.o: cjson.c cjson.h
+$(BIN_DIR)/cjson.o: cjson.c cjson.h | $(BIN_DIR)
 	$(CC) $(CFLAGS) -c cjson.c -o $@
 
-main.o: main.c
+$(BIN_DIR)/main.o: main.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -c main.c -o $@
 
-main: main.o grammar.o cjson.o
+$(BIN_DIR)/main: $(BIN_DIR)/main.o $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^
 
-grammar.so: grammar.y lemon
-	./lemon grammar.y
-	$(CC) $(BUILDF) -fPIC -c grammar.c -o grammar.o
-	$(CC) $(BUILDF) -fPIC -c cjson.c -o cjson.o
-	$(CC) -shared grammar.o cjson.o -o grammar.so
+$(BIN_DIR)/grammar.so: grammar.y $(BIN_DIR)/lemon | $(BIN_DIR)
+	./$(BIN_DIR)/lemon grammar.y
+	$(CC) $(BUILDF) -fPIC -c grammar.c -o $(BIN_DIR)/grammar.o
+	$(CC) $(BUILDF) -fPIC -c cjson.c -o $(BIN_DIR)/cjson.o
+	$(CC) -shared $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o -o $@
 
-libgrammar.a: grammar.o cjson.o
+$(BIN_DIR)/libgrammar.a: $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o | $(BIN_DIR)
 	ar rcs $@ $^
 
 .PHONY: clean runmain
 
 runmain:
-	./main < ./tokenstream.txt
+	./$(BIN_DIR)/main < ./tokenstream.txt
 
 clean:
-	rm -f $(TARGETS) $(OBJECTS) grammar.c grammar.h
+	rm -rf $(BIN_DIR) grammar.c grammar.h
 
 oclean:
-	rm -f grammar.o cjson.o
+	rm -f $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o
