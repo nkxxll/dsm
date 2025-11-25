@@ -1,4 +1,4 @@
-from lark import Lark, Transformer, Tree, v_args
+from lark import Lark, Transformer, v_args
 
 # Grammar definition with proper operator precedence hierarchy
 # Precedence (lowest to highest): ampersand, additive, multiplicative, power, atom
@@ -90,7 +90,7 @@ TIMETOKEN: /\d{1,2}:\d{2}(:\d{2})?/
 """
 
 
-class Transformer(Transformer):
+class Parser(Transformer):
     """Transform parse tree into JSON structure"""
 
     @v_args(inline=True)
@@ -297,7 +297,7 @@ class Transformer(Transformer):
 
 def parse(input_text):
     """Parse input text and return Python dict"""
-    parser = Lark(grammar, parser="lalr", transformer=Transformer())
+    parser = Lark(grammar, parser="lalr", transformer=Parser())
     try:
         result = parser.parse(input_text)
         return result

@@ -103,7 +103,7 @@ def eval_node(
 
     # Handle Tree objects from Lark parser
     if isinstance(node, Tree):
-        # Tree has already been transformed to dict by JsonTransformer
+        # Tree has already been transformed to dict by Parser
         return eval_node(node.children[0] if node.children else {}, env)
 
     # Handle dict nodes
