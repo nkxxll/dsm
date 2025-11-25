@@ -1,6 +1,6 @@
 let () =
   let input =
-    {|sum_num := 0;
+    {|sum_num := 0
               FOR i IN [10, 20, 30] DO
                 sum_num := sum_num + i;
               ENDDO;
@@ -16,5 +16,7 @@ let () =
       Stdio.print_endline err;
       failwith "nonnon"
   in
-  ignore (Dsm.Interpreter.interpret p)
+  match p with
+  | Ok parsed -> ignore (Dsm.Interpreter.interpret_parsed parsed)
+  | Error error -> Stdio.print_endline error
 ;;

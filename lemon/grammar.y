@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <setjmp.h>
 
 /** start: what should be the header file */
 #define DEBUG
@@ -32,6 +33,7 @@ cJSON *ternary (char *fname, cJSON *a, cJSON *b, cJSON *c);
 char *linenumber;
 char *curtoken;
 char *curtype;
+static jmp_buf s_jumpBuffer;
 }
 
 %code {
@@ -54,45 +56,73 @@ const char * getLine (cJSON* token) {
 
 
 const char *parse_to_string(const char *input) {
-	cJSON *root = cJSON_Parse(input);
-    State state;
+	int jmp_val = setjmp(s_jumpBuffer);
+	if (jmp_val != 0) {
+        size_t buf_size = 256;
+        char buf[buf_size];
+        int n;
+        if (jmp_val == 1) {
+            n = snprintf(
+            buf,
+            buf_size,
+            "{\"error\" : true, \"message\": \"Syntax Error: Compiler reports unexpected token \\\"%s\\\" of type \\\"%s\\\" in line %s\"}\n",
+            curtoken, curtype, linenumber
+        );
+        } else if (jmp_val == 2) {
+        	n = snprintf (buf, buf_size, "{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", curtoken);
+        } else {
+        	n = snprintf (buf, buf_size, "{\"error\" : true, \"message\": \"Jumped here dont know why...!\"}\n");
+        }
 
-	if (!root) {
-		printf("JSON invalid\n");
-		exit(0);
+        // allocate n+1 chars (for the null terminator)
+        char *res = malloc(n + 1);
+        if (res == NULL) exit(1);
+
+        // copy exactly n chars + '\0'
+        memcpy(res, buf, n + 1);
+
+        return res;
+	} else {
+	    cJSON *root = cJSON_Parse(input);
+        State state;
+
+	    if (!root) {
+	    	printf("JSON invalid\n");
+	    	exit(0);
+	    }
+
+	    void* pParser = ParseAlloc (malloc);
+	    int num = cJSON_GetArraySize (root);
+
+	    for (int i = 0; i < num; i++ ) {
+
+	    	// Knoten im Token-Stream auslesen
+	    	cJSON *node = cJSON_GetArrayItem(root,i);
+
+	    	char *line = cJSON_GetArrayItem(node,0)->valuestring;
+	    	char *type = cJSON_GetArrayItem(node,1)->valuestring;
+	    	char *value = cJSON_GetArrayItem(node,2)->valuestring;
+
+	    	cJSON *tok = cJSON_CreateObject();
+	    	cJSON_AddStringToObject(tok, "value", value);
+	    	cJSON_AddStringToObject(tok, "line", line);
+
+	    	linenumber = line;
+	    	curtoken = value;
+	    	curtype = type;
+	    	// THE und Kommentare werden ueberlesen
+	    	if (strcmp(type, "THE") == 0) continue;
+	    	if (strcmp(type, "COMMENT") == 0) continue;
+	    	if (strcmp(type, "MCOMMENT") == 0) continue;
+
+	    	int tokenid = get_token_id (type);
+	    	Parse (pParser, tokenid, tok, &state);
+
+	    }
+	    Parse (pParser, 0, 0, &state);
+        ParseFree(pParser, free );
+        return cJSON_Print(state.cjson_ptr);
 	}
-
-	void* pParser = ParseAlloc (malloc);
-	int num = cJSON_GetArraySize (root);
-
-	for (int i = 0; i < num; i++ ) {
-
-		// Knoten im Token-Stream auslesen
-		cJSON *node = cJSON_GetArrayItem(root,i);
-
-		char *line = cJSON_GetArrayItem(node,0)->valuestring;
-		char *type = cJSON_GetArrayItem(node,1)->valuestring;
-		char *value = cJSON_GetArrayItem(node,2)->valuestring;
-
-		cJSON *tok = cJSON_CreateObject();
-		cJSON_AddStringToObject(tok, "value", value);
-		cJSON_AddStringToObject(tok, "line", line);
-
-		linenumber = line;
-		curtoken = value;
-		curtype = type;
-		// THE und Kommentare werden ueberlesen
-		if (strcmp(type, "THE") == 0) continue;
-		if (strcmp(type, "COMMENT") == 0) continue;
-		if (strcmp(type, "MCOMMENT") == 0) continue;
-
-		int tokenid = get_token_id (type);
-		Parse (pParser, tokenid, tok, &state);
-
-	}
-	Parse (pParser, 0, 0, &state);
-    ParseFree(pParser, free );
-    return cJSON_Print(state.cjson_ptr);
 }
 
 
@@ -146,10 +176,8 @@ int get_token_id (char *token) {
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "IF") == 0) return IF;
  	if (strcmp(token, "IN") == 0) return IN;
-
- 	if (strcmp(token, "IN") == 0) return IN;
- 	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
-	exit(0);
+    curtoken = token;
+    longjmp(s_jumpBuffer, 2);
 }
 
 
@@ -190,8 +218,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 }
 
 %syntax_error {
-  printf ("{\"error\" : true, \"message\": \"Syntax Error: Compiler reports unexpected token \\\"%s\\\" of type \\\"%s\\\" in line %s\"}\n", curtoken, curtype, linenumber);
-  exit(0);
+    longjmp(s_jumpBuffer, 1);
 }
 
 %extra_argument { State *state }

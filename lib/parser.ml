@@ -5,7 +5,22 @@ let parse_to_yojson_pretty_string tokens_str =
   tokens_str |> Binding.parse |> Yojson.Safe.from_string |> Yojson.Safe.pretty_to_string
 ;;
 
-let parse tokens_str = tokens_str |> Binding.parse |> Yojson.Safe.from_string
+let is_error json =
+  let open Yojson.Safe.Util in
+  match json |> member "error" with
+  | `Null -> false
+  | _ -> true
+;;
+
+let get_error_message json =
+  let open Yojson.Safe.Util in
+  json |> member "message" |> to_string
+;;
+
+let parse tokens_str : (Yojson.Safe.t, string) Result.t =
+  let json = tokens_str |> Binding.parse |> Yojson.Safe.from_string in
+  if is_error json then Error (get_error_message json) else Ok json
+;;
 
 let%test_module "Parser tests" =
   (module struct
@@ -152,7 +167,8 @@ let%test_module "Parser tests" =
         | Error err -> err
       in
       Stdio.print_endline res;
-      [%expect {|
+      [%expect
+        {|
         {
           "type": "STATEMENTBLOCK",
           "statements": [

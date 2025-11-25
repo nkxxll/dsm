@@ -367,9 +367,15 @@ let timestamp_to_iso_string ts =
     tm.tm_sec
 ;;
 
-let interpret yojson_ast : value =
+let interpret_parsed yojson_ast : value =
   let interp_data = InterpreterData.create () in
   eval interp_data yojson_ast
+;;
+
+let interpret input : unit =
+  let res = input |> Tokenizer.tokenize |> Result.bind ~f:Parser.parse in
+  res |> Result.iter_error ~f:Stdio.print_endline;
+  res |> Result.iter ~f:(fun p -> ignore (interpret_parsed p))
 ;;
 
 let%test_module "Parser tests" =
@@ -380,12 +386,7 @@ let%test_module "Parser tests" =
     WRITE (1 + 5) / 2.5 * 2.3;
     WRITE "Hello " & "World";|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p ->
-         (* Yojson.Safe.pretty_to_string p |> Stdio.print_endline; *)
-         ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
        "Hello world"
@@ -396,19 +397,13 @@ let%test_module "Parser tests" =
 
     let%expect_test "test interpretation null" =
       let input = {|WRITE null;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| null |}]
     ;;
 
     let%expect_test "test interpretation booleans" =
       let input = {|WRITE true; WRITE false;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
         true
@@ -421,10 +416,7 @@ let%test_module "Parser tests" =
         {|x := 42;
     WRITE x;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| 42. |}]
     ;;
 
@@ -433,10 +425,7 @@ let%test_module "Parser tests" =
         {|msg := "Hello";
     WRITE msg;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "Hello" |}]
     ;;
 
@@ -445,37 +434,25 @@ let%test_module "Parser tests" =
         {|result := 10 + 5 * 2;
      WRITE result;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| 20. |}]
     ;;
 
     let%expect_test "test string concatenation with number (string & number)" =
       let input = {|WRITE "Value: " & 42;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "Value: " 42. |}]
     ;;
 
     let%expect_test "test string concatenation with number (number & string)" =
       let input = {|WRITE 42 & " is the answer";|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| 42. " is the answer" |}]
     ;;
 
     let%expect_test "test string concatenation with multiple numbers" =
       let input = {|WRITE "Result: " & 10 + 5 & " total";|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "Result: " 15. " total" |}]
     ;;
 
@@ -484,10 +461,7 @@ let%test_module "Parser tests" =
         {|x := 1447 + 2;
          Write x + 100;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| 1549. |}]
     ;;
 
@@ -498,10 +472,7 @@ let%test_module "Parser tests" =
           WRITE [1, 2, 3, x];
          WRITE ["a", "b"];|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
         [1., 2., 3.,  "hello" ]
@@ -513,40 +484,28 @@ let%test_module "Parser tests" =
 
     let%expect_test "test now write" =
       let input = {| write now; |} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test currenttime write" =
       let input = {| write currenttime; |} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time literal parsing" =
       let input = {| write 12:34; |} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test time literal with seconds" =
       let input = {| write 12:34:56; |} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
@@ -558,10 +517,7 @@ let%test_module "Parser tests" =
           write t;
         |}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
@@ -572,10 +528,7 @@ let%test_module "Parser tests" =
           write [10:15, 20:45:30, "meeting"];
         |}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| [XXXX-XX-XXTXX:XX:XXZ, XXXX-XX-XXTXX:XX:XXZ,  "meeting" ] |}]
     ;;
@@ -586,10 +539,7 @@ let%test_module "Parser tests" =
           write [now, "timestamp"];
         |}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| [XXXX-XX-XXTXX:XX:XXZ,  "timestamp" ] |}]
     ;;
@@ -603,10 +553,7 @@ let%test_module "Parser tests" =
           write t2;
         |}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
@@ -623,10 +570,7 @@ let%test_module "Parser tests" =
           write time x;
         |}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
@@ -647,10 +591,7 @@ let%test_module "Parser tests" =
           write average y;
           write increase y;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
@@ -666,28 +607,19 @@ let%test_module "Parser tests" =
 
     let%expect_test "test if statement with true condition" =
       let input = {|IF true THEN WRITE "yes"; ENDIF;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "yes" |}]
     ;;
 
     let%expect_test "test if statement with false condition" =
       let input = {|IF false THEN WRITE "yes"; ENDIF;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| |}]
     ;;
 
     let%expect_test "test if statement with else branch" =
       let input = {|IF false THEN WRITE "yes"; ELSE WRITE "no"; ENDIF;|} in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "no" |}]
     ;;
 
@@ -696,10 +628,7 @@ let%test_module "Parser tests" =
         {|x := 42;
           IF true THEN WRITE "x is truthy"; ENDIF;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "x is truthy" |}]
     ;;
 
@@ -709,10 +638,7 @@ let%test_module "Parser tests" =
           WRITE i;
         ENDDO;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
         1.
@@ -727,10 +653,7 @@ let%test_module "Parser tests" =
           WRITE name;
         ENDDO;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
         "Alice"
@@ -747,24 +670,17 @@ let%test_module "Parser tests" =
           ENDDO;
           WRITE num;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| 60. |}]
     ;;
 
     let%expect_test "test nested if statements" =
       let input =
-        {|sum x := 5;
-          IF true THEN
+        {|IF true THEN
             IF true THEN WRITE "nested"; ENDIF;
           ENDIF;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect {| "nested" |}]
     ;;
 
@@ -774,10 +690,7 @@ let%test_module "Parser tests" =
           IF true THEN WRITE i; ENDIF;
         ENDDO;|}
       in
-      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
-      (match parsed with
-       | Ok p -> ignore (interpret p)
-       | Error err -> Stdio.print_endline err);
+      input |> interpret;
       [%expect
         {|
         1.
