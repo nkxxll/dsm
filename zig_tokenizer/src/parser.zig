@@ -5,6 +5,7 @@ const json = std.json;
 pub const AstNode = union(enum) {
     statementblock: struct { statements: []const AstNode },
     write: struct { arg: *const AstNode },
+    trace: struct { line: []const u8, arg: *const AstNode },
     assign: struct { ident: []const u8, arg: *const AstNode },
     timeassign: struct { ident: []const u8, arg: *const AstNode },
     variable: []const u8,
@@ -41,6 +42,11 @@ pub const AstNode = union(enum) {
             .write => |w| {
                 @constCast(w.arg).deinit(allocator);
                 allocator.destroy(@constCast(w.arg));
+            },
+            .trace => |t| {
+                allocator.free(t.line);
+                @constCast(t.arg).deinit(allocator);
+                allocator.destroy(@constCast(t.arg));
             },
             .assign => |a| {
                 allocator.free(a.ident);
@@ -170,6 +176,13 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
         const arg = try allocator.create(AstNode);
         arg.* = try jsonValueToAst(allocator, arg_json);
         return AstNode{ .write = .{ .arg = arg } };
+    } else if (std.mem.eql(u8, node_type, "TRACE")) {
+        const line = obj.get("line").?.string;
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        const line_dup = try allocator.dupe(u8, line);
+        return AstNode{ .trace = .{ .line = line_dup, .arg = arg } };
     } else if (std.mem.eql(u8, node_type, "ASSIGN")) {
         const ident = obj.get("ident").?.string;
         const arg_json = obj.get("arg").?;

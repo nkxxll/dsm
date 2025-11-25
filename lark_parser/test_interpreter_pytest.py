@@ -416,6 +416,51 @@ class TestForLoop:
         assert output.strip() == "110\n120\n210\n220"
 
 
+class TestTraceStatement:
+    """Tests for TRACE statement"""
+
+    def test_trace_simple_number(self):
+        ast = parse("trace 42;")
+        output = capture_output(ast)
+        # Line number is extracted from TRACE token position (line 1)
+        assert output.strip() == "Line 1: 42"
+
+    def test_trace_string(self):
+        ast = parse('trace "hello";')
+        output = capture_output(ast)
+        assert output.strip() == "Line 1: hello"
+
+    def test_trace_expression(self):
+        ast = parse("trace 5 + 3;")
+        output = capture_output(ast)
+        assert output.strip() == "Line 1: 8"
+
+    def test_trace_with_variable(self):
+        ast = parse("x := 42; trace x;")
+        output = capture_output(ast)
+        # trace is on line 1
+        assert output.strip() == "Line 1: 42"
+
+    def test_trace_concatenation(self):
+        ast = parse('trace "Result: " & "42";')
+        output = capture_output(ast)
+        assert output.strip() == "Line 1: Result: 42"
+
+    def test_trace_list(self):
+        ast = parse("trace [1, 2, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "Line 1: [1, 2, 3]"
+
+    def test_multiple_trace_statements_on_different_lines(self):
+        ast = parse("trace 10;\ntrace 20;\ntrace 30;")
+        output = capture_output(ast)
+        lines = output.strip().split("\n")
+        assert len(lines) == 3
+        assert lines[0] == "Line 1: 10"
+        assert lines[1] == "Line 2: 20"
+        assert lines[2] == "Line 3: 30"
+
+
 class TestTimeOperations:
     """Tests for time operations"""
 

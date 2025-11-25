@@ -121,6 +121,14 @@ def eval_node(
         write_value(value)
         return UnitValue()
 
+    elif node_type == "TRACE":
+        line = node.get("line", "0")
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        print(f"Line {line}: ", end="")
+        write_value(value)
+        return UnitValue()
+
     elif node_type == "ASSIGN":
         ident = node.get("ident", "")
         arg = node.get("arg")

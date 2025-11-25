@@ -144,6 +144,13 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             val.deinit(allocator);
             return Value.unit;
         },
+        .trace => |t| {
+            const val = try eval(allocator, env, t.arg, writer);
+            try writer.print("Line {s}: ", .{t.line});
+            try writeValue(allocator, val, writer);
+            val.deinit(allocator);
+            return Value.unit;
+        },
         .assign => |a| {
             const val = try eval(allocator, env, a.arg, writer);
             try env.put(a.ident, val);
@@ -1106,5 +1113,23 @@ test "for loop" {
 
     const output = buffer.items;
     const expected = "1\n2\n3\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "trace statement" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\TRACE(1) 42;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "Line 1: 42\n";
     try testing.expectEqualStrings(expected, output);
 }

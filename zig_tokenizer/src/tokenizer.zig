@@ -40,6 +40,7 @@ pub const LangTag = enum {
     TIMETOKEN,
     READ,
     WRITE,
+    TRACE,
     IF,
     THEN,
     ELSEIF,
@@ -85,6 +86,7 @@ pub const Token = struct {
     pub const keywords = std.StaticStringMap(Tag).initComptime(.{
         .{ "READ", .READ },
         .{ "WRITE", .WRITE },
+        .{ "TRACE", .TRACE },
         .{ "IF", .IF },
         .{ "THEN", .THEN },
         .{ "ELSEIF", .ELSEIF },
@@ -127,6 +129,7 @@ pub const Token = struct {
             .eof,
             .READ,
             .WRITE,
+            .TRACE,
             .IF,
             .THEN,
             .ELSEIF,

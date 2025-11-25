@@ -11,12 +11,15 @@ statementblock: statement*
 
 statement: write_stmt
          | assign_stmt
+         | trace_stmt
          | if_stmt
          | for_stmt
 
 write_stmt: WRITE ampersand ";"
 
 assign_stmt: IDENTIFIER ":=" ampersand ";"
+
+trace_stmt: TRACE ampersand ";"
 
 if_stmt: IF ampersand THEN statementblock else_part? ENDIF ";"
 
@@ -64,6 +67,7 @@ NUMTOKEN: /\d+(\.\d+)?/
 STRTOKEN: /"[^"]*"|'[^']*'/
 IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
 WRITE: "write"i
+TRACE: "trace"i
 IF: "if"i
 THEN: "then"i
 ELSE: "else"i
@@ -201,6 +205,23 @@ class JsonTransformer(Transformer):
         # WRITE statement
         return {"type": "WRITE", "arg": expr}
 
+    def trace_stmt(self, items):
+        # items contains: [TRACE token, expression dict, ";"]
+        # Extract line number from TRACE token and expression from dict
+        trace_token = None
+        expr = None
+        
+        for item in items:
+            if isinstance(item, dict):
+                expr = item
+            elif hasattr(item, 'type') and item.type == 'TRACE':
+                trace_token = item
+        
+        # Get line number from TRACE token's position
+        line_num = str(trace_token.line) if trace_token and hasattr(trace_token, 'line') else "0"
+        
+        return {"type": "TRACE", "line": line_num, "arg": expr}
+
     @v_args(inline=True)
     def assign_stmt(self, ident, expr):
         # Assignment statement: IDENTIFIER = expr
@@ -260,6 +281,11 @@ class JsonTransformer(Transformer):
         return {"type": "STATEMENTBLOCK", "statements": items}
 
     def code(self, items):
+        # items[0] should be the statementblock dict
+        return items[0]
+    
+    def start(self, items):
+        # start wraps the code
         return items[0]
 
 
