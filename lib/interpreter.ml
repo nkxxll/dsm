@@ -123,6 +123,11 @@ let get_expression node =
   node |> member "expression"
 ;;
 
+let get_statements_block node =
+  let open Yojson.Safe.Util in
+  node |> member "statements"
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   let type_ = get_type yojson_ast in
   match type_ with
@@ -280,15 +285,14 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "FOR" ->
     let varname = get_varname yojson_ast in
     let expression = get_expression yojson_ast in
-    let statements = get_statements yojson_ast in
+    let statements_block = get_statements_block yojson_ast in
     let iter_val = eval interp_data expression in
     (match iter_val.type_ with
      | List items ->
        let _ =
          List.map items ~f:(fun item ->
            Hashtbl.set interp_data.env ~key:varname ~data:item;
-           let _ = statements |> List.map ~f:(eval interp_data) in
-           ())
+           eval interp_data statements_block)
        in
        { type_ = Unit; time = None }
      | _ -> failwith "FOR loop requires a list to iterate over")
