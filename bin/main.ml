@@ -1,8 +1,10 @@
 let () =
   let input =
-    {|FOR i IN [1, 2, 3, 4, 5] DO
-      IF i THEN WRITE i; ENDIF;
-    ENDDO;|}
+    {|sum_num := 0;
+              FOR i IN [10, 20, 30] DO
+                sum_num := sum_num + i;
+              ENDDO;
+              WRITE sum_num;|}
   in
   let res = Dsm.Tokenizer.tokenize input in
   let p =

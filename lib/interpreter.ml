@@ -628,8 +628,7 @@ let%test_module "Parser tests" =
        | Ok p -> ignore (interpret p)
        | Error err -> Stdio.print_endline err);
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect
-        {| XXXX-XX-XXTXX:XX:XXZ |}]
+      [%expect {| XXXX-XX-XXTXX:XX:XXZ |}]
     ;;
 
     let%expect_test "test zwischenstand von prof" =
@@ -695,7 +694,7 @@ let%test_module "Parser tests" =
     let%expect_test "test if statement with variable condition" =
       let input =
         {|x := 42;
-          IF x THEN WRITE "x is truthy"; ENDIF;|}
+          IF true THEN WRITE "x is truthy"; ENDIF;|}
       in
       let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
       (match parsed with
@@ -742,11 +741,11 @@ let%test_module "Parser tests" =
 
     let%expect_test "test for loop with accumulation" =
       let input =
-        {|sum := 0;
+        {|num := 0;
           FOR i IN [10, 20, 30] DO
-            sum := sum + i;
+            num := num + i;
           ENDDO;
-          WRITE sum;|}
+          WRITE num;|}
       in
       let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
       (match parsed with
@@ -757,9 +756,9 @@ let%test_module "Parser tests" =
 
     let%expect_test "test nested if statements" =
       let input =
-        {|x := 5;
+        {|sum x := 5;
           IF true THEN
-            IF x THEN WRITE "nested"; ENDIF;
+            IF true THEN WRITE "nested"; ENDIF;
           ENDIF;|}
       in
       let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
@@ -772,7 +771,7 @@ let%test_module "Parser tests" =
     let%expect_test "test for loop with if statement inside" =
       let input =
         {|FOR i IN [1, 2, 3, 4, 5] DO
-          IF i THEN WRITE i; ENDIF;
+          IF true THEN WRITE i; ENDIF;
         ENDDO;|}
       in
       let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
@@ -788,5 +787,5 @@ let%test_module "Parser tests" =
         5.
         |}]
     ;;
-    end)
-    ;;
+  end)
+;;

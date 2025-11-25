@@ -139,7 +139,9 @@ int get_token_id (char *token) {
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "ENDDO") == 0) return ENDDO;
+ 	if (strcmp(token, "ELSE") == 0) return ELSE;
  	if (strcmp(token, "DO") == 0) return DO;
+ 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "IF") == 0) return IF;

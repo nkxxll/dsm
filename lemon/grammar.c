@@ -1082,14 +1082,14 @@ static YYACTIONTYPE yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* code ::= statementblock */
-#line 216 "grammar.y"
+#line 218 "grammar.y"
 {
     state->cjson_ptr = yymsp[0].minor.yy0;
 }
 #line 1089 "grammar.c"
         break;
       case 1: /* statementblock ::= */
-#line 225 "grammar.y"
+#line 227 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "STATEMENTBLOCK");
@@ -1100,7 +1100,7 @@ static YYACTIONTYPE yy_reduce(
 #line 1100 "grammar.c"
         break;
       case 2: /* statementblock ::= statementblock statement */
-#line 234 "grammar.y"
+#line 236 "grammar.y"
 {
 	cJSON_AddItemToArray(cJSON_GetObjectItem ( yymsp[-1].minor.yy0, "statements"), yymsp[0].minor.yy0);
 	yylhsminor.yy0 = yymsp[-1].minor.yy0;
@@ -1109,7 +1109,7 @@ static YYACTIONTYPE yy_reduce(
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
       case 3: /* statement ::= WRITE ex SEMICOLON */
-#line 244 "grammar.y"
+#line 246 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "WRITE");
@@ -1119,7 +1119,7 @@ static YYACTIONTYPE yy_reduce(
 #line 1119 "grammar.c"
         break;
       case 4: /* statement ::= IDENTIFIER ASSIGN ex SEMICOLON */
-#line 256 "grammar.y"
+#line 258 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "ASSIGN");
@@ -1132,12 +1132,12 @@ static YYACTIONTYPE yy_reduce(
         break;
       case 5: /* statement ::= IF if_then_else */
       case 9: /* elseif ::= ELSEIF if_then_else */ yytestcase(yyruleno==9);
-#line 266 "grammar.y"
+#line 268 "grammar.y"
 {yymsp[-1].minor.yy0 = yymsp[0].minor.yy0;}
 #line 1137 "grammar.c"
         break;
       case 6: /* if_then_else ::= ex THEN statementblock elseif */
-#line 269 "grammar.y"
+#line 271 "grammar.y"
 {
     cJSON *res = cJSON_CreateObject();
     cJSON_AddStringToObject(res, "type", "IF");
@@ -1150,7 +1150,7 @@ static YYACTIONTYPE yy_reduce(
   yymsp[-3].minor.yy0 = yylhsminor.yy0;
         break;
       case 7: /* elseif ::= ENDIF SEMICOLON */
-#line 280 "grammar.y"
+#line 282 "grammar.y"
 {
     cJSON *res = cJSON_CreateObject();
     cJSON_AddStringToObject(res, "type", "STATEMENTBLOCK");
@@ -1161,12 +1161,12 @@ static YYACTIONTYPE yy_reduce(
 #line 1161 "grammar.c"
         break;
       case 8: /* elseif ::= ELSE statementblock ENDIF SEMICOLON */
-#line 289 "grammar.y"
+#line 291 "grammar.y"
 {yymsp[-3].minor.yy0 = yymsp[-2].minor.yy0;}
 #line 1166 "grammar.c"
         break;
       case 10: /* statement ::= FOR IDENTIFIER IN ex DO statementblock ENDDO SEMICOLON */
-#line 296 "grammar.y"
+#line 298 "grammar.y"
 {
     cJSON *res = cJSON_CreateObject();
     cJSON_AddStringToObject(res, "type", "FOR");
@@ -1178,7 +1178,7 @@ static YYACTIONTYPE yy_reduce(
 #line 1178 "grammar.c"
         break;
       case 11: /* statement ::= TIME IDENTIFIER ASSIGN ex SEMICOLON */
-#line 307 "grammar.y"
+#line 309 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "TIMEASSIGN");
@@ -1189,7 +1189,7 @@ static YYACTIONTYPE yy_reduce(
 #line 1189 "grammar.c"
         break;
       case 12: /* ex ::= NOW */
-#line 316 "grammar.y"
+#line 318 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "NOW");
@@ -1198,7 +1198,7 @@ static YYACTIONTYPE yy_reduce(
 #line 1198 "grammar.c"
         break;
       case 13: /* ex ::= CURRENTTIME */
-#line 323 "grammar.y"
+#line 325 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "CURRENTTIME");
@@ -1207,14 +1207,14 @@ static YYACTIONTYPE yy_reduce(
 #line 1207 "grammar.c"
         break;
       case 14: /* ex ::= LPAR ex RPAR */
-#line 330 "grammar.y"
+#line 332 "grammar.y"
 {
 	yymsp[-2].minor.yy0 = yymsp[-1].minor.yy0;
 }
 #line 1214 "grammar.c"
         break;
       case 15: /* ex ::= NUMTOKEN */
-#line 336 "grammar.y"
+#line 338 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "NUMTOKEN");
@@ -1225,7 +1225,7 @@ static YYACTIONTYPE yy_reduce(
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 16: /* ex ::= TIMETOKEN */
-#line 344 "grammar.y"
+#line 346 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "TIMETOKEN");
@@ -1236,7 +1236,7 @@ static YYACTIONTYPE yy_reduce(
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 17: /* ex ::= STRTOKEN */
-#line 353 "grammar.y"
+#line 355 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "STRTOKEN");
@@ -1247,7 +1247,7 @@ static YYACTIONTYPE yy_reduce(
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 18: /* ex ::= IDENTIFIER */
-#line 362 "grammar.y"
+#line 364 "grammar.y"
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "VARIABLE");
@@ -1259,68 +1259,68 @@ static YYACTIONTYPE yy_reduce(
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 19: /* ex ::= TIME ex */
-#line 371 "grammar.y"
+#line 373 "grammar.y"
 { yymsp[-1].minor.yy0 = unary("TIME", yymsp[0].minor.yy0); }
 #line 1264 "grammar.c"
         break;
       case 20: /* ex ::= UPPERCASE ex */
-#line 374 "grammar.y"
+#line 376 "grammar.y"
 { yymsp[-1].minor.yy0 = unary("UPPERCASE", yymsp[0].minor.yy0); }
 #line 1269 "grammar.c"
         break;
       case 21: /* ex ::= MAXIMUM ex */
-#line 377 "grammar.y"
+#line 379 "grammar.y"
 { yymsp[-1].minor.yy0 = unary("MAXIMUM", yymsp[0].minor.yy0); }
 #line 1274 "grammar.c"
         break;
       case 22: /* ex ::= AVERAGE ex */
-#line 380 "grammar.y"
+#line 382 "grammar.y"
 { yymsp[-1].minor.yy0 = unary("AVERAGE", yymsp[0].minor.yy0); }
 #line 1279 "grammar.c"
         break;
       case 23: /* ex ::= INCREASE ex */
-#line 383 "grammar.y"
+#line 385 "grammar.y"
 { yymsp[-1].minor.yy0 = unary("INCREASE", yymsp[0].minor.yy0); }
 #line 1284 "grammar.c"
         break;
       case 24: /* ex ::= ex AMPERSAND ex */
-#line 386 "grammar.y"
+#line 388 "grammar.y"
 {yylhsminor.yy0 = binary ("AMPERSAND", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1289 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 25: /* ex ::= ex PLUS ex */
-#line 389 "grammar.y"
+#line 391 "grammar.y"
 {yylhsminor.yy0 = binary ("PLUS", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1295 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 26: /* ex ::= ex MINUS ex */
-#line 392 "grammar.y"
+#line 394 "grammar.y"
 {yylhsminor.yy0 = binary ("MINUS", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1301 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 27: /* ex ::= ex TIMES ex */
-#line 395 "grammar.y"
+#line 397 "grammar.y"
 {yylhsminor.yy0 = binary ("TIMES", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1307 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 28: /* ex ::= ex DIVIDE ex */
-#line 398 "grammar.y"
+#line 400 "grammar.y"
 {yylhsminor.yy0 = binary ("DIVIDE", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1313 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 29: /* ex ::= ex POWER ex */
-#line 401 "grammar.y"
+#line 403 "grammar.y"
 {yylhsminor.yy0 = binary ("POWER", yymsp[-2].minor.yy0, yymsp[0].minor.yy0); }
 #line 1319 "grammar.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 30: /* ex ::= NULLTOK */
-#line 404 "grammar.y"
+#line 406 "grammar.y"
 {
 cJSON *res = cJSON_CreateObject();
 cJSON_AddStringToObject(res, "type", "NULL");
@@ -1329,7 +1329,7 @@ yymsp[0].minor.yy0 = res;
 #line 1329 "grammar.c"
         break;
       case 31: /* ex ::= TRUE */
-#line 411 "grammar.y"
+#line 413 "grammar.y"
 {
  	cJSON *res = cJSON_CreateObject();
  	cJSON_AddStringToObject(res, "type", "TRUE");
@@ -1338,7 +1338,7 @@ yymsp[0].minor.yy0 = res;
 #line 1338 "grammar.c"
         break;
       case 32: /* ex ::= FALSE */
-#line 418 "grammar.y"
+#line 420 "grammar.y"
 {
  	cJSON *res = cJSON_CreateObject();
  	cJSON_AddStringToObject(res, "type", "FALSE");
@@ -1347,7 +1347,7 @@ yymsp[0].minor.yy0 = res;
 #line 1347 "grammar.c"
         break;
       case 33: /* ex ::= LSPAR RSPAR */
-#line 425 "grammar.y"
+#line 427 "grammar.y"
 {
     cJSON *res = cJSON_CreateObject();
     cJSON_AddStringToObject(res, "type", "EMPTYLIST");
@@ -1356,7 +1356,7 @@ yymsp[0].minor.yy0 = res;
 #line 1356 "grammar.c"
         break;
       case 34: /* ex ::= LSPAR exlist RSPAR */
-#line 433 "grammar.y"
+#line 435 "grammar.y"
 {
     cJSON *res = cJSON_CreateObject();
     cJSON_AddStringToObject(res, "type", "LIST");
@@ -1366,7 +1366,7 @@ yymsp[0].minor.yy0 = res;
 #line 1366 "grammar.c"
         break;
       case 35: /* exlist ::= ex */
-#line 441 "grammar.y"
+#line 443 "grammar.y"
 {
     cJSON *arg = cJSON_CreateArray();
     cJSON_AddItemToArray(arg, yymsp[0].minor.yy0);
@@ -1376,7 +1376,7 @@ yymsp[0].minor.yy0 = res;
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       case 36: /* exlist ::= exlist COMMA ex */
-#line 448 "grammar.y"
+#line 450 "grammar.y"
 {
     cJSON_AddItemToArray(yymsp[-2].minor.yy0,yymsp[0].minor.yy0);
     yylhsminor.yy0 = yymsp[-2].minor.yy0;
@@ -1444,7 +1444,7 @@ static void yy_syntax_error(
   ParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 190 "grammar.y"
+#line 192 "grammar.y"
 
   printf ("{\"error\" : true, \"message\": \"Syntax Error: Compiler reports unexpected token \\\"%s\\\" of type \\\"%s\\\" in line %s\"}\n", curtoken, curtype, linenumber);
   exit(0);
@@ -1823,7 +1823,9 @@ int get_token_id (char *token) {
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "ENDDO") == 0) return ENDDO;
+ 	if (strcmp(token, "ELSE") == 0) return ELSE;
  	if (strcmp(token, "DO") == 0) return DO;
+ 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "IF") == 0) return IF;
@@ -1869,4 +1871,4 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 	return res;
 }
 
-#line 1872 "grammar.c"
+#line 1874 "grammar.c"
