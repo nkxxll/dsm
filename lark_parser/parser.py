@@ -1,4 +1,4 @@
-from lark import Lark, Transformer, v_args
+from lark import Lark, Transformer, v_args, Tree
 
 # Grammar definition with proper operator precedence hierarchy
 # Precedence (lowest to highest): ampersand, additive, multiplicative, power, atom
@@ -11,10 +11,18 @@ statementblock: statement*
 
 statement: write_stmt
          | assign_stmt
+         | if_stmt
+         | for_stmt
 
 write_stmt: WRITE ampersand ";"
 
 assign_stmt: IDENTIFIER ":=" ampersand ";"
+
+if_stmt: IF ampersand THEN statementblock else_part? ENDIF ";"
+
+else_part: ELSE statementblock
+
+for_stmt: FOR IDENTIFIER IN ampersand DO statementblock ENDDO ";"
 
 ?ampersand: ampersand "&" additive -> ampersand_op
           | additive
@@ -36,12 +44,42 @@ assign_stmt: IDENTIFIER ":=" ampersand ";"
      | "null" -> null_val
      | "true" -> true_val
      | "false" -> false_val
+     | function_call
+     | NOW -> now_op
+     | CURRENTTIME -> currenttime_op
+     | TIMETOKEN -> time_token
+     | "[" "]" -> empty_list
+     | "[" ampersand list_rest "]" -> non_empty_list
      | "(" ampersand ")"
+
+function_call: UPPERCASE ampersand -> uppercase_op
+             | MAXIMUM ampersand -> maximum_op
+             | AVERAGE ampersand -> average_op
+             | INCREASE ampersand -> increase_op
+             | TIME ampersand -> time_op
+
+list_rest: ("," ampersand)*
 
 NUMTOKEN: /\d+(\.\d+)?/
 STRTOKEN: /"[^"]*"|'[^']*'/
 IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
-WRITE: "write"
+WRITE: "write"i
+IF: "if"i
+THEN: "then"i
+ELSE: "else"i
+ENDIF: "endif"i
+FOR: "for"i
+IN: "in"i
+DO: "do"i
+ENDDO: "enddo"i
+NOW: "now"i
+CURRENTTIME: "currenttime"i
+TIME: "time"i
+UPPERCASE: "uppercase"i
+MAXIMUM: "maximum"i
+AVERAGE: "average"i
+INCREASE: "increase"i
+TIMETOKEN: /\d{1,2}:\d{2}(:\d{2})?/
 
 %import common.WS
 %ignore WS
@@ -81,6 +119,10 @@ class JsonTransformer(Transformer):
             value = value[1:-1]
         return {"type": "STRTOKEN", "value": value}
 
+    @v_args(inline=True)
+    def time_token(self, token):
+        return {"type": "TIMETOKEN", "value": str(token)}
+
     def _binary_op(self, op_name, items):
         return {"type": op_name, "arg": [items[0], items[1]]}
 
@@ -109,6 +151,52 @@ class JsonTransformer(Transformer):
         return self._binary_op("POWER", [a, b])
 
     @v_args(inline=True)
+    def uppercase_op(self, token, expr):
+        return {"type": "UPPERCASE", "arg": expr}
+
+    @v_args(inline=True)
+    def maximum_op(self, token, expr):
+        return {"type": "MAXIMUM", "arg": expr}
+
+    @v_args(inline=True)
+    def average_op(self, token, expr):
+        return {"type": "AVERAGE", "arg": expr}
+
+    @v_args(inline=True)
+    def increase_op(self, token, expr):
+        return {"type": "INCREASE", "arg": expr}
+
+    def function_call(self, items):
+        # function_call dispatches to its sub-rules which return dicts
+        return items[0]
+
+    @v_args(inline=True)
+    def now_op(self):
+        return {"type": "NOW"}
+
+    @v_args(inline=True)
+    def currenttime_op(self):
+        return {"type": "CURRENTTIME"}
+
+    @v_args(inline=True)
+    def time_op(self, token, expr):
+        return {"type": "TIME", "arg": expr}
+
+    def empty_list(self, items):
+        return {"type": "LIST", "arg": []}
+
+    @v_args(inline=True)
+    def non_empty_list(self, first_item, rest_items):
+        # Combine first item with rest items
+        all_items = [first_item] + rest_items
+        return {"type": "LIST", "arg": all_items}
+
+    def list_rest(self, items):
+        # list_rest returns items from the ("," ampersand)* rule
+        # Each match gives us an ampersand, so items is the list of ampersands
+        return items
+
+    @v_args(inline=True)
     def write_stmt(self, write_token, expr):
         # WRITE statement
         return {"type": "WRITE", "arg": expr}
@@ -118,8 +206,54 @@ class JsonTransformer(Transformer):
         # Assignment statement: IDENTIFIER = expr
         return {"type": "ASSIGN", "ident": str(ident), "arg": expr}
 
+    def if_stmt(self, items):
+        # items: [IF token, condition_dict, THEN token, thenbranch_dict, [else_part_dict], ENDIF token, semicolon token]
+        # Filter out dicts, collect in order
+        dicts = []
+        for i, item in enumerate(items):
+            # print(f"  item {i}: {type(item).__name__} = {item if isinstance(item, dict) else str(item)[:20]}")
+            if isinstance(item, dict):
+                dicts.append(item)
+        
+        condition = dicts[0]
+        thenbranch = dicts[1]
+        # else_part will be the 3rd dict if it exists
+        elsebranch = dicts[2] if len(dicts) > 2 else {"type": "STATEMENTBLOCK", "statements": []}
+        
+        return {
+            "type": "IF",
+            "condition": condition,
+            "thenbranch": thenbranch,
+            "elsebranch": elsebranch,
+        }
+
+    def else_part(self, items):
+        # items: [ELSE token, statementblock dict]
+        # Return only the dict
+        return items[1]
+
+    def for_stmt(self, items):
+        # items contains: FOR token, IDENTIFIER token, IN token, expression, DO token, statementblock, ENDDO token, semicolon token
+        # Extract IDENTIFIER token and dicts
+        varname = None
+        dicts_only = []
+        for item in items:
+            if hasattr(item, 'type') and item.type == 'IDENTIFIER':
+                varname = str(item)
+            elif isinstance(item, dict):
+                dicts_only.append(item)
+        
+        expression = dicts_only[0]
+        statements = dicts_only[1]
+        return {
+            "type": "FOR",
+            "varname": varname,
+            "expression": expression,
+            "statements": statements,
+        }
+
     def statement(self, items):
-        # Unwrap the statement from either write_stmt or assign_stmt
+        # Unwrap the statement from any of the statement types
         return items[0]
 
     def statementblock(self, items):

@@ -56,6 +56,18 @@ class TimeValue(Value):
         return f"TimeValue({self.timestamp})"
 
 
+def _is_truthy(value: Value) -> bool:
+    """Evaluate truthiness of a value"""
+    if isinstance(value, BoolValue):
+        return value.value
+    elif isinstance(value, NumberValue):
+        return value.value != 0
+    elif isinstance(value, UnitValue):
+        return False
+    else:
+        return True
+
+
 def timestamp_to_iso_string(timestamp: float) -> str:
     """Convert unix timestamp to ISO 8601 string (UTC)"""
     dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
@@ -127,6 +139,34 @@ def eval_node(
             raise TypeError("TIMEASSIGN requires a time value")
         return UnitValue()
 
+    elif node_type == "IF":
+        condition = node.get("condition")
+        thenbranch = node.get("thenbranch")
+        elsebranch = node.get("elsebranch")
+
+        cond_value = eval_node(condition, env)
+        is_true = _is_truthy(cond_value)
+
+        if is_true:
+            return eval_node(thenbranch, env)
+        else:
+            return eval_node(elsebranch, env)
+
+    elif node_type == "FOR":
+        varname = node.get("varname", "")
+        expression = node.get("expression")
+        statements = node.get("statements")
+
+        iterable_value = eval_node(expression, env)
+        if not isinstance(iterable_value, ListValue):
+            raise TypeError("FOR loop requires a list")
+
+        for item in iterable_value.items:
+            env[varname] = item
+            eval_node(statements, env)
+
+        return UnitValue()
+
     elif node_type == "PLUS":
         args = node.get("arg", [])
         left = eval_node(args[0], env)
@@ -185,12 +225,33 @@ def eval_node(
             return StringValue(left.value + right.value)
         elif isinstance(left, StringValue) and isinstance(right, NumberValue):
             # Convert number to string for concatenation
-            num_str = str(int(right.value)) if right.value == int(right.value) else str(right.value)
+            num_str = (
+                str(int(right.value))
+                if right.value == int(right.value)
+                else str(right.value)
+            )
             return StringValue(left.value + num_str)
         elif isinstance(left, NumberValue) and isinstance(right, StringValue):
             # Convert number to string for concatenation
-            num_str = str(int(left.value)) if left.value == int(left.value) else str(left.value)
+            num_str = (
+                str(int(left.value))
+                if left.value == int(left.value)
+                else str(left.value)
+            )
             return StringValue(num_str + right.value)
+        elif isinstance(left, NumberValue) and isinstance(right, NumberValue):
+            # Convert both numbers to strings for concatenation
+            left_str = (
+                str(int(left.value))
+                if left.value == int(left.value)
+                else str(left.value)
+            )
+            right_str = (
+                str(int(right.value))
+                if right.value == int(right.value)
+                else str(right.value)
+            )
+            return StringValue(left_str + right_str)
         raise TypeError(
             f"Cannot concatenate {type(left).__name__} and {type(right).__name__}"
         )
@@ -242,6 +303,64 @@ def eval_node(
         else:
             return UnitValue()
 
+    elif node_type == "UPPERCASE":
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if isinstance(value, StringValue):
+            return StringValue(value.value.upper())
+        elif isinstance(value, ListValue):
+            uppercased_items = []
+            for item in value.items:
+                if isinstance(item, StringValue):
+                    uppercased_items.append(StringValue(item.value.upper()))
+                else:
+                    uppercased_items.append(item)
+            return ListValue(uppercased_items)
+        else:
+            raise TypeError("UPPERCASE expects a string or list of strings")
+
+    elif node_type == "MAXIMUM":
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if not isinstance(value, ListValue):
+            raise TypeError("MAXIMUM expects a list")
+
+        numbers = [item.value for item in value.items if isinstance(item, NumberValue)]
+        if not numbers:
+            raise TypeError("MAXIMUM requires a list with at least one number")
+
+        return NumberValue(max(numbers))
+
+    elif node_type == "AVERAGE":
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if not isinstance(value, ListValue):
+            raise TypeError("AVERAGE expects a list")
+
+        numbers = [item.value for item in value.items if isinstance(item, NumberValue)]
+        if not numbers:
+            raise TypeError("AVERAGE requires a list with at least one number")
+
+        return NumberValue(sum(numbers) / len(numbers))
+
+    elif node_type == "INCREASE":
+        arg = node.get("arg")
+        value = eval_node(arg, env)
+        if not isinstance(value, ListValue):
+            raise TypeError("INCREASE expects a list")
+
+        # Extract only numeric items
+        numbers = [item.value for item in value.items if isinstance(item, NumberValue)]
+
+        # Calculate differences between consecutive elements
+        if len(numbers) < 2:
+            return ListValue([])
+
+        differences = [
+            NumberValue(numbers[i + 1] - numbers[i]) for i in range(len(numbers) - 1)
+        ]
+        return ListValue(differences)
+
     else:
         raise ValueError(f"Unknown node type: {node_type}")
 
@@ -266,7 +385,11 @@ def write_value(value: Value) -> None:
         formatted_items = []
         for item in value.items:
             if isinstance(item, NumberValue):
-                formatted_items.append(str(item.value))
+                # Format numbers without unnecessary decimals
+                if item.value == int(item.value):
+                    formatted_items.append(str(int(item.value)))
+                else:
+                    formatted_items.append(str(item.value))
             elif isinstance(item, StringValue):
                 formatted_items.append(item.value)
             elif isinstance(item, BoolValue):

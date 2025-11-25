@@ -23,6 +23,12 @@ pub const AstNode = union(enum) {
     now,
     currenttime,
     time: *const AstNode,
+    uppercase: *const AstNode,
+    maximum: *const AstNode,
+    average: *const AstNode,
+    increase: *const AstNode,
+    ifnode: struct { condition: *const AstNode, thenbranch: *const AstNode, elsebranch: *const AstNode },
+    fornode: struct { varname: []const u8, expression: *const AstNode, statements: *const AstNode },
 
     pub fn deinit(self: *AstNode, allocator: std.mem.Allocator) void {
         switch (self.*) {
@@ -94,6 +100,37 @@ pub const AstNode = union(enum) {
             .time => |t| {
                 @constCast(t).deinit(allocator);
                 allocator.destroy(@constCast(t));
+            },
+            .uppercase => |u| {
+                @constCast(u).deinit(allocator);
+                allocator.destroy(@constCast(u));
+            },
+            .maximum => |m| {
+                @constCast(m).deinit(allocator);
+                allocator.destroy(@constCast(m));
+            },
+            .average => |a| {
+                @constCast(a).deinit(allocator);
+                allocator.destroy(@constCast(a));
+            },
+            .increase => |i| {
+                @constCast(i).deinit(allocator);
+                allocator.destroy(@constCast(i));
+            },
+            .ifnode => |ifn| {
+                @constCast(ifn.condition).deinit(allocator);
+                allocator.destroy(@constCast(ifn.condition));
+                @constCast(ifn.thenbranch).deinit(allocator);
+                allocator.destroy(@constCast(ifn.thenbranch));
+                @constCast(ifn.elsebranch).deinit(allocator);
+                allocator.destroy(@constCast(ifn.elsebranch));
+            },
+            .fornode => |forn| {
+                allocator.free(forn.varname);
+                @constCast(forn.expression).deinit(allocator);
+                allocator.destroy(@constCast(forn.expression));
+                @constCast(forn.statements).deinit(allocator);
+                allocator.destroy(@constCast(forn.statements));
             },
         }
     }
@@ -219,6 +256,53 @@ fn jsonValueToAst(allocator: std.mem.Allocator, value: json.Value) !AstNode {
         const arg = try allocator.create(AstNode);
         arg.* = try jsonValueToAst(allocator, arg_json);
         return AstNode{ .time = arg };
+    } else if (std.mem.eql(u8, node_type, "UPPERCASE")) {
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        return AstNode{ .uppercase = arg };
+    } else if (std.mem.eql(u8, node_type, "MAXIMUM")) {
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        return AstNode{ .maximum = arg };
+    } else if (std.mem.eql(u8, node_type, "AVERAGE")) {
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        return AstNode{ .average = arg };
+    } else if (std.mem.eql(u8, node_type, "INCREASE")) {
+        const arg_json = obj.get("arg").?;
+        const arg = try allocator.create(AstNode);
+        arg.* = try jsonValueToAst(allocator, arg_json);
+        return AstNode{ .increase = arg };
+    } else if (std.mem.eql(u8, node_type, "IF")) {
+        const condition_json = obj.get("condition").?;
+        const condition = try allocator.create(AstNode);
+        condition.* = try jsonValueToAst(allocator, condition_json);
+        
+        const thenbranch_json = obj.get("thenbranch").?;
+        const thenbranch = try allocator.create(AstNode);
+        thenbranch.* = try jsonValueToAst(allocator, thenbranch_json);
+        
+        const elsebranch_json = obj.get("elsebranch").?;
+        const elsebranch = try allocator.create(AstNode);
+        elsebranch.* = try jsonValueToAst(allocator, elsebranch_json);
+        
+        return AstNode{ .ifnode = .{ .condition = condition, .thenbranch = thenbranch, .elsebranch = elsebranch } };
+    } else if (std.mem.eql(u8, node_type, "FOR")) {
+        const varname = obj.get("varname").?.string;
+        const varname_dup = try allocator.dupe(u8, varname);
+        
+        const expression_json = obj.get("expression").?;
+        const expression = try allocator.create(AstNode);
+        expression.* = try jsonValueToAst(allocator, expression_json);
+        
+        const statements_json = obj.get("statements").?;
+        const statements = try allocator.create(AstNode);
+        statements.* = try jsonValueToAst(allocator, statements_json);
+        
+        return AstNode{ .fornode = .{ .varname = varname_dup, .expression = expression, .statements = statements } };
     } else {
         return error.InvalidType;
     }

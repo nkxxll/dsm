@@ -177,6 +177,245 @@ class TestErrorHandling:
 
 
 
+class TestListOperations:
+    """Tests for list operations"""
+
+    def test_list_literal(self):
+        ast = parse("write [1, 2, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "[1, 2, 3]"
+
+    def test_list_with_strings(self):
+        ast = parse('write ["a", "b", "c"];')
+        output = capture_output(ast)
+        assert output.strip() == "[a, b, c]"
+
+    def test_list_with_mixed_types(self):
+        ast = parse('x := "hello"; write [1, x, true];')
+        output = capture_output(ast)
+        assert output.strip() == "[1, hello, true]"
+
+    def test_empty_list(self):
+        ast = parse("write [];")
+        output = capture_output(ast)
+        assert output.strip() == "[]"
+
+
+class TestUppercase:
+    """Tests for UPPERCASE function"""
+
+    def test_uppercase_string(self):
+        ast = parse('write uppercase "hello";')
+        output = capture_output(ast)
+        assert output.strip() == "HELLO"
+
+    def test_uppercase_string_with_mixed_case(self):
+        ast = parse('write uppercase "HeLLo WoRLD";')
+        output = capture_output(ast)
+        assert output.strip() == "HELLO WORLD"
+
+    def test_uppercase_list_of_strings(self):
+        ast = parse('write uppercase ["hello", "world"];')
+        output = capture_output(ast)
+        assert output.strip() == "[HELLO, WORLD]"
+
+    def test_uppercase_with_variable(self):
+        ast = parse('msg := "test"; write uppercase msg;')
+        output = capture_output(ast)
+        assert output.strip() == "TEST"
+
+    def test_uppercase_non_string_raises_error(self):
+        ast = parse("write uppercase 42;")
+        with pytest.raises(TypeError):
+            interpret(ast)
+
+
+class TestMaximum:
+    """Tests for MAXIMUM function"""
+
+    def test_maximum_simple_list(self):
+        ast = parse("write maximum [1, 5, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "5"
+
+    def test_maximum_with_floats(self):
+        ast = parse("write maximum [1.5, 5.2, 3.8];")
+        output = capture_output(ast)
+        assert output.strip() == "5.2"
+
+    def test_maximum_with_variable(self):
+        ast = parse("nums := [10, 20, 15]; write maximum nums;")
+        output = capture_output(ast)
+        assert output.strip() == "20"
+
+    def test_maximum_single_element(self):
+        ast = parse("write maximum [42];")
+        output = capture_output(ast)
+        assert output.strip() == "42"
+
+    def test_maximum_empty_list_raises_error(self):
+        ast = parse("write maximum [];")
+        with pytest.raises(TypeError):
+            interpret(ast)
+
+    def test_maximum_non_numeric_list_raises_error(self):
+        ast = parse('write maximum ["a", "b"];')
+        with pytest.raises(TypeError):
+            interpret(ast)
+
+
+class TestAverage:
+    """Tests for AVERAGE function"""
+
+    def test_average_simple_list(self):
+        ast = parse("write average [1, 2, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "2"
+
+    def test_average_with_floats(self):
+        ast = parse("write average [1.5, 2.5, 3.0];")
+        output = capture_output(ast)
+        # (1.5 + 2.5 + 3.0) / 3 = 7 / 3 = 2.333...
+        result = float(output.strip())
+        assert abs(result - 2.333333) < 0.001
+
+    def test_average_with_variable(self):
+        ast = parse("nums := [10, 20, 30]; write average nums;")
+        output = capture_output(ast)
+        assert output.strip() == "20"
+
+    def test_average_single_element(self):
+        ast = parse("write average [42];")
+        output = capture_output(ast)
+        assert output.strip() == "42"
+
+    def test_average_empty_list_raises_error(self):
+        ast = parse("write average [];")
+        with pytest.raises(TypeError):
+            interpret(ast)
+
+
+class TestIncrease:
+    """Tests for INCREASE function"""
+
+    def test_increase_simple_list(self):
+        ast = parse("write increase [1, 2, 3];")
+        output = capture_output(ast)
+        assert output.strip() == "[1, 1]"
+
+    def test_increase_with_floats(self):
+        ast = parse("write increase [1.0, 2.5, 5.5];")
+        output = capture_output(ast)
+        # [2.5 - 1.0, 5.5 - 2.5] = [1.5, 3.0]
+        assert output.strip() == "[1.5, 3]"
+
+    def test_increase_with_negatives(self):
+        ast = parse("write increase [5, 3, 7, 2];")
+        output = capture_output(ast)
+        # [3-5, 7-3, 2-7] = [-2, 4, -5]
+        assert output.strip() == "[-2, 4, -5]"
+
+    def test_increase_single_element(self):
+        ast = parse("write increase [42];")
+        output = capture_output(ast)
+        assert output.strip() == "[]"
+
+    def test_increase_two_elements(self):
+        ast = parse("write increase [10, 15];")
+        output = capture_output(ast)
+        assert output.strip() == "[5]"
+
+    def test_increase_empty_list(self):
+        ast = parse("write increase [];")
+        output = capture_output(ast)
+        assert output.strip() == "[]"
+
+
+class TestIfStatement:
+    """Tests for IF/THEN/ELSE statements"""
+
+    def test_if_true(self):
+        ast = parse("if true then write 42; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "42"
+
+    def test_if_false(self):
+        ast = parse("if false then write 42; endif;")
+        output = capture_output(ast)
+        assert output.strip() == ""
+
+    def test_if_true_else(self):
+        ast = parse("if true then write 1; else write 2; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "1"
+
+    def test_if_false_else(self):
+        ast = parse("if false then write 1; else write 2; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "2"
+
+    def test_if_with_number_condition_nonzero(self):
+        ast = parse("if 42 then write 1; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "1"
+
+    def test_if_with_number_condition_zero(self):
+        ast = parse("if 0 then write 1; endif;")
+        output = capture_output(ast)
+        assert output.strip() == ""
+
+    def test_if_with_variable_condition(self):
+        ast = parse("x := 10; if x then write x; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "10"
+
+    def test_if_nested(self):
+        ast = parse("if true then if true then write 42; endif; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "42"
+
+    def test_if_multiple_statements(self):
+        ast = parse("if true then write 1; write 2; endif;")
+        output = capture_output(ast)
+        assert output.strip() == "1\n2"
+
+
+class TestForLoop:
+    """Tests for FOR loops"""
+
+    def test_for_loop_simple(self):
+        ast = parse("for i in [1, 2, 3] do write i; enddo;")
+        output = capture_output(ast)
+        assert output.strip() == "1\n2\n3"
+
+    def test_for_loop_with_strings(self):
+        ast = parse('for name in ["a", "b", "c"] do write name; enddo;')
+        output = capture_output(ast)
+        assert output.strip() == "a\nb\nc"
+
+    def test_for_loop_accumulation(self):
+        ast = parse("sum := 0; for i in [1, 2, 3] do sum := sum + i; enddo; write sum;")
+        output = capture_output(ast)
+        assert output.strip() == "6"
+
+    def test_for_loop_empty_list(self):
+        ast = parse("for i in [] do write i; enddo;")
+        output = capture_output(ast)
+        assert output.strip() == ""
+
+    def test_for_loop_with_variable(self):
+        ast = parse("nums := [10, 20, 30]; for x in nums do write x; enddo;")
+        output = capture_output(ast)
+        assert output.strip() == "10\n20\n30"
+
+    def test_for_loop_nested(self):
+        ast = parse(
+            "for i in [1, 2] do for j in [10, 20] do write i & j; enddo; enddo;"
+        )
+        output = capture_output(ast)
+        assert output.strip() == "110\n120\n210\n220"
+
+
 class TestTimeOperations:
     """Tests for time operations"""
 
