@@ -4,7 +4,7 @@ State 0:
           statementblock ::= * statementblock statement
 
                           code accept
-                statementblock shift        14     
+                statementblock shift        18     
                      {default} reduce       1      statementblock ::=
 
 State 1:
@@ -16,6 +16,10 @@ State 1:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -32,21 +36,25 @@ State 1:
           exlist ::= * ex
           exlist ::= * exlist COMMA ex
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                         RSPAR shift-reduce 23     ex ::= LSPAR RSPAR
-                            ex shift        20     
-                        exlist shift        25     
+                         RSPAR shift-reduce 27     ex ::= LSPAR RSPAR
+                            ex shift        24     
+                        exlist shift        33     
 
 State 2:
           statement ::= TIME IDENTIFIER ASSIGN * ex SEMICOLON
@@ -58,6 +66,10 @@ State 2:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -70,19 +82,23 @@ State 2:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        15     
+                            ex shift        19     
 
 State 3:
           statement ::= IDENTIFIER ASSIGN * ex SEMICOLON
@@ -94,6 +110,10 @@ State 3:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -106,19 +126,23 @@ State 3:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        16     
+                            ex shift        20     
 
 State 4:
           ex ::= * NOW
@@ -129,6 +153,10 @@ State 4:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -142,19 +170,23 @@ State 4:
           ex ::= * LSPAR exlist RSPAR
           exlist ::= exlist COMMA * ex
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        19     
+                            ex shift        23     
 
 State 5:
           ex ::= * NOW
@@ -165,6 +197,54 @@ State 5:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
+          ex ::= INCREASE * ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
+                    IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
+                           NOW shift-reduce 6      ex ::= NOW
+                   CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
+                          LPAR shift        15     
+                      NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 11     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        25     
+
+State 6:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -178,21 +258,25 @@ State 5:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        29     
+                            ex shift        39     
 
-State 6:
+State 7:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -201,6 +285,54 @@ State 6:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= AVERAGE * ex
+          ex ::= * INCREASE ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
+                    IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
+                           NOW shift-reduce 6      ex ::= NOW
+                   CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
+                          LPAR shift        15     
+                      NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 11     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        26     
+
+State 8:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -214,21 +346,25 @@ State 6:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        30     
+                            ex shift        38     
 
-State 7:
+State 9:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -237,6 +373,54 @@ State 7:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= MAXIMUM * ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
+                    IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
+                           NOW shift-reduce 6      ex ::= NOW
+                   CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
+                          LPAR shift        15     
+                      NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 11     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        27     
+
+State 10:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -250,21 +434,25 @@ State 7:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        31     
+                            ex shift        37     
 
-State 8:
+State 11:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -273,6 +461,54 @@ State 8:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= UPPERCASE * ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
+                    IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
+                           NOW shift-reduce 6      ex ::= NOW
+                   CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
+                          LPAR shift        15     
+                      NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 11     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        28     
+
+State 12:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -286,21 +522,25 @@ State 8:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        24     
+                            ex shift        32     
 
-State 9:
+State 13:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -310,6 +550,10 @@ State 9:
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
           ex ::= TIME * ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -322,21 +566,25 @@ State 9:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        21     
+                            ex shift        29     
 
-State 10:
+State 14:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -345,6 +593,10 @@ State 10:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= ex PLUS * ex
@@ -358,21 +610,25 @@ State 10:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        23     
+                            ex shift        31     
 
-State 11:
+State 15:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -382,6 +638,10 @@ State 11:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -394,21 +654,25 @@ State 11:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        17     
+                            ex shift        21     
 
-State 12:
+State 16:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -417,6 +681,10 @@ State 12:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= ex AMPERSAND * ex
           ex ::= * ex PLUS ex
@@ -430,21 +698,25 @@ State 12:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        22     
+                            ex shift        30     
 
-State 13:
+State 17:
           statement ::= WRITE * ex SEMICOLON
           ex ::= * NOW
           ex ::= * CURRENTTIME
@@ -454,6 +726,10 @@ State 13:
           ex ::= * STRTOKEN
           ex ::= * IDENTIFIER
           ex ::= * TIME ex
+          ex ::= * UPPERCASE ex
+          ex ::= * MAXIMUM ex
+          ex ::= * AVERAGE ex
+          ex ::= * INCREASE ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex PLUS ex
           ex ::= * ex MINUS ex
@@ -466,21 +742,25 @@ State 13:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          TIME shift        9      
+                          TIME shift        13     
+                     UPPERCASE shift        11     
+                       AVERAGE shift        7      
+                      INCREASE shift        5      
+                       MAXIMUM shift        9      
                     IDENTIFIER shift-reduce 12     ex ::= IDENTIFIER
                            NOW shift-reduce 6      ex ::= NOW
                    CURRENTTIME shift-reduce 7      ex ::= CURRENTTIME
-                          LPAR shift        11     
+                          LPAR shift        15     
                       NUMTOKEN shift-reduce 9      ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 10     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 11     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 20     ex ::= NULLTOK
-                          TRUE shift-reduce 21     ex ::= TRUE
-                         FALSE shift-reduce 22     ex ::= FALSE
+                       NULLTOK shift-reduce 24     ex ::= NULLTOK
+                          TRUE shift-reduce 25     ex ::= TRUE
+                         FALSE shift-reduce 26     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        18     
+                            ex shift        22     
 
-State 14:
+State 18:
       (0) code ::= statementblock *
           statementblock ::= statementblock * statement
           statement ::= * WRITE ex SEMICOLON
@@ -488,12 +768,12 @@ State 14:
           statement ::= * TIME IDENTIFIER ASSIGN ex SEMICOLON
 
                              $ reduce       0      code ::= statementblock
-                          TIME shift        27     
-                         WRITE shift        13     
-                    IDENTIFIER shift        28     
+                          TIME shift        35     
+                         WRITE shift        17     
+                    IDENTIFIER shift        36     
                      statement shift-reduce 2      statementblock ::= statementblock statement
 
-State 15:
+State 19:
           statement ::= TIME IDENTIFIER ASSIGN ex * SEMICOLON
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
@@ -502,15 +782,15 @@ State 15:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
                      SEMICOLON shift-reduce 5      statement ::= TIME IDENTIFIER ASSIGN ex SEMICOLON
 
-State 16:
+State 20:
           statement ::= IDENTIFIER ASSIGN ex * SEMICOLON
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
@@ -519,15 +799,15 @@ State 16:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
                      SEMICOLON shift-reduce 4      statement ::= IDENTIFIER ASSIGN ex SEMICOLON
 
-State 17:
+State 21:
           ex ::= LPAR ex * RPAR
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
@@ -536,15 +816,15 @@ State 17:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
                           RPAR shift-reduce 8      ex ::= LPAR ex RPAR
 
-State 18:
+State 22:
           statement ::= WRITE ex * SEMICOLON
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
@@ -553,49 +833,117 @@ State 18:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
                      SEMICOLON shift-reduce 3      statement ::= WRITE ex SEMICOLON
 
-State 19:
+State 23:
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
-     (26) exlist ::= exlist COMMA ex *
+     (30) exlist ::= exlist COMMA ex *
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
-                     {default} reduce       26     exlist ::= exlist COMMA ex
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       30     exlist ::= exlist COMMA ex
 
-State 20:
+State 24:
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
-     (25) exlist ::= ex *
+     (29) exlist ::= ex *
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
-                     {default} reduce       25     exlist ::= ex
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       29     exlist ::= ex
 
-State 21:
+State 25:
+     (17) ex ::= INCREASE ex *
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       17     ex ::= INCREASE ex
+
+State 26:
+     (16) ex ::= AVERAGE ex *
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       16     ex ::= AVERAGE ex
+
+State 27:
+     (15) ex ::= MAXIMUM ex *
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       15     ex ::= MAXIMUM ex
+
+State 28:
+     (14) ex ::= UPPERCASE ex *
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       14     ex ::= UPPERCASE ex
+
+State 29:
      (13) ex ::= TIME ex *
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
@@ -604,115 +952,115 @@ State 21:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                     AMPERSAND shift        12     
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
+                     AMPERSAND shift        16     
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
                      {default} reduce       13     ex ::= TIME ex
-
-State 22:
-          ex ::= ex * AMPERSAND ex
-     (14) ex ::= ex AMPERSAND ex *
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-
-                          PLUS shift        10     
-                         MINUS shift        8      
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
-                     {default} reduce       14     ex ::= ex AMPERSAND ex
-
-State 23:
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * PLUS ex
-     (15) ex ::= ex PLUS ex *
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
-                     {default} reduce       15     ex ::= ex PLUS ex
-
-State 24:
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-     (16) ex ::= ex MINUS ex *
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-
-                         TIMES shift        7      
-                        DIVIDE shift        6      
-                         POWER shift        5      
-                     {default} reduce       16     ex ::= ex MINUS ex
-
-State 25:
-          ex ::= LSPAR exlist * RSPAR
-          exlist ::= exlist * COMMA ex
-
-                         RSPAR shift-reduce 24     ex ::= LSPAR exlist RSPAR
-                         COMMA shift        4      
-
-State 26:
-          statement ::= TIME IDENTIFIER * ASSIGN ex SEMICOLON
-
-                        ASSIGN shift        2      
-
-State 27:
-          statement ::= TIME * IDENTIFIER ASSIGN ex SEMICOLON
-
-                    IDENTIFIER shift        26     
-
-State 28:
-          statement ::= IDENTIFIER * ASSIGN ex SEMICOLON
-
-                        ASSIGN shift        3      
-
-State 29:
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-     (19) ex ::= ex POWER ex *
-
-                         POWER shift        5      
-                     {default} reduce       19     ex ::= ex POWER ex
 
 State 30:
           ex ::= ex * AMPERSAND ex
+     (18) ex ::= ex AMPERSAND ex *
           ex ::= ex * PLUS ex
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
-     (18) ex ::= ex DIVIDE ex *
           ex ::= ex * POWER ex
 
-                         POWER shift        5      
-                     {default} reduce       18     ex ::= ex DIVIDE ex
+                          PLUS shift        14     
+                         MINUS shift        12     
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       18     ex ::= ex AMPERSAND ex
 
 State 31:
           ex ::= ex * AMPERSAND ex
           ex ::= ex * PLUS ex
+     (19) ex ::= ex PLUS ex *
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
-     (17) ex ::= ex TIMES ex *
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
 
-                         POWER shift        5      
-                     {default} reduce       17     ex ::= ex TIMES ex
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       19     ex ::= ex PLUS ex
+
+State 32:
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+     (20) ex ::= ex MINUS ex *
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                         TIMES shift        10     
+                        DIVIDE shift        8      
+                         POWER shift        6      
+                     {default} reduce       20     ex ::= ex MINUS ex
+
+State 33:
+          ex ::= LSPAR exlist * RSPAR
+          exlist ::= exlist * COMMA ex
+
+                         RSPAR shift-reduce 28     ex ::= LSPAR exlist RSPAR
+                         COMMA shift        4      
+
+State 34:
+          statement ::= TIME IDENTIFIER * ASSIGN ex SEMICOLON
+
+                        ASSIGN shift        2      
+
+State 35:
+          statement ::= TIME * IDENTIFIER ASSIGN ex SEMICOLON
+
+                    IDENTIFIER shift        34     
+
+State 36:
+          statement ::= IDENTIFIER * ASSIGN ex SEMICOLON
+
+                        ASSIGN shift        3      
+
+State 37:
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+     (21) ex ::= ex TIMES ex *
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+
+                         POWER shift        6      
+                     {default} reduce       21     ex ::= ex TIMES ex
+
+State 38:
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+     (22) ex ::= ex DIVIDE ex *
+          ex ::= ex * POWER ex
+
+                         POWER shift        6      
+                     {default} reduce       22     ex ::= ex DIVIDE ex
+
+State 39:
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+     (23) ex ::= ex POWER ex *
+
+                         POWER shift        6      
+                     {default} reduce       23     ex ::= ex POWER ex
 
 ----------------------------------------------------
 Symbols:
@@ -720,40 +1068,45 @@ The first-set of non-terminals is shown after the name.
 
     0: $:
     1: TIME (precedence=1)
-    2: AMPERSAND (precedence=2)
-    3: PLUS (precedence=3)
-    4: MINUS (precedence=3)
-    5: TIMES (precedence=4)
-    6: DIVIDE (precedence=4)
-    7: POWER (precedence=5)
-    8: WRITE
-    9: SEMICOLON
-   10: IDENTIFIER
-   11: ASSIGN
-   12: NOW
-   13: CURRENTTIME
-   14: LPAR
-   15: RPAR
-   16: NUMTOKEN
-   17: TIMETOKEN
-   18: STRTOKEN
-   19: NULLTOK
-   20: TRUE
-   21: FALSE
-   22: LSPAR
-   23: RSPAR
-   24: COMMA
-   25: code: <lambda> TIME WRITE IDENTIFIER
-   26: statementblock: <lambda> TIME WRITE IDENTIFIER
-   27: statement: TIME WRITE IDENTIFIER
-   28: ex: TIME IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
-   29: exlist: TIME IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
+    2: UPPERCASE (precedence=1)
+    3: AVERAGE (precedence=1)
+    4: INCREASE (precedence=1)
+    5: MAXIMUM (precedence=1)
+    6: AMPERSAND (precedence=2)
+    7: PLUS (precedence=3)
+    8: MINUS (precedence=3)
+    9: TIMES (precedence=4)
+   10: DIVIDE (precedence=4)
+   11: POWER (precedence=5)
+   12: WRITE
+   13: SEMICOLON
+   14: IDENTIFIER
+   15: ASSIGN
+   16: NOW
+   17: CURRENTTIME
+   18: LPAR
+   19: RPAR
+   20: NUMTOKEN
+   21: TIMETOKEN
+   22: STRTOKEN
+   23: NULLTOK
+   24: TRUE
+   25: FALSE
+   26: LSPAR
+   27: RSPAR
+   28: COMMA
+   29: code: <lambda> TIME WRITE IDENTIFIER
+   30: statementblock: <lambda> TIME WRITE IDENTIFIER
+   31: statement: TIME WRITE IDENTIFIER
+   32: ex: TIME UPPERCASE AVERAGE INCREASE MAXIMUM IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
+   33: exlist: TIME UPPERCASE AVERAGE INCREASE MAXIMUM IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
 ----------------------------------------------------
 Syntax-only Symbols:
 The following symbols never carry semantic content.
 
-$ TIME AMPERSAND PLUS MINUS TIMES DIVIDE POWER WRITE SEMICOLON ASSIGN NOW
-CURRENTTIME LPAR RPAR NULLTOK TRUE FALSE LSPAR RSPAR COMMA code
+$ TIME UPPERCASE AVERAGE INCREASE MAXIMUM AMPERSAND PLUS MINUS TIMES DIVIDE
+POWER WRITE SEMICOLON ASSIGN NOW CURRENTTIME LPAR RPAR NULLTOK TRUE FALSE
+LSPAR RSPAR COMMA code
 ----------------------------------------------------
 Rules:
    0: code ::= statementblock.
@@ -770,16 +1123,20 @@ Rules:
   11: ex ::= STRTOKEN.
   12: ex ::= IDENTIFIER.
   13: ex ::= TIME ex. [TIME precedence=1]
-  14: ex ::= ex AMPERSAND ex. [AMPERSAND precedence=2]
-  15: ex ::= ex PLUS ex. [PLUS precedence=3]
-  16: ex ::= ex MINUS ex. [MINUS precedence=3]
-  17: ex ::= ex TIMES ex. [TIMES precedence=4]
-  18: ex ::= ex DIVIDE ex. [DIVIDE precedence=4]
-  19: ex ::= ex POWER ex. [POWER precedence=5]
-  20: ex ::= NULLTOK.
-  21: ex ::= TRUE.
-  22: ex ::= FALSE.
-  23: ex ::= LSPAR RSPAR.
-  24: ex ::= LSPAR exlist RSPAR.
-  25: exlist ::= ex.
-  26: exlist ::= exlist COMMA ex.
+  14: ex ::= UPPERCASE ex. [UPPERCASE precedence=1]
+  15: ex ::= MAXIMUM ex. [MAXIMUM precedence=1]
+  16: ex ::= AVERAGE ex. [AVERAGE precedence=1]
+  17: ex ::= INCREASE ex. [INCREASE precedence=1]
+  18: ex ::= ex AMPERSAND ex. [AMPERSAND precedence=2]
+  19: ex ::= ex PLUS ex. [PLUS precedence=3]
+  20: ex ::= ex MINUS ex. [MINUS precedence=3]
+  21: ex ::= ex TIMES ex. [TIMES precedence=4]
+  22: ex ::= ex DIVIDE ex. [DIVIDE precedence=4]
+  23: ex ::= ex POWER ex. [POWER precedence=5]
+  24: ex ::= NULLTOK.
+  25: ex ::= TRUE.
+  26: ex ::= FALSE.
+  27: ex ::= LSPAR RSPAR.
+  28: ex ::= LSPAR exlist RSPAR.
+  29: exlist ::= ex.
+  30: exlist ::= exlist COMMA ex.

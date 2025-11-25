@@ -1,7 +1,10 @@
 let () =
   let input =
-    {|
-      write currenttime;
+    {|x := 4711;
+    time x := now;
+
+    write x;
+    write time x;
     |}
   in
   let res = Dsm.Tokenizer.tokenize input in

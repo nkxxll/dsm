@@ -196,6 +196,77 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | Some t -> { type_ = TimeLiteral t; time = None }
      | None -> { type_ = Unit; time = None })
   | "CURRENTTIME" -> { type_ = TimeLiteral (Unix.gettimeofday ()); time = None }
+  | "UPPERCASE" ->
+    let arg = get_arg yojson_ast in
+    let val_ = eval interp_data arg in
+    (match val_.type_ with
+     | StringLiteral s -> { type_ = StringLiteral (String.uppercase s); time = None }
+     | List items ->
+       let uppercased =
+         List.map items ~f:(fun item ->
+           match item.type_ with
+           | StringLiteral s -> { item with type_ = StringLiteral (String.uppercase s) }
+           | _ -> item)
+       in
+       { type_ = List uppercased; time = None }
+     | _ -> failwith "UPPERCASE expects a string or (nonempty) list of strings")
+  | "MAXIMUM" ->
+    let arg = get_arg yojson_ast in
+    let val_ = eval interp_data arg in
+    (match val_.type_ with
+     | List items ->
+       let numbers =
+         List.filter_map items ~f:(fun item ->
+           match item.type_ with
+           | NumberLiteral n -> Some n
+           | _ -> None)
+       in
+       (match List.max_elt numbers ~compare:Float.compare with
+        | Some max_val -> { type_ = NumberLiteral max_val; time = None }
+        | None -> failwith "MAXIMUM requires a non-empty list of numbers")
+     | _ -> failwith "MAXIMUM expects a list")
+  | "AVERAGE" ->
+    let arg = get_arg yojson_ast in
+    let val_ = eval interp_data arg in
+    (match val_.type_ with
+     | List items ->
+       let numbers =
+         List.filter_map items ~f:(fun item ->
+           match item.type_ with
+           | NumberLiteral n -> Some n
+           | _ -> None)
+       in
+       (match numbers with
+        | [] -> failwith "AVERAGE requires a non-empty list of numbers"
+        | lst ->
+          let sum = List.fold lst ~init:0.0 ~f:( +. ) in
+          let avg = sum /. Float.of_int (List.length lst) in
+          { type_ = NumberLiteral avg; time = None })
+     | _ -> failwith "AVERAGE expects a list")
+  | "INCREASE" ->
+    let arg = get_arg yojson_ast in
+    let val_ = eval interp_data arg in
+    (match val_.type_ with
+     | List items ->
+       let numbers =
+         List.filter_map items ~f:(fun item ->
+           match item.type_ with
+           | NumberLiteral n -> Some n
+           | _ -> None)
+       in
+       (match numbers with
+        | [] | [ _ ] -> { type_ = List []; time = None }
+        | lst ->
+          let diffs =
+            List.init
+              (List.length lst - 1)
+              ~f:(fun i ->
+                let curr = List.nth_exn lst (i + 1) in
+                let prev = List.nth_exn lst i in
+                { type_ = NumberLiteral (curr -. prev); time = None })
+          in
+          { type_ = List diffs; time = None })
+     | _ -> failwith "INCREASE expects a list")
   | _ -> failwith "not implemented yet"
 
 and write_value (expr : value) =
@@ -488,6 +559,56 @@ let%test_module "Parser tests" =
         {|
         XXXX-XX-XXTXX:XX:XXZ
         XXXX-XX-XXTXX:XX:XXZ
+        |}]
+    ;;
+
+    let%expect_test "test time assign" =
+      let input =
+        {|
+          x := 5;
+          time x := 17:30:45;
+          write time x;
+        |}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect.output] |> censor_digits |> Stdio.print_endline;
+      [%expect
+        {| XXXX-XX-XXTXX:XX:XXZ |}]
+    ;;
+
+    let%expect_test "test zwischenstand von prof" =
+      let input =
+        {|x := 4711;
+          time x := now;
+
+          write x;
+          write time x;
+
+          write uppercase "Hallo";
+          write uppercase ["Wer", "wagt","gewinnt"];
+
+          y := [100,200,150];
+          write maximum y;
+          write average y;
+          write increase y;|}
+      in
+      let parsed = input |> Tokenizer.tokenize |> Result.map ~f:Parser.parse in
+      (match parsed with
+       | Ok p -> ignore (interpret p)
+       | Error err -> Stdio.print_endline err);
+      [%expect.output] |> censor_digits |> Stdio.print_endline;
+      [%expect
+        {|
+        XXXX.
+        XXXX-XX-XXTXX:XX:XXZ
+         "HALLO"
+        [ "WER" ,  "WAGT" ,  "GEWINNT" ]
+        XXX.
+        XXX.
+        [XXX., -XX.]
         |}]
     ;;
   end)

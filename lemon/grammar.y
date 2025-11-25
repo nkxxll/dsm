@@ -129,6 +129,10 @@ int get_token_id (char *token) {
  	if (strcmp(token, "FALSE") == 0) return FALSE;
  	if (strcmp(token, "NOW") == 0) return NOW;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
+ 	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
+ 	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
+ 	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
+ 	if (strcmp(token, "INCREASE") == 0) return INCREASE;
 
  	printf ("{\"error\" : true, \"message\": \"UNKNOWN TOKEN TYPE %s\"}\n", token);
 	exit(0);
@@ -139,10 +143,8 @@ int get_token_id (char *token) {
 cJSON* unary (char* fname, cJSON* a)
 {
 	cJSON *res = cJSON_CreateObject();
-	cJSON *arg = cJSON_CreateArray();
-	cJSON_AddItemToArray(arg, a);
 	cJSON_AddStringToObject(res, "type", fname);
-	cJSON_AddItemToObject(res, "arg", arg);
+	cJSON_AddItemToObject(res, "arg", a);
 	return res;
 }
 
@@ -188,7 +190,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%left      TIME .
+%right      TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
@@ -314,6 +316,18 @@ ex(r) ::= IDENTIFIER(a) .
 
 ex(r) ::= TIME ex(a) .
 { r = unary("TIME", a); }
+
+ex(r) ::= UPPERCASE ex(a) .
+{ r = unary("UPPERCASE", a); }
+
+ex(r) ::= MAXIMUM ex(a) .
+{ r = unary("MAXIMUM", a); }
+
+ex(r) ::= AVERAGE ex(a) .
+{ r = unary("AVERAGE", a); }
+
+ex(r) ::= INCREASE ex(a) .
+{ r = unary("INCREASE", a); }
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }

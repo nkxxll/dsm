@@ -4,134 +4,143 @@ open Base
 
 module TokenType = struct
   type t =
-    | SEMICOLON
-    | ASSIGN
-    | COMMA
-    | PLUS
-    | MINUS
-    | TIMES
-    | DIVIDE
-    | POWER
-    | LPAR
-    | RPAR
-    | LSPAR
-    | RSPAR
     | AMPERSAND
-    | LT
-    | GT
-    | LTEQ
-    | GTEQ
-    | EQ
-    | NEQ
-    | IDENTIFIER of string
-    | STRTOKEN of string
-    | NUMTOKEN of float
-    | TIMETOKEN of string
-    | READ
-    | WRITE
-    | IF
-    | THEN
-    | ELSEIF
-    | ELSE
-    | ENDIF
-    | FOR
-    | IN
-    | DO
-    | ENDDO
-    | NOW
-    | CURRENTTIME
-    | MINIMUM
-    | MAXIMUM
-    | FIRST
-    | LAST
-    | SUM
+    | ASSIGN
     | AVERAGE
+    | COMMA
+    | CURRENTTIME
+    | DIVIDE
+    | DO
     | EARLIEST
+    | ELSE
+    | ELSEIF
+    | ENDDO
+    | ENDIF
+    | EQ
+    | FALSE
+    | FIRST
+    | FOR
+    | GT
+    | GTEQ
+    | IDENTIFIER of string
+    | IF
+    | IN
+    | INCREASE
+    | LAST
     | LATEST
+    | LPAR
+    | LSPAR
+    | LT
+    | LTEQ
+    | MAXIMUM
+    | MINIMUM
+    | MINUS
+    | NEQ
+    | NOW
     | NULL
+    | NUMTOKEN of float
+    | PLUS
+    | POWER
+    | READ
+    | RPAR
+    | RSPAR
+    | SEMICOLON
+    | STRTOKEN of string
+    | SUM
+    | THEN
+    | TIME
+    | TIMES
+    | TIMETOKEN of string
     | TRUE
-     | FALSE
-     | UNKNOWN of string
+    | UPPERCASE
+    | WRITE
+    | UNKNOWN of string
   [@@deriving yojson]
 
   let token_type_from_string str =
     match String.uppercase str with
-    | "READ" -> READ
-    | "WRITE" -> WRITE
-    | "IF" -> IF
-    | "THEN" -> THEN
-    | "ELSEIF" -> ELSEIF
-    | "ELSE" -> ELSE
-    | "ENDIF" -> ENDIF
-    | "FOR" -> FOR
-    | "IN" -> IN
-    | "DO" -> DO
-    | "ENDDO" -> ENDDO
-    | "NOW" -> NOW
-    | "CURRENTTIME" -> CURRENTTIME
-    | "MINIMUM" -> MINIMUM
-    | "MAXIMUM" -> MAXIMUM
-    | "FIRST" -> FIRST
-    | "LAST" -> LAST
-    | "SUM" -> SUM
     | "AVERAGE" -> AVERAGE
+    | "CURRENTTIME" -> CURRENTTIME
+    | "DO" -> DO
     | "EARLIEST" -> EARLIEST
+    | "ELSE" -> ELSE
+    | "ELSEIF" -> ELSEIF
+    | "ENDDO" -> ENDDO
+    | "ENDIF" -> ENDIF
+    | "FALSE" -> FALSE
+    | "FIRST" -> FIRST
+    | "FOR" -> FOR
+    | "IF" -> IF
+    | "IN" -> IN
+    | "INCREASE" -> INCREASE
+    | "LAST" -> LAST
     | "LATEST" -> LATEST
+    | "MAXIMUM" -> MAXIMUM
+    | "MINIMUM" -> MINIMUM
+    | "NOW" -> NOW
     | "NULL" -> NULL
+    | "READ" -> READ
+    | "SUM" -> SUM
+    | "THEN" -> THEN
+    | "TIME" -> TIME
     | "TRUE" -> TRUE
-     | "FALSE" -> FALSE
-     | other -> IDENTIFIER other
+    | "UPPERCASE" -> UPPERCASE
+    | "WRITE" -> WRITE
+    | other -> IDENTIFIER other
   ;;
 
   let token_type_to_string = function
-    | SEMICOLON -> "SEMICOLON"
-    | ASSIGN -> "ASSIGN"
-    | COMMA -> "COMMA"
-    | PLUS -> "PLUS"
-    | MINUS -> "MINUS"
-    | TIMES -> "TIMES"
-    | DIVIDE -> "DIVIDE"
-    | POWER -> "POWER"
-    | LPAR -> "LPAR"
-    | RPAR -> "RPAR"
-    | LSPAR -> "LSPAR"
-    | RSPAR -> "RSPAR"
     | AMPERSAND -> "AMPERSAND"
-    | LT -> "LT"
-    | GT -> "GT"
-    | LTEQ -> "LTEQ"
-    | GTEQ -> "GTEQ"
-    | EQ -> "EQ"
-    | NEQ -> "NEQ"
-    | IDENTIFIER _ -> "IDENTIFIER"
-    | STRTOKEN _ -> "STRTOKEN"
-    | NUMTOKEN _ -> "NUMTOKEN"
-    | TIMETOKEN _ -> "TIMETOKEN"
-    | READ -> "READ"
-    | WRITE -> "WRITE"
-    | IF -> "IF"
-    | THEN -> "THEN"
-    | ELSEIF -> "ELSEIF"
-    | ELSE -> "ELSE"
-    | ENDIF -> "ENDIF"
-    | FOR -> "FOR"
-    | IN -> "IN"
-    | DO -> "DO"
-    | ENDDO -> "ENDDO"
-    | NOW -> "NOW"
-    | CURRENTTIME -> "CURRENTTIME"
-    | MINIMUM -> "MINIMUM"
-    | MAXIMUM -> "MAXIMUM"
-    | FIRST -> "FIRST"
-    | LAST -> "LAST"
-    | SUM -> "SUM"
+    | ASSIGN -> "ASSIGN"
     | AVERAGE -> "AVERAGE"
+    | COMMA -> "COMMA"
+    | CURRENTTIME -> "CURRENTTIME"
+    | DIVIDE -> "DIVIDE"
+    | DO -> "DO"
     | EARLIEST -> "EARLIEST"
+    | ELSE -> "ELSE"
+    | ELSEIF -> "ELSEIF"
+    | ENDDO -> "ENDDO"
+    | ENDIF -> "ENDIF"
+    | EQ -> "EQ"
+    | FALSE -> "FALSE"
+    | FIRST -> "FIRST"
+    | FOR -> "FOR"
+    | GT -> "GT"
+    | GTEQ -> "GTEQ"
+    | IDENTIFIER _ -> "IDENTIFIER"
+    | IF -> "IF"
+    | IN -> "IN"
+    | INCREASE -> "INCREASE"
+    | LAST -> "LAST"
     | LATEST -> "LATEST"
+    | LPAR -> "LPAR"
+    | LSPAR -> "LSPAR"
+    | LT -> "LT"
+    | LTEQ -> "LTEQ"
+    | MAXIMUM -> "MAXIMUM"
+    | MINIMUM -> "MINIMUM"
+    | MINUS -> "MINUS"
+    | NEQ -> "NEQ"
+    | NOW -> "NOW"
     | NULL -> "NULL"
+    | NUMTOKEN _ -> "NUMTOKEN"
+    | PLUS -> "PLUS"
+    | POWER -> "POWER"
+    | READ -> "READ"
+    | RPAR -> "RPAR"
+    | RSPAR -> "RSPAR"
+    | SEMICOLON -> "SEMICOLON"
+    | STRTOKEN _ -> "STRTOKEN"
+    | SUM -> "SUM"
+    | THEN -> "THEN"
+    | TIME -> "TIME"
+    | TIMES -> "TIMES"
+    | TIMETOKEN _ -> "TIMETOKEN"
     | TRUE -> "TRUE"
-     | FALSE -> "FALSE"
-     | UNKNOWN s -> Printf.sprintf "UNKNOWN %s" s
+    | UPPERCASE -> "UPPERCASE"
+    | WRITE -> "WRITE"
+    | UNKNOWN s -> Printf.sprintf "UNKNOWN %s" s
   ;;
 end
 
