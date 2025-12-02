@@ -19,6 +19,11 @@ and value_type =
   | TimeLiteral of float
   | Unit
 
+let unit = { type_ = Unit; time = None }
+let value_type_only type_ = { type_; time = None }
+let value_time_only time = { type_ = Unit; time }
+let value_full type_ time = { type_; time }
+
 module InterpreterData = struct
   type t =
     { now : float
@@ -139,24 +144,24 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "STATEMENTBLOCK" ->
     let stmts = get_statements yojson_ast in
     let _ = stmts |> List.map ~f:(eval interp_data) in
-    { type_ = Unit; time = None }
+    unit
   | "WRITE" ->
     let arg = get_arg yojson_ast in
     eval interp_data arg |> write_value;
-    { type_ = Unit; time = None }
+    unit
   | "TRACE" ->
     let line = get_line yojson_ast in
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     Stdio.printf "Line %s: " line;
     write_value val_;
-    { type_ = Unit; time = None }
+    unit
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     Hashtbl.set interp_data.env ~key:ident ~data:val_;
-    { type_ = Unit; time = None }
+    unit
   | "TIMEASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
@@ -164,85 +169,84 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match val_ with
      | { type_ = TimeLiteral t; _ } ->
        let current =
-         Hashtbl.find_or_add interp_data.env ident ~default:(fun () ->
-           { type_ = Unit; time = None })
+         Hashtbl.find_or_add interp_data.env ident ~default:(fun () -> unit)
        in
        Hashtbl.set interp_data.env ~key:ident ~data:{ current with time = Some t }
      | _ -> ());
-    { type_ = Unit; time = None }
+    unit
   | "TIMETOKEN" ->
     let time_str = get_value yojson_ast in
     let time_float = time_string_to_float time_str in
-    { type_ = TimeLiteral time_float; time = None }
+    value_type_only (TimeLiteral time_float)
   | "VARIABLE" ->
     let name = get_name yojson_ast in
     (match Hashtbl.find interp_data.env name with
      | Some v -> v
-     | None -> { type_ = Unit; time = None })
+     | None -> unit)
   | "PLUS" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l +. r); time = None }
-     | _, _ -> { type_ = Unit; time = None })
+     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l +. r))
+     | _, _ -> unit)
   | "MINUS" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l -. r); time = None }
-     | _, _ -> { type_ = Unit; time = None })
+     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l -. r))
+     | _, _ -> unit)
   | "TIMES" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l *. r); time = None }
-     | _, _ -> { type_ = Unit; time = None })
+     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l *. r))
+     | _, _ -> unit)
   | "DIVIDE" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l /. r); time = None }
-     | _, _ -> { type_ = Unit; time = None })
+     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l /. r))
+     | _, _ -> unit)
   | "AMPERSAND" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
-     | StringLiteral r, StringLiteral l -> { type_ = StringLiteral (l ^ r); time = None }
+     | StringLiteral r, StringLiteral l -> value_type_only (StringLiteral (l ^ r))
      | NumberLiteral r, StringLiteral l ->
-       { type_ = StringLiteral (l ^ Float.to_string r); time = None }
+       value_type_only (StringLiteral (l ^ Float.to_string r))
      | StringLiteral r, NumberLiteral l ->
-       { type_ = StringLiteral (Float.to_string l ^ r); time = None }
-     | _, _ -> { type_ = Unit; time = None })
+       value_type_only (StringLiteral (Float.to_string l ^ r))
+     | _, _ -> unit)
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
-    { type_ = StringLiteral v; time = None }
+    value_type_only (StringLiteral v)
   | "NUMTOKEN" ->
-    { type_ = NumberLiteral (Float.of_string (get_value yojson_ast)); time = None }
-  | "NULL" -> { type_ = Unit; time = None }
-  | "TRUE" -> { type_ = BoolLiteral true; time = None }
-  | "FALSE" -> { type_ = BoolLiteral false; time = None }
+    value_type_only (NumberLiteral (Float.of_string (get_value yojson_ast)))
+  | "NULL" -> unit
+  | "TRUE" -> value_type_only (BoolLiteral true)
+  | "FALSE" -> value_type_only (BoolLiteral false)
   | "LIST" ->
     let items = get_items_list yojson_ast in
     let evaluated_items = List.map items ~f:(eval interp_data) in
-    { type_ = List evaluated_items; time = None }
-  | "NOW" -> { type_ = TimeLiteral interp_data.now; time = None }
+    value_type_only (List evaluated_items)
+  | "NOW" -> value_type_only (TimeLiteral interp_data.now)
   | "TIME" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.time with
-     | Some t -> { type_ = TimeLiteral t; time = None }
-     | None -> { type_ = Unit; time = None })
-  | "CURRENTTIME" -> { type_ = TimeLiteral (Unix.gettimeofday ()); time = None }
+     | Some t -> value_type_only (TimeLiteral t)
+     | None -> unit)
+  | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
   | "UPPERCASE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.type_ with
-     | StringLiteral s -> { type_ = StringLiteral (String.uppercase s); time = None }
+     | StringLiteral s -> value_type_only (StringLiteral (String.uppercase s))
      | List items ->
        let uppercased =
          List.map items ~f:(fun item ->
@@ -250,8 +254,8 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            | StringLiteral s -> { item with type_ = StringLiteral (String.uppercase s) }
            | _ -> item)
        in
-       { type_ = List uppercased; time = None }
-     | _ -> failwith "UPPERCASE expects a string or (nonempty) list of strings")
+       value_type_only (List uppercased)
+     | _ -> unit)
   | "MAXIMUM" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
@@ -264,9 +268,9 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            | _ -> None)
        in
        (match List.max_elt numbers ~compare:Float.compare with
-        | Some max_val -> { type_ = NumberLiteral max_val; time = None }
-        | None -> failwith "MAXIMUM requires a non-empty list of numbers")
-     | _ -> failwith "MAXIMUM expects a list")
+        | Some max_val -> value_type_only (NumberLiteral max_val)
+        | None -> unit)
+       | _ -> unit)
   | "AVERAGE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
@@ -279,12 +283,12 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            | _ -> None)
        in
        (match numbers with
-        | [] -> { type_ = Unit; time = None }
+        | [] -> unit
         | lst ->
           let sum = List.fold lst ~init:0.0 ~f:( +. ) in
           let avg = sum /. Float.of_int (List.length lst) in
-          { type_ = NumberLiteral avg; time = None })
-     | _ -> { type_ = Unit; time = None })
+          value_type_only (NumberLiteral avg))
+     | _ -> unit)
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in
@@ -293,7 +297,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match cond_val.type_ with
      | BoolLiteral true -> eval interp_data thenbranch
      | BoolLiteral false -> eval interp_data elsebranch
-     | _ -> failwith "IF condition must evaluate to a boolean")
+     | _ -> unit)
   | "FOR" ->
     let varname = get_varname yojson_ast in
     let expression = get_expression yojson_ast in
@@ -306,8 +310,8 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            Hashtbl.set interp_data.env ~key:varname ~data:item;
            eval interp_data statements_block)
        in
-       { type_ = Unit; time = None }
-     | _ -> failwith "FOR loop requires a list to iterate over")
+       unit
+       | _ -> unit)
   | "INCREASE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
@@ -320,7 +324,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            | _ -> None)
        in
        (match numbers with
-        | [] | [ _ ] -> { type_ = List []; time = None }
+        | [] | [ _ ] -> value_type_only (List [])
         | lst ->
           let diffs =
             List.init
@@ -328,11 +332,11 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
               ~f:(fun i ->
                 let curr = List.nth_exn lst (i + 1) in
                 let prev = List.nth_exn lst i in
-                { type_ = NumberLiteral (curr -. prev); time = None })
+                value_type_only (NumberLiteral (curr -. prev)))
           in
-          { type_ = List diffs; time = None })
-     | _ -> failwith "INCREASE expects a list")
-  | _ -> failwith "not implemented yet"
+          value_type_only (List diffs))
+          | _ -> unit)
+  | _ -> unit
 
 and write_value (expr : value) =
   match expr.type_ with

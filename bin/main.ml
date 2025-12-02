@@ -14,7 +14,7 @@ let () =
       Dsm.Parser.parse r
     | Error err ->
       Stdio.print_endline err;
-      failwith "nonnon"
+      Error err
   in
   match p with
   | Ok parsed -> ignore (Dsm.Interpreter.interpret_parsed parsed)
