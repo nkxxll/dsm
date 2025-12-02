@@ -55,11 +55,11 @@ fn timestampToIsoString(allocator: std.mem.Allocator, timestamp: f64) ![]const u
     const minute = @divFloor(@mod(secs_today, 3600), 60);
     const second = @mod(secs_today, 60);
 
-    return try std.fmt.allocPrint(allocator, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{ year, month, day, hour, minute, second });
+    return std.fmt.allocPrint(allocator, "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}Z", .{ year, month, day, hour, minute, second });
 }
 
-/// Convert HH:MM or HH:MM:SS time string to unix timestamp
-fn timeStringToFloat(time_str: []const u8) !f64 {
+/// Convert HH:MM or HH:MM:SS time string to unix timestamp (returns null if invalid)
+fn timeStringToFloat(time_str: []const u8) ?f64 {
     var parts: [3]i32 = .{ 0, 0, 0 };
     var part_idx: usize = 0;
     var current_num: i32 = 0;
@@ -74,7 +74,7 @@ fn timeStringToFloat(time_str: []const u8) !f64 {
         } else if (char >= '0' and char <= '9') {
             current_num = current_num * 10 + (char - '0');
         } else {
-            return error.InvalidTimeFormat;
+            return null;
         }
     }
     parts[part_idx] = current_num;
@@ -84,7 +84,7 @@ fn timeStringToFloat(time_str: []const u8) !f64 {
     const seconds = parts[2];
 
     if (hours < 0 or hours >= 24 or minutes < 0 or minutes >= 60 or seconds < 0 or seconds >= 60) {
-        return error.InvalidTimeFormat;
+        return null;
     }
 
     // Get today's date and create timestamp
@@ -129,39 +129,37 @@ pub const EvalError = error{
 };
 
 /// Evaluate AST node
-pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, writer: anytype) EvalError!Value {
+pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, writer: anytype) Value {
     switch (node.*) {
         .statementblock => |sb| {
             for (sb.statements) |*stmt| {
-                const val = try eval(allocator, env, stmt, writer);
+                const val = eval(allocator, env, stmt, writer);
                 val.deinit(allocator);
             }
             return Value.unit;
         },
         .write => |w| {
-            const val = try eval(allocator, env, w.arg, writer);
-            try writeValue(allocator, val, writer);
+            const val = eval(allocator, env, w.arg, writer);
+            writeValue(allocator, val, writer);
             val.deinit(allocator);
             return Value.unit;
         },
         .trace => |t| {
-            const val = try eval(allocator, env, t.arg, writer);
-            try writer.print("Line {s}: ", .{t.line});
-            try writeValue(allocator, val, writer);
+            const val = eval(allocator, env, t.arg, writer);
+            _ = writer.print("Line {s}: ", .{t.line}) catch {};
+            writeValue(allocator, val, writer);
             val.deinit(allocator);
             return Value.unit;
         },
         .assign => |a| {
-            const val = try eval(allocator, env, a.arg, writer);
-            try env.put(a.ident, val);
+            const val = eval(allocator, env, a.arg, writer);
+            env.put(a.ident, val) catch {};
             return Value.unit;
         },
         .timeassign => |ta| {
-            const val = try eval(allocator, env, ta.arg, writer);
+            const val = eval(allocator, env, ta.arg, writer);
             if (val == .time) {
-                try env.put(ta.ident, val);
-            } else {
-                return error.InvalidType;
+                env.put(ta.ident, val) catch {};
             }
             return Value.unit;
         },
@@ -169,111 +167,123 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             if (env.get(name)) |val| {
                 return val;
             } else {
-                return error.InvalidType;
+                return Value.unit;
             }
         },
         .plus => |op| {
-            const left = try eval(allocator, env, op.left, writer);
+            const left = eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
-            const right = try eval(allocator, env, op.right, writer);
+            const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
             switch (left) {
                 .number => |l| switch (right) {
                     .number => |r| return Value{ .number = l + r },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .minus => |op| {
-            const left = try eval(allocator, env, op.left, writer);
+            const left = eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
-            const right = try eval(allocator, env, op.right, writer);
+            const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
             switch (left) {
                 .number => |l| switch (right) {
                     .number => |r| return Value{ .number = l - r },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .times => |op| {
-            const left = try eval(allocator, env, op.left, writer);
+            const left = eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
-            const right = try eval(allocator, env, op.right, writer);
+            const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
             switch (left) {
                 .number => |l| switch (right) {
                     .number => |r| return Value{ .number = l * r },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .divide => |op| {
-            const left = try eval(allocator, env, op.left, writer);
+            const left = eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
-            const right = try eval(allocator, env, op.right, writer);
+            const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
             switch (left) {
                 .number => |l| switch (right) {
                     .number => |r| {
-                        if (r == 0) return error.DivisionByZero;
+                        if (r == 0) return Value.unit;
                         return Value{ .number = l / r };
                     },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .ampersand => |op| {
-            const left = try eval(allocator, env, op.left, writer);
+            const left = eval(allocator, env, op.left, writer);
             defer left.deinit(allocator);
-            const right = try eval(allocator, env, op.right, writer);
+            const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
             switch (left) {
                 .string => |l| switch (right) {
                     .string => |r| {
-                        const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ l, r });
+                        const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ l, r }) catch return Value.unit;
                         return Value{ .string = concatenated };
                     },
                     .number => |n| {
-                        const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
-                        const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ l, num_str });
+                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unit;
+                        const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ l, num_str }) catch {
+                            allocator.free(num_str);
+                            return Value.unit;
+                        };
                         allocator.free(num_str);
                         return Value{ .string = concatenated };
                     },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
                 .number => |n| switch (right) {
                     .string => |r| {
-                        const num_str = try std.fmt.allocPrint(allocator, "{d}", .{n});
-                        const concatenated = try std.mem.concat(allocator, u8, &[_][]const u8{ num_str, r });
+                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unit;
+                        const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ num_str, r }) catch {
+                            allocator.free(num_str);
+                            return Value.unit;
+                        };
                         allocator.free(num_str);
                         return Value{ .string = concatenated };
                     },
-                    else => return error.InvalidType,
+                    else => return Value.unit,
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
-        .strtoken => |s| return Value{ .string = try allocator.dupe(u8, s) },
+        .strtoken => |s| return Value{ .string = allocator.dupe(u8, s) catch return Value.unit },
         .numtoken => |n| return Value{ .number = n },
         .null => return Value.unit,
         .true => return Value{ .bool = true },
         .false => return Value{ .bool = false },
         .list => |lst| {
-            var items = try std.ArrayList(Value).initCapacity(allocator, lst.len);
+            var items = std.ArrayList(Value).initCapacity(allocator, lst.len) catch return Value.unit;
             for (lst) |item| {
-                const val = try eval(allocator, env, &item, writer);
-                try items.append(allocator, val);
+                const val = eval(allocator, env, &item, writer);
+                items.append(allocator, val) catch {
+                    items.deinit(allocator);
+                    return Value.unit;
+                };
             }
             return Value{ .list = items };
         },
         .timetoken => |t| {
-            const timestamp = try timeStringToFloat(t);
-            return Value{ .time = timestamp };
+            if (timeStringToFloat(t)) |timestamp| {
+                return Value{ .time = timestamp };
+            } else {
+                return Value.unit;
+            }
         },
         .now => {
             const now_secs = std.time.timestamp();
@@ -284,7 +294,7 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             return Value{ .time = @floatFromInt(now_secs) };
         },
         .time => |t| {
-            const val = try eval(allocator, env, t, writer);
+            const val = eval(allocator, env, t, writer);
             if (val == .time) {
                 return val;
             } else {
@@ -292,37 +302,50 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             }
         },
         .uppercase => |u| {
-            const val = try eval(allocator, env, u, writer);
+            const val = eval(allocator, env, u, writer);
             switch (val) {
                 .string => |s| {
-                    var uppercase_str = try allocator.alloc(u8, s.len);
+                    var uppercase_str = allocator.alloc(u8, s.len) catch return Value.unit;
                     for (s, 0..) |c, i| {
                         uppercase_str[i] = std.ascii.toUpper(c);
                     }
                     return Value{ .string = uppercase_str };
                 },
                 .list => |list| {
-                    var new_list = try std.ArrayList(Value).initCapacity(allocator, list.items.len);
+                    var new_list = std.ArrayList(Value).initCapacity(allocator, list.items.len) catch return Value.unit;
                     for (list.items) |item| {
                         switch (item) {
                             .string => |s| {
-                                var uppercase_str = try allocator.alloc(u8, s.len);
+                                var uppercase_str = allocator.alloc(u8, s.len) catch {
+                                    new_list.deinit(allocator);
+                                    val.deinit(allocator);
+                                    return Value.unit;
+                                };
                                 for (s, 0..) |c, i| {
                                     uppercase_str[i] = std.ascii.toUpper(c);
                                 }
-                                try new_list.append(allocator, Value{ .string = uppercase_str });
+                                new_list.append(allocator, Value{ .string = uppercase_str }) catch {
+                                    allocator.free(uppercase_str);
+                                    new_list.deinit(allocator);
+                                    val.deinit(allocator);
+                                    return Value.unit;
+                                };
                             },
-                            else => try new_list.append(allocator, item),
+                            else => new_list.append(allocator, item) catch {
+                                new_list.deinit(allocator);
+                                val.deinit(allocator);
+                                return Value.unit;
+                            },
                         }
                     }
                     val.deinit(allocator);
                     return Value{ .list = new_list };
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .maximum => |m| {
-            const val = try eval(allocator, env, m, writer);
+            const val = eval(allocator, env, m, writer);
             switch (val) {
                 .list => |list| {
                     var max_val: f64 = -std.math.inf(f64);
@@ -336,14 +359,14 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
                         }
                     }
                     val.deinit(allocator);
-                    if (!found) return error.InvalidType;
+                    if (!found) return Value.unit;
                     return Value{ .number = max_val };
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .average => |a| {
-            const val = try eval(allocator, env, a, writer);
+            const val = eval(allocator, env, a, writer);
             switch (val) {
                 .list => |list| {
                     var sum: f64 = 0;
@@ -355,36 +378,40 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
                         }
                     }
                     val.deinit(allocator);
-                    if (count == 0) return error.InvalidType;
+                    if (count == 0) return Value.unit;
                     return Value{ .number = sum / count };
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .increase => |i| {
-            const val = try eval(allocator, env, i, writer);
+            const val = eval(allocator, env, i, writer);
             switch (val) {
                 .list => |list| {
                     if (list.items.len < 2) {
                         val.deinit(allocator);
-                        const empty_list = try std.ArrayList(Value).initCapacity(allocator, 0);
+                        const empty_list = std.ArrayList(Value).initCapacity(allocator, 0) catch return Value.unit;
                         return Value{ .list = empty_list };
                     }
-                    var diffs = try std.ArrayList(Value).initCapacity(allocator, list.items.len - 1);
+                    var diffs = std.ArrayList(Value).initCapacity(allocator, list.items.len - 1) catch return Value.unit;
                     for (list.items[0 .. list.items.len - 1], 0..) |item, idx| {
                         if (item == .number and list.items[idx + 1] == .number) {
                             const diff = list.items[idx + 1].number - item.number;
-                            try diffs.append(allocator, Value{ .number = diff });
+                            diffs.append(allocator, Value{ .number = diff }) catch {
+                                diffs.deinit(allocator);
+                                val.deinit(allocator);
+                                return Value.unit;
+                            };
                         }
                     }
                     val.deinit(allocator);
                     return Value{ .list = diffs };
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
         .ifnode => |ifn| {
-            const cond = try eval(allocator, env, ifn.condition, writer);
+            const cond = eval(allocator, env, ifn.condition, writer);
             const is_true = switch (cond) {
                 .bool => |b| b,
                 .number => |n| n != 0,
@@ -393,86 +420,86 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             };
             cond.deinit(allocator);
             if (is_true) {
-                return try eval(allocator, env, ifn.thenbranch, writer);
+                return eval(allocator, env, ifn.thenbranch, writer);
             } else {
-                return try eval(allocator, env, ifn.elsebranch, writer);
+                return eval(allocator, env, ifn.elsebranch, writer);
             }
         },
         .fornode => |forn| {
-            const iter_val = try eval(allocator, env, forn.expression, writer);
+            const iter_val = eval(allocator, env, forn.expression, writer);
             switch (iter_val) {
                 .list => |list| {
                     for (list.items) |item| {
-                        try env.put(forn.varname, item);
-                        _ = try eval(allocator, env, forn.statements, writer);
+                        env.put(forn.varname, item) catch {};
+                        _ = eval(allocator, env, forn.statements, writer);
                     }
                     iter_val.deinit(allocator);
                     return Value.unit;
                 },
-                else => return error.InvalidType,
+                else => return Value.unit,
             }
         },
     }
 }
 
 /// Write value to writer
-pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) !void {
+pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) void {
     switch (value) {
         .number => |n| {
-            const str = try std.fmt.allocPrint(allocator, "{d}\n", .{n});
+            const str = std.fmt.allocPrint(allocator, "{d}\n", .{n}) catch return;
             defer allocator.free(str);
-            _ = try writer.write(str);
+            _ = writer.write(str) catch {};
         },
         .string => |s| {
-            _ = try writer.write(s);
-            _ = try writer.write("\n");
+            _ = writer.write(s) catch {};
+            _ = writer.write("\n") catch {};
         },
         .bool => |b| {
             const str = if (b) "true\n" else "false\n";
-            _ = try writer.write(str);
+            _ = writer.write(str) catch {};
         },
         .unit => {
-            _ = try writer.write("null\n");
+            _ = writer.write("null\n") catch {};
         },
         .time => |t| {
-            const iso_str = try timestampToIsoString(allocator, t);
+            const iso_str = timestampToIsoString(allocator, t) catch return;
             defer allocator.free(iso_str);
-            _ = try writer.write(iso_str);
-            _ = try writer.write("\n");
+            _ = writer.write(iso_str) catch {};
+            _ = writer.write("\n") catch {};
         },
         .list => |lst| {
-            _ = try writer.write("[");
+            _ = writer.write("[") catch {};
             for (lst.items, 0..) |item, i| {
                 if (i > 0) {
-                    _ = try writer.write(", ");
+                    _ = writer.write(", ") catch {};
                 }
                 switch (item) {
                     .number => |n| {
-                        const str = try std.fmt.allocPrint(allocator, "{d}", .{n});
+                        const str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return;
                         defer allocator.free(str);
-                        _ = try writer.write(str);
+                        _ = writer.write(str) catch {};
                     },
                     .string => |s| {
-                        _ = try writer.write(s);
+                        _ = writer.write(s) catch {};
                     },
                     .bool => |b| {
                         const str = if (b) "true" else "false";
-                        _ = try writer.write(str);
+                        _ = writer.write(str) catch {};
                     },
                     .unit => {
-                        _ = try writer.write("null");
+                        _ = writer.write("null") catch {};
                     },
                     .time => |t| {
-                        const iso_str = try timestampToIsoString(allocator, t);
+                        const iso_str = timestampToIsoString(allocator, t) catch return;
                         defer allocator.free(iso_str);
-                        _ = try writer.write(iso_str);
+                        _ = writer.write(iso_str) catch {};
                     },
                     .list => {
-                        _ = try writer.write("[...]");
+                        _ = writer.write("[...]") catch {};
                     },
                 }
             }
-            _ = try writer.write("]\n");
+            _ = writer.write("]\n") catch {};
         },
     }
 }
@@ -497,7 +524,7 @@ pub fn interpret(allocator: std.mem.Allocator, input: [:0]const u8, writer: anyt
     const ast = try parseJsonToAst(allocator, ast_json);
     defer @constCast(&ast).deinit(allocator);
 
-    const result = try eval(allocator, &env, &ast, writer);
+    const result = eval(allocator, &env, &ast, writer);
     result.deinit(allocator);
 }
 
@@ -815,7 +842,7 @@ test "leap year check - year 2024" {
 
 test "time string parsing HH:MM" {
     const testing = std.testing;
-    const result = try timeStringToFloat("14:30");
+    const result = timeStringToFloat("14:30") orelse return error.TestFailed;
     const hours: f64 = 14 * 3600;
     const minutes: f64 = 30 * 60;
     const expected_offset = hours + minutes;
@@ -831,7 +858,7 @@ test "time string parsing HH:MM" {
 
 test "time string parsing HH:MM:SS" {
     const testing = std.testing;
-    const result = try timeStringToFloat("09:15:45");
+    const result = timeStringToFloat("09:15:45") orelse return error.TestFailed;
     const hours: f64 = 9 * 3600;
     const minutes: f64 = 15 * 60;
     const seconds: f64 = 45;
@@ -847,7 +874,7 @@ test "time string parsing HH:MM:SS" {
 
 test "time string parsing midnight" {
     const testing = std.testing;
-    const result = try timeStringToFloat("00:00:00");
+    const result = timeStringToFloat("00:00:00") orelse return error.TestFailed;
 
     const now = std.time.timestamp();
     const secs_today = @mod(now, 86400);
@@ -859,25 +886,25 @@ test "time string parsing midnight" {
 test "time string parsing invalid - hours >= 24" {
     const testing = std.testing;
     const result = timeStringToFloat("25:00:00");
-    try testing.expectError(error.InvalidTimeFormat, result);
+    try testing.expect(result == null);
 }
 
 test "time string parsing invalid - minutes >= 60" {
     const testing = std.testing;
     const result = timeStringToFloat("12:75:00");
-    try testing.expectError(error.InvalidTimeFormat, result);
+    try testing.expect(result == null);
 }
 
 test "time string parsing invalid - seconds >= 60" {
     const testing = std.testing;
     const result = timeStringToFloat("12:30:75");
-    try testing.expectError(error.InvalidTimeFormat, result);
+    try testing.expect(result == null);
 }
 
 test "time string parsing invalid - non-numeric characters" {
     const testing = std.testing;
     const result = timeStringToFloat("12:30:ab");
-    try testing.expectError(error.InvalidTimeFormat, result);
+    try testing.expect(result == null);
 }
 
 test "timestamp to ISO string - epoch start" {
