@@ -55,7 +55,7 @@ let time_string_to_float time_str =
     let tm = Unix.localtime now in
     let new_tm = { tm with tm_hour = hours; tm_min = minutes; tm_sec = seconds } in
     fst (Unix.mktime new_tm)
-  | _ -> failwith ("Invalid time format: " ^ time_str)
+  | _ -> 0.0
 ;;
 
 let get_arg node =
@@ -168,7 +168,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            { type_ = Unit; time = None })
        in
        Hashtbl.set interp_data.env ~key:ident ~data:{ current with time = Some t }
-     | _ -> failwith "You have to call time with a timestamp");
+     | _ -> ());
     { type_ = Unit; time = None }
   | "TIMETOKEN" ->
     let time_str = get_value yojson_ast in
@@ -178,35 +178,35 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     let name = get_name yojson_ast in
     (match Hashtbl.find interp_data.env name with
      | Some v -> v
-     | None -> failwith ("Undefined variable: " ^ name))
+     | None -> { type_ = Unit; time = None })
   | "PLUS" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
      | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l +. r); time = None }
-     | _, _ -> failwith "should never happen")
+     | _, _ -> { type_ = Unit; time = None })
   | "MINUS" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
      | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l -. r); time = None }
-     | _, _ -> failwith "should never happen")
+     | _, _ -> { type_ = Unit; time = None })
   | "TIMES" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
      | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l *. r); time = None }
-     | _, _ -> failwith "should never happen")
+     | _, _ -> { type_ = Unit; time = None })
   | "DIVIDE" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
     let rval = List.nth_exn args 1 |> eval interp_data in
     (match rval.type_, lval.type_ with
      | NumberLiteral r, NumberLiteral l -> { type_ = NumberLiteral (l /. r); time = None }
-     | _, _ -> failwith "should never happen")
+     | _, _ -> { type_ = Unit; time = None })
   | "AMPERSAND" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
@@ -217,7 +217,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
        { type_ = StringLiteral (l ^ Float.to_string r); time = None }
      | StringLiteral r, NumberLiteral l ->
        { type_ = StringLiteral (Float.to_string l ^ r); time = None }
-     | _, _ -> failwith "should never happen")
+     | _, _ -> { type_ = Unit; time = None })
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     { type_ = StringLiteral v; time = None }
@@ -279,12 +279,12 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            | _ -> None)
        in
        (match numbers with
-        | [] -> failwith "AVERAGE requires a non-empty list of numbers"
+        | [] -> { type_ = Unit; time = None }
         | lst ->
           let sum = List.fold lst ~init:0.0 ~f:( +. ) in
           let avg = sum /. Float.of_int (List.length lst) in
           { type_ = NumberLiteral avg; time = None })
-     | _ -> failwith "AVERAGE expects a list")
+     | _ -> { type_ = Unit; time = None })
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in

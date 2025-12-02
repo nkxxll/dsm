@@ -1,6 +1,6 @@
 let () =
   let input =
-    {|sum_num := 0
+    {|sum_num := 0;
               FOR i IN [10, 20, 30] DO
                 sum_num := sum_num + i;
               ENDDO;
