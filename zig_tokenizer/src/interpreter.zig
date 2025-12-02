@@ -97,17 +97,37 @@ fn timeStringToFloat(time_str: []const u8) ?f64 {
     return @floatFromInt(today_start + time_secs);
 }
 
-/// Runtime values
-pub const Value = union(enum) {
+/// Value type (the actual value, without time metadata)
+pub const ValueType = union(enum) {
     number: f64,
     string: []const u8,
     bool: bool,
     unit,
-    time: f64,
     list: std.ArrayList(Value),
+};
+
+/// Runtime values with optional time metadata
+pub const Value = struct {
+    type: ValueType,
+    time: ?f64 = null,
+
+    /// Helper to create a unit value
+    pub fn unitValue() Value {
+        return .{ .type = .unit, .time = null };
+    }
+
+    /// Helper to create a value with just the type (no time)
+    pub fn valueTypeOnly(val_type: ValueType) Value {
+        return .{ .type = val_type, .time = null };
+    }
+
+    /// Helper to create a value with time
+    pub fn valueWithTime(val_type: ValueType, t: f64) Value {
+        return .{ .type = val_type, .time = t };
+    }
 
     pub fn deinit(self: *const Value, allocator: std.mem.Allocator) void {
-        switch (self.*) {
+        switch (self.type) {
             .string => |s| allocator.free(s),
             .list => |l| {
                 for (l.items) |item| {
@@ -136,38 +156,49 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
                 const val = eval(allocator, env, stmt, writer);
                 val.deinit(allocator);
             }
-            return Value.unit;
+            return Value.unitValue();
         },
         .write => |w| {
             const val = eval(allocator, env, w.arg, writer);
             writeValue(allocator, val, writer);
             val.deinit(allocator);
-            return Value.unit;
+            return Value.unitValue();
         },
         .trace => |t| {
             const val = eval(allocator, env, t.arg, writer);
             _ = writer.print("Line {s}: ", .{t.line}) catch {};
             writeValue(allocator, val, writer);
             val.deinit(allocator);
-            return Value.unit;
+            return Value.unitValue();
         },
         .assign => |a| {
             const val = eval(allocator, env, a.arg, writer);
             env.put(a.ident, val) catch {};
-            return Value.unit;
+            return Value.unitValue();
         },
         .timeassign => |ta| {
             const val = eval(allocator, env, ta.arg, writer);
-            if (val == .time) {
-                env.put(ta.ident, val) catch {};
+            
+            // Get the current value for this identifier (or unit if not found)
+            var current = if (env.get(ta.ident)) |v| v else Value.unitValue();
+            
+            // Set its time field to the evaluated value's time field
+            if (val.time) |t| {
+                current.time = t;
+                env.put(ta.ident, current) catch {};
+            } else {
+                // Only values with time can be assigned to time
+                val.deinit(allocator);
+                return Value.unitValue();
             }
-            return Value.unit;
+            val.deinit(allocator);
+            return Value.unitValue();
         },
         .variable => |name| {
             if (env.get(name)) |val| {
                 return val;
             } else {
-                return Value.unit;
+                return Value.unitValue();
             }
         },
         .plus => |op| {
@@ -175,12 +206,12 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             defer left.deinit(allocator);
             const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
-            switch (left) {
-                .number => |l| switch (right) {
-                    .number => |r| return Value{ .number = l + r },
-                    else => return Value.unit,
+            switch (left.type) {
+                .number => |l| switch (right.type) {
+                    .number => |r| return Value.valueTypeOnly(.{ .number = l + r }),
+                    else => return Value.unitValue(),
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .minus => |op| {
@@ -188,12 +219,12 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             defer left.deinit(allocator);
             const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
-            switch (left) {
-                .number => |l| switch (right) {
-                    .number => |r| return Value{ .number = l - r },
-                    else => return Value.unit,
+            switch (left.type) {
+                .number => |l| switch (right.type) {
+                    .number => |r| return Value.valueTypeOnly(.{ .number = l - r }),
+                    else => return Value.unitValue(),
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .times => |op| {
@@ -201,12 +232,12 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             defer left.deinit(allocator);
             const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
-            switch (left) {
-                .number => |l| switch (right) {
-                    .number => |r| return Value{ .number = l * r },
-                    else => return Value.unit,
+            switch (left.type) {
+                .number => |l| switch (right.type) {
+                    .number => |r| return Value.valueTypeOnly(.{ .number = l * r }),
+                    else => return Value.unitValue(),
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .divide => |op| {
@@ -214,15 +245,15 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             defer left.deinit(allocator);
             const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
-            switch (left) {
-                .number => |l| switch (right) {
+            switch (left.type) {
+                .number => |l| switch (right.type) {
                     .number => |r| {
-                        if (r == 0) return Value.unit;
-                        return Value{ .number = l / r };
+                        if (r == 0) return Value.unitValue();
+                        return Value.valueTypeOnly(.{ .number = l / r });
                     },
-                    else => return Value.unit,
+                    else => return Value.unitValue(),
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .ampersand => |op| {
@@ -230,189 +261,193 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
             defer left.deinit(allocator);
             const right = eval(allocator, env, op.right, writer);
             defer right.deinit(allocator);
-            switch (left) {
-                .string => |l| switch (right) {
+            switch (left.type) {
+                .string => |l| switch (right.type) {
                     .string => |r| {
-                        const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ l, r }) catch return Value.unit;
-                        return Value{ .string = concatenated };
+                        const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ l, r }) catch return Value.unitValue();
+                        return Value.valueTypeOnly(.{ .string = concatenated });
                     },
                     .number => |n| {
-                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unit;
+                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unitValue();
                         const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ l, num_str }) catch {
                             allocator.free(num_str);
-                            return Value.unit;
+                            return Value.unitValue();
                         };
                         allocator.free(num_str);
-                        return Value{ .string = concatenated };
+                        return Value.valueTypeOnly(.{ .string = concatenated });
                     },
-                    else => return Value.unit,
+                    else => return Value.unitValue(),
                 },
-                .number => |n| switch (right) {
+                .number => |n| switch (right.type) {
                     .string => |r| {
-                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unit;
+                        const num_str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return Value.unitValue();
                         const concatenated = std.mem.concat(allocator, u8, &[_][]const u8{ num_str, r }) catch {
                             allocator.free(num_str);
-                            return Value.unit;
+                            return Value.unitValue();
                         };
                         allocator.free(num_str);
-                        return Value{ .string = concatenated };
+                        return Value.valueTypeOnly(.{ .string = concatenated });
                     },
-                    else => return Value.unit,
+                    else => return Value.unitValue(),
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
-        .strtoken => |s| return Value{ .string = allocator.dupe(u8, s) catch return Value.unit },
-        .numtoken => |n| return Value{ .number = n },
-        .null => return Value.unit,
-        .true => return Value{ .bool = true },
-        .false => return Value{ .bool = false },
+        .strtoken => |s| return Value.valueTypeOnly(.{ .string = allocator.dupe(u8, s) catch return Value.unitValue() }),
+        .numtoken => |n| return Value.valueTypeOnly(.{ .number = n }),
+        .null => return Value.unitValue(),
+        .true => return Value.valueTypeOnly(.{ .bool = true }),
+        .false => return Value.valueTypeOnly(.{ .bool = false }),
         .list => |lst| {
-            var items = std.ArrayList(Value).initCapacity(allocator, lst.len) catch return Value.unit;
+            var items = std.ArrayList(Value).initCapacity(allocator, lst.len) catch return Value.unitValue();
             for (lst) |item| {
                 const val = eval(allocator, env, &item, writer);
                 items.append(allocator, val) catch {
                     items.deinit(allocator);
-                    return Value.unit;
+                    return Value.unitValue();
                 };
             }
-            return Value{ .list = items };
+            return Value.valueTypeOnly(.{ .list = items });
         },
         .timetoken => |t| {
             if (timeStringToFloat(t)) |timestamp| {
-                return Value{ .time = timestamp };
+                return Value.valueWithTime(.unit, timestamp);
             } else {
-                return Value.unit;
+                return Value.unitValue();
             }
         },
         .now => {
             const now_secs = std.time.timestamp();
-            return Value{ .time = @floatFromInt(now_secs) };
+            return Value.valueWithTime(.unit, @floatFromInt(now_secs));
         },
         .currenttime => {
             const now_secs = std.time.timestamp();
-            return Value{ .time = @floatFromInt(now_secs) };
+            return Value.valueWithTime(.unit, @floatFromInt(now_secs));
         },
         .time => |t| {
             const val = eval(allocator, env, t, writer);
-            if (val == .time) {
-                return val;
+            
+            // Extract and return the time property as a unit with time set
+            if (val.time) |time_val| {
+                val.deinit(allocator);
+                return Value.valueWithTime(.unit, time_val);
             } else {
-                return Value.unit;
+                val.deinit(allocator);
+                return Value.unitValue();
             }
         },
         .uppercase => |u| {
             const val = eval(allocator, env, u, writer);
-            switch (val) {
+            switch (val.type) {
                 .string => |s| {
-                    var uppercase_str = allocator.alloc(u8, s.len) catch return Value.unit;
+                    var uppercase_str = allocator.alloc(u8, s.len) catch return Value.unitValue();
                     for (s, 0..) |c, i| {
                         uppercase_str[i] = std.ascii.toUpper(c);
                     }
-                    return Value{ .string = uppercase_str };
+                    return Value.valueTypeOnly(.{ .string = uppercase_str });
                 },
                 .list => |list| {
-                    var new_list = std.ArrayList(Value).initCapacity(allocator, list.items.len) catch return Value.unit;
+                    var new_list = std.ArrayList(Value).initCapacity(allocator, list.items.len) catch return Value.unitValue();
                     for (list.items) |item| {
-                        switch (item) {
+                        switch (item.type) {
                             .string => |s| {
                                 var uppercase_str = allocator.alloc(u8, s.len) catch {
                                     new_list.deinit(allocator);
                                     val.deinit(allocator);
-                                    return Value.unit;
+                                    return Value.unitValue();
                                 };
                                 for (s, 0..) |c, i| {
                                     uppercase_str[i] = std.ascii.toUpper(c);
                                 }
-                                new_list.append(allocator, Value{ .string = uppercase_str }) catch {
+                                new_list.append(allocator, Value.valueTypeOnly(.{ .string = uppercase_str })) catch {
                                     allocator.free(uppercase_str);
                                     new_list.deinit(allocator);
                                     val.deinit(allocator);
-                                    return Value.unit;
+                                    return Value.unitValue();
                                 };
                             },
                             else => new_list.append(allocator, item) catch {
                                 new_list.deinit(allocator);
                                 val.deinit(allocator);
-                                return Value.unit;
+                                return Value.unitValue();
                             },
                         }
                     }
                     val.deinit(allocator);
-                    return Value{ .list = new_list };
+                    return Value.valueTypeOnly(.{ .list = new_list });
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .maximum => |m| {
             const val = eval(allocator, env, m, writer);
-            switch (val) {
+            switch (val.type) {
                 .list => |list| {
                     var max_val: f64 = -std.math.inf(f64);
                     var found = false;
                     for (list.items) |item| {
-                        if (item == .number) {
-                            if (item.number > max_val) {
-                                max_val = item.number;
+                        if (item.type == .number) {
+                            if (item.type.number > max_val) {
+                                max_val = item.type.number;
                                 found = true;
                             }
                         }
                     }
                     val.deinit(allocator);
-                    if (!found) return Value.unit;
-                    return Value{ .number = max_val };
+                    if (!found) return Value.unitValue();
+                    return Value.valueTypeOnly(.{ .number = max_val });
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .average => |a| {
             const val = eval(allocator, env, a, writer);
-            switch (val) {
+            switch (val.type) {
                 .list => |list| {
                     var sum: f64 = 0;
                     var count: f64 = 0;
                     for (list.items) |item| {
-                        if (item == .number) {
-                            sum += item.number;
+                        if (item.type == .number) {
+                            sum += item.type.number;
                             count += 1;
                         }
                     }
                     val.deinit(allocator);
-                    if (count == 0) return Value.unit;
-                    return Value{ .number = sum / count };
+                    if (count == 0) return Value.unitValue();
+                    return Value.valueTypeOnly(.{ .number = sum / count });
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .increase => |i| {
             const val = eval(allocator, env, i, writer);
-            switch (val) {
+            switch (val.type) {
                 .list => |list| {
                     if (list.items.len < 2) {
                         val.deinit(allocator);
-                        const empty_list = std.ArrayList(Value).initCapacity(allocator, 0) catch return Value.unit;
-                        return Value{ .list = empty_list };
+                        const empty_list = std.ArrayList(Value).initCapacity(allocator, 0) catch return Value.unitValue();
+                        return Value.valueTypeOnly(.{ .list = empty_list });
                     }
-                    var diffs = std.ArrayList(Value).initCapacity(allocator, list.items.len - 1) catch return Value.unit;
+                    var diffs = std.ArrayList(Value).initCapacity(allocator, list.items.len - 1) catch return Value.unitValue();
                     for (list.items[0 .. list.items.len - 1], 0..) |item, idx| {
-                        if (item == .number and list.items[idx + 1] == .number) {
-                            const diff = list.items[idx + 1].number - item.number;
-                            diffs.append(allocator, Value{ .number = diff }) catch {
+                        if (item.type == .number and list.items[idx + 1].type == .number) {
+                            const diff = list.items[idx + 1].type.number - item.type.number;
+                            diffs.append(allocator, Value.valueTypeOnly(.{ .number = diff })) catch {
                                 diffs.deinit(allocator);
                                 val.deinit(allocator);
-                                return Value.unit;
+                                return Value.unitValue();
                             };
                         }
                     }
                     val.deinit(allocator);
-                    return Value{ .list = diffs };
+                    return Value.valueTypeOnly(.{ .list = diffs });
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
         .ifnode => |ifn| {
             const cond = eval(allocator, env, ifn.condition, writer);
-            const is_true = switch (cond) {
+            const is_true = switch (cond.type) {
                 .bool => |b| b,
                 .number => |n| n != 0,
                 .unit => false,
@@ -427,16 +462,16 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
         },
         .fornode => |forn| {
             const iter_val = eval(allocator, env, forn.expression, writer);
-            switch (iter_val) {
+            switch (iter_val.type) {
                 .list => |list| {
                     for (list.items) |item| {
                         env.put(forn.varname, item) catch {};
                         _ = eval(allocator, env, forn.statements, writer);
                     }
                     iter_val.deinit(allocator);
-                    return Value.unit;
+                    return Value.unitValue();
                 },
-                else => return Value.unit,
+                else => return Value.unitValue(),
             }
         },
     }
@@ -444,7 +479,7 @@ pub fn eval(allocator: std.mem.Allocator, env: *Env, node: *const AstNode, write
 
 /// Write value to writer
 pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) void {
-    switch (value) {
+    switch (value.type) {
         .number => |n| {
             const str = std.fmt.allocPrint(allocator, "{d}\n", .{n}) catch return;
             defer allocator.free(str);
@@ -459,13 +494,15 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) v
             _ = writer.write(str) catch {};
         },
         .unit => {
-            _ = writer.write("null\n") catch {};
-        },
-        .time => |t| {
-            const iso_str = timestampToIsoString(allocator, t) catch return;
-            defer allocator.free(iso_str);
-            _ = writer.write(iso_str) catch {};
-            _ = writer.write("\n") catch {};
+            // Only write time if present, otherwise write null
+            if (value.time) |t| {
+                const iso_str = timestampToIsoString(allocator, t) catch return;
+                defer allocator.free(iso_str);
+                _ = writer.write(iso_str) catch {};
+                _ = writer.write("\n") catch {};
+            } else {
+                _ = writer.write("null\n") catch {};
+            }
         },
         .list => |lst| {
             _ = writer.write("[") catch {};
@@ -473,7 +510,7 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) v
                 if (i > 0) {
                     _ = writer.write(", ") catch {};
                 }
-                switch (item) {
+                switch (item.type) {
                     .number => |n| {
                         const str = std.fmt.allocPrint(allocator, "{d}", .{n}) catch return;
                         defer allocator.free(str);
@@ -487,12 +524,13 @@ pub fn writeValue(allocator: std.mem.Allocator, value: Value, writer: anytype) v
                         _ = writer.write(str) catch {};
                     },
                     .unit => {
-                        _ = writer.write("null") catch {};
-                    },
-                    .time => |t| {
-                        const iso_str = timestampToIsoString(allocator, t) catch return;
-                        defer allocator.free(iso_str);
-                        _ = writer.write(iso_str) catch {};
+                        if (item.time) |t| {
+                            const iso_str = timestampToIsoString(allocator, t) catch return;
+                            defer allocator.free(iso_str);
+                            _ = writer.write(iso_str) catch {};
+                        } else {
+                            _ = writer.write("null") catch {};
+                        }
                     },
                     .list => {
                         _ = writer.write("[...]") catch {};
@@ -1159,4 +1197,351 @@ test "trace statement" {
     const output = buffer.items;
     const expected = "Line 1: 42\n";
     try testing.expectEqualStrings(expected, output);
+}
+
+// ===== Time as Property Tests =====
+
+test "time assignment - value unchanged after time assign" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 42;
+        \\time x := 14:30:00;
+        \\WRITE x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "42\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time assignment - time property stored and retrieved" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 42;
+        \\time x := 14:30:00;
+        \\WRITE time x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // Should contain ISO 8601 format with time
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "Z"));
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "14:30:00"));
+}
+
+test "time assignment - string with time property" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\s := "hello";
+        \\time s := 10:15:30;
+        \\WRITE s;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "hello\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time assignment - extract time from string with time" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\s := "hello";
+        \\time s := 09:45:15;
+        \\WRITE time s;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // Should contain time in output
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "09:45:15"));
+}
+
+test "time assignment - multiple variables with different times" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 100;
+        \\y := 200;
+        \\time x := 08:00:00;
+        \\time y := 16:30:00;
+        \\WRITE x;
+        \\WRITE y;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "100\n200\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time assignment - uninitialized variable gets time property" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\time z := 12:00:00;
+        \\WRITE z;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // z should be unit with time
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "Z"));
+}
+
+test "time operator - extract time from time literal" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE time 15:45:30;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // Should output ISO format with the time
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "15:45:30"));
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+}
+
+test "now keyword - now stores current timestamp" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 99;
+        \\time x := now;
+        \\WRITE x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "99\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "now keyword - time operator on now" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 99;
+        \\time x := now;
+        \\WRITE time x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // Should contain ISO timestamp
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "Z"));
+}
+
+test "currenttime keyword - currenttime stores current timestamp" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\y := 55;
+        \\time y := currenttime;
+        \\WRITE y;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "55\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "write time operator - no time on variable outputs null" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 123;
+        \\WRITE time x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "null\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "write operator - unit without time outputs null" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := null;
+        \\WRITE x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "null\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time property with list values" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\lst := [1, 2, 3];
+        \\time lst := 11:22:33;
+        \\WRITE lst;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "[1, 2, 3]\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time property persists through expression evaluation" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 10;
+        \\time x := 13:45:00;
+        \\y := x + 5;
+        \\WRITE y;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "15\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time operator on expression result - no time on result" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\WRITE time (5 + 3);
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 64);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    const expected = "null\n";
+    try testing.expectEqualStrings(expected, output);
+}
+
+test "time assignment - HH:MM format" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 77;
+        \\time x := 18:45;
+        \\WRITE time x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // Should contain time in output
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "18:45"));
+}
+
+test "time and value operators in sequence" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    const input: [:0]const u8 =
+        \\x := 42;
+        \\time x := 10:30:00;
+        \\WRITE x;
+        \\WRITE time x;
+    ;
+
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 128);
+    defer buffer.deinit(allocator);
+
+    try interpret(allocator, input, buffer.writer(allocator));
+
+    const output = buffer.items;
+    // First line should be 42
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "42\n"));
+    // Second part should have ISO timestamp
+    try testing.expect(std.mem.containsAtLeast(u8, output, 1, "T"));
 }
