@@ -139,6 +139,61 @@ let get_statements_block node =
 ;;
 
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
+  let eval_binary_number_op op_func =
+    let args = get_arg_list yojson_ast in
+    let lval = List.nth_exn args 0 |> eval interp_data in
+    let rval = List.nth_exn args 1 |> eval interp_data in
+    match rval.type_, lval.type_ with
+    | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (op_func l r))
+    | _, _ -> unit
+  in
+  let extract_numbers items =
+    List.filter_map items ~f:(fun item ->
+      match item.type_ with
+      | NumberLiteral n -> Some n
+      | _ -> None)
+  in
+  let eval_maximum items =
+    match List.max_elt items ~compare:Float.compare with
+    | Some max_val -> value_type_only (NumberLiteral max_val)
+    | None -> unit
+  in
+  let eval_average items =
+    match items with
+    | [] -> unit
+    | lst ->
+      let sum = List.fold lst ~init:0.0 ~f:( +. ) in
+      let avg = sum /. Float.of_int (List.length lst) in
+      value_type_only (NumberLiteral avg)
+  in
+  let eval_increase items =
+    match items with
+    | [] | [ _ ] -> value_type_only (List [])
+    | lst ->
+      let diffs =
+        List.init
+          (List.length lst - 1)
+          ~f:(fun i ->
+            let curr = List.nth_exn lst (i + 1) in
+            let prev = List.nth_exn lst i in
+            value_type_only (NumberLiteral (curr -. prev)))
+      in
+      value_type_only (List diffs)
+  in
+  let apply_string_transform transform_fn item =
+    match item.type_ with
+    | StringLiteral s -> { item with type_ = StringLiteral (transform_fn s) }
+    | _ -> item
+  in
+  let eval_string_op transform_fn arg =
+    let val_ = eval interp_data arg in
+    match val_.type_ with
+    | StringLiteral s -> value_type_only (StringLiteral (transform_fn s))
+    | List items ->
+      let transformed = List.map items ~f:(apply_string_transform transform_fn) in
+      value_type_only (List transformed)
+    | _ -> unit
+  in
   let type_ = get_type yojson_ast in
   match type_ with
   | "STATEMENTBLOCK" ->
@@ -183,34 +238,10 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match Hashtbl.find interp_data.env name with
      | Some v -> v
      | None -> unit)
-  | "PLUS" ->
-    let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l +. r))
-     | _, _ -> unit)
-  | "MINUS" ->
-    let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l -. r))
-     | _, _ -> unit)
-  | "TIMES" ->
-    let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l *. r))
-     | _, _ -> unit)
-  | "DIVIDE" ->
-    let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    (match rval.type_, lval.type_ with
-     | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l /. r))
-     | _, _ -> unit)
+  | "PLUS" -> eval_binary_number_op ( +. )
+  | "MINUS" -> eval_binary_number_op ( -. )
+  | "TIMES" -> eval_binary_number_op ( *. )
+  | "DIVIDE" -> eval_binary_number_op ( /. )
   | "AMPERSAND" ->
     let args = get_arg_list yojson_ast in
     let lval = List.nth_exn args 0 |> eval interp_data in
@@ -225,8 +256,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
-  | "NUMTOKEN" ->
-    value_type_only (NumberLiteral (Float.of_string (get_value yojson_ast)))
+  | "NUMTOKEN" -> value_type_only (NumberLiteral (Float.of_string (get_value yojson_ast)))
   | "NULL" -> unit
   | "TRUE" -> value_type_only (BoolLiteral true)
   | "FALSE" -> value_type_only (BoolLiteral false)
@@ -242,52 +272,18 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | Some t -> value_type_only (TimeLiteral t)
      | None -> unit)
   | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
-  | "UPPERCASE" ->
-    let arg = get_arg yojson_ast in
-    let val_ = eval interp_data arg in
-    (match val_.type_ with
-     | StringLiteral s -> value_type_only (StringLiteral (String.uppercase s))
-     | List items ->
-       let uppercased =
-         List.map items ~f:(fun item ->
-           match item.type_ with
-           | StringLiteral s -> { item with type_ = StringLiteral (String.uppercase s) }
-           | _ -> item)
-       in
-       value_type_only (List uppercased)
-     | _ -> unit)
+  | "UPPERCASE" -> eval_string_op String.uppercase (get_arg yojson_ast)
   | "MAXIMUM" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.type_ with
-     | List items ->
-       let numbers =
-         List.filter_map items ~f:(fun item ->
-           match item.type_ with
-           | NumberLiteral n -> Some n
-           | _ -> None)
-       in
-       (match List.max_elt numbers ~compare:Float.compare with
-        | Some max_val -> value_type_only (NumberLiteral max_val)
-        | None -> unit)
-       | _ -> unit)
+     | List items -> eval_maximum (extract_numbers items)
+     | _ -> unit)
   | "AVERAGE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.type_ with
-     | List items ->
-       let numbers =
-         List.filter_map items ~f:(fun item ->
-           match item.type_ with
-           | NumberLiteral n -> Some n
-           | _ -> None)
-       in
-       (match numbers with
-        | [] -> unit
-        | lst ->
-          let sum = List.fold lst ~init:0.0 ~f:( +. ) in
-          let avg = sum /. Float.of_int (List.length lst) in
-          value_type_only (NumberLiteral avg))
+     | List items -> eval_average (extract_numbers items)
      | _ -> unit)
   | "IF" ->
     let condition = get_condition yojson_ast in
@@ -311,31 +307,13 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            eval interp_data statements_block)
        in
        unit
-       | _ -> unit)
+     | _ -> unit)
   | "INCREASE" ->
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.type_ with
-     | List items ->
-       let numbers =
-         List.filter_map items ~f:(fun item ->
-           match item.type_ with
-           | NumberLiteral n -> Some n
-           | _ -> None)
-       in
-       (match numbers with
-        | [] | [ _ ] -> value_type_only (List [])
-        | lst ->
-          let diffs =
-            List.init
-              (List.length lst - 1)
-              ~f:(fun i ->
-                let curr = List.nth_exn lst (i + 1) in
-                let prev = List.nth_exn lst i in
-                value_type_only (NumberLiteral (curr -. prev)))
-          in
-          value_type_only (List diffs))
-          | _ -> unit)
+     | List items -> eval_increase (extract_numbers items)
+     | _ -> unit)
   | _ -> unit
 
 and write_value (expr : value) =
@@ -369,18 +347,6 @@ and write_value (expr : value) =
   | TimeLiteral t ->
     Stdio.print_endline (timestamp_to_iso_string t);
     ()
-;;
-
-let timestamp_to_iso_string ts =
-  let tm = Unix.gmtime ts in
-  Printf.sprintf
-    "%04d-%02d-%02dT%02d:%02d:%02dZ"
-    (tm.tm_year + 1900)
-    (tm.tm_mon + 1)
-    tm.tm_mday
-    tm.tm_hour
-    tm.tm_min
-    tm.tm_sec
 ;;
 
 let interpret_parsed yojson_ast : value =
