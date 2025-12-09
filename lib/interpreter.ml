@@ -142,6 +142,19 @@ type execution_type =
   | ElementWise
   | NotElementWise
 
+let arithmetic_operation (op : 'a -> 'a -> 'a) this other : value =
+  match this, other with
+  | { type_ = NumberLiteral n; time = this_time }, { type_ = NumberLiteral m; time = _ }
+    -> { type_ = NumberLiteral (op n m); time = this_time }
+  | _, _ -> unit
+;;
+
+let minus_operation this =
+  match this with
+  | { type_ = NumberLiteral n; _ } -> { this with type_ = NumberLiteral (-.n) }
+  | _ -> unit
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   (* Binary operation dispatcher *)
   let binary_operation ~execution_type (f : value -> value -> value) =
@@ -183,17 +196,6 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
          { type_ = List (List.map flist ~f); time = ft }
        | any -> f any)
     | NotElementWise -> f first
-  in
-  let extract_numbers items =
-    List.filter_map items ~f:(fun item ->
-      match item.type_ with
-      | NumberLiteral n -> Some n
-      | _ -> None)
-  in
-  let apply_string_transform transform_fn item =
-    match item.type_ with
-    | StringLiteral s -> { item with type_ = StringLiteral (transform_fn s) }
-    | _ -> item
   in
   let type_ = get_type yojson_ast in
   match type_ with
@@ -239,26 +241,11 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match Hashtbl.find interp_data.env name with
      | Some v -> v
      | None -> unit)
+  | "UNMINUS" -> unary_operation ~execution_type:NotElementWise ~f:minus_operation
   | "PLUS" ->
-    let args = get_arg_list yojson_ast in
-    binary
-      (BinaryElementWise
-         (fun lval rval ->
-           match rval.type_, lval.type_ with
-           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l +. r))
-           | _, _ -> unit))
-      (List.nth_exn args 0)
-      (List.nth_exn args 1)
+    binary_operation ~execution_type:ElementWise (arithmetic_operation Float.add)
   | "MINUS" ->
-    let args = get_arg_list yojson_ast in
-    binary
-      (BinaryElementWise
-         (fun lval rval ->
-           match rval.type_, lval.type_ with
-           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l -. r))
-           | _, _ -> unit))
-      (List.nth_exn args 0)
-      (List.nth_exn args 1)
+    binary_operation ~execution_type:ElementWise (arithmetic_operation Float.sub)
   | "TIMES" ->
     let args = get_arg_list yojson_ast in
     binary
