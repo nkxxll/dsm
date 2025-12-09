@@ -138,14 +138,51 @@ let get_statements_block node =
   node |> member "statements"
 ;;
 
+type execution_type =
+  | ElementWise
+  | NotElementWise
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
-  let eval_binary_number_op op_func =
+  (* Binary operation dispatcher *)
+  let binary_operation ~execution_type (f : value -> value -> value) =
     let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    match rval.type_, lval.type_ with
-    | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (op_func l r))
-    | _, _ -> unit
+    let first = eval interp_data (List.nth_exn args 0) in
+    let second = eval interp_data (List.nth_exn args 1) in
+    match execution_type with
+    | ElementWise ->
+      (match first, second with
+       | ( { type_ = List first_list; time = first_time }
+         , { type_ = List second_list; time = _second_time } ) ->
+         if Int.equal (List.length first_list) (List.length second_list)
+         then (
+           let combined = List.zip_exn first_list second_list in
+           let new_list =
+             List.map combined ~f:(fun item ->
+               let first, second = item in
+               f first second)
+           in
+           { type_ = List new_list; time = first_time })
+         else unit
+       | ( { type_ = List first_list; time = _first_time }
+         , { type_ = _; time = second_time } ) ->
+         { type_ = List (List.map first_list ~f:(fun fa -> f fa second))
+         ; time = second_time
+         }
+       | first_type, { type_ = List second_list; time = second_time } ->
+         { type_ = List (List.map second_list ~f:(f first_type)); time = second_time }
+       | first_value, second_value -> f first_value second_value)
+    | NotElementWise -> f first second
+  in
+  let unary_operation ~execution_type ~f =
+    let arg = get_arg yojson_ast in
+    let first = eval interp_data arg in
+    match execution_type with
+    | ElementWise ->
+      (match first with
+       | { type_ = List flist; time = ft } ->
+         { type_ = List (List.map flist ~f); time = ft }
+       | any -> f any)
+    | NotElementWise -> f first
   in
   let extract_numbers items =
     List.filter_map items ~f:(fun item ->
@@ -153,46 +190,10 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
       | NumberLiteral n -> Some n
       | _ -> None)
   in
-  let eval_maximum items =
-    match List.max_elt items ~compare:Float.compare with
-    | Some max_val -> value_type_only (NumberLiteral max_val)
-    | None -> unit
-  in
-  let eval_average items =
-    match items with
-    | [] -> unit
-    | lst ->
-      let sum = List.fold lst ~init:0.0 ~f:( +. ) in
-      let avg = sum /. Float.of_int (List.length lst) in
-      value_type_only (NumberLiteral avg)
-  in
-  let eval_increase items =
-    match items with
-    | [] | [ _ ] -> value_type_only (List [])
-    | lst ->
-      let diffs =
-        List.init
-          (List.length lst - 1)
-          ~f:(fun i ->
-            let curr = List.nth_exn lst (i + 1) in
-            let prev = List.nth_exn lst i in
-            value_type_only (NumberLiteral (curr -. prev)))
-      in
-      value_type_only (List diffs)
-  in
   let apply_string_transform transform_fn item =
     match item.type_ with
     | StringLiteral s -> { item with type_ = StringLiteral (transform_fn s) }
     | _ -> item
-  in
-  let eval_string_op transform_fn arg =
-    let val_ = eval interp_data arg in
-    match val_.type_ with
-    | StringLiteral s -> value_type_only (StringLiteral (transform_fn s))
-    | List items ->
-      let transformed = List.map items ~f:(apply_string_transform transform_fn) in
-      value_type_only (List transformed)
-    | _ -> unit
   in
   let type_ = get_type yojson_ast in
   match type_ with
@@ -238,21 +239,60 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match Hashtbl.find interp_data.env name with
      | Some v -> v
      | None -> unit)
-  | "PLUS" -> eval_binary_number_op ( +. )
-  | "MINUS" -> eval_binary_number_op ( -. )
-  | "TIMES" -> eval_binary_number_op ( *. )
-  | "DIVIDE" -> eval_binary_number_op ( /. )
+  | "PLUS" ->
+    let args = get_arg_list yojson_ast in
+    binary
+      (BinaryElementWise
+         (fun lval rval ->
+           match rval.type_, lval.type_ with
+           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l +. r))
+           | _, _ -> unit))
+      (List.nth_exn args 0)
+      (List.nth_exn args 1)
+  | "MINUS" ->
+    let args = get_arg_list yojson_ast in
+    binary
+      (BinaryElementWise
+         (fun lval rval ->
+           match rval.type_, lval.type_ with
+           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l -. r))
+           | _, _ -> unit))
+      (List.nth_exn args 0)
+      (List.nth_exn args 1)
+  | "TIMES" ->
+    let args = get_arg_list yojson_ast in
+    binary
+      (BinaryElementWise
+         (fun lval rval ->
+           match rval.type_, lval.type_ with
+           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l *. r))
+           | _, _ -> unit))
+      (List.nth_exn args 0)
+      (List.nth_exn args 1)
+  | "DIVIDE" ->
+    let args = get_arg_list yojson_ast in
+    binary
+      (BinaryElementWise
+         (fun lval rval ->
+           match rval.type_, lval.type_ with
+           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l /. r))
+           | _, _ -> unit))
+      (List.nth_exn args 0)
+      (List.nth_exn args 1)
   | "AMPERSAND" ->
     let args = get_arg_list yojson_ast in
-    let lval = List.nth_exn args 0 |> eval interp_data in
-    let rval = List.nth_exn args 1 |> eval interp_data in
-    (match rval.type_, lval.type_ with
-     | StringLiteral r, StringLiteral l -> value_type_only (StringLiteral (l ^ r))
-     | NumberLiteral r, StringLiteral l ->
-       value_type_only (StringLiteral (l ^ Float.to_string r))
-     | StringLiteral r, NumberLiteral l ->
-       value_type_only (StringLiteral (Float.to_string l ^ r))
-     | _, _ -> unit)
+    binary
+      (BinaryElementWise
+         (fun lval rval ->
+           match rval.type_, lval.type_ with
+           | StringLiteral r, StringLiteral l -> value_type_only (StringLiteral (l ^ r))
+           | NumberLiteral r, StringLiteral l ->
+             value_type_only (StringLiteral (l ^ Float.to_string r))
+           | StringLiteral r, NumberLiteral l ->
+             value_type_only (StringLiteral (Float.to_string l ^ r))
+           | _, _ -> unit))
+      (List.nth_exn args 0)
+      (List.nth_exn args 1)
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
@@ -272,19 +312,58 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | Some t -> value_type_only (TimeLiteral t)
      | None -> unit)
   | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
-  | "UPPERCASE" -> eval_string_op String.uppercase (get_arg yojson_ast)
+  | "UPPERCASE" ->
+    unary
+      (UnaryBoth
+         ( (fun val_ ->
+             match val_.type_ with
+             | StringLiteral s -> value_type_only (StringLiteral (String.uppercase s))
+             | _ -> val_)
+         , fun items ->
+             let transformed =
+               List.map items ~f:(apply_string_transform String.uppercase)
+             in
+             value_type_only (List transformed) ))
+      (get_arg yojson_ast)
   | "MAXIMUM" ->
-    let arg = get_arg yojson_ast in
-    let val_ = eval interp_data arg in
-    (match val_.type_ with
-     | List items -> eval_maximum (extract_numbers items)
-     | _ -> unit)
+    unary
+      (UnaryListWise
+         (fun items ->
+           let numbers = extract_numbers items in
+           match List.max_elt numbers ~compare:Float.compare with
+           | Some max_val -> value_type_only (NumberLiteral max_val)
+           | None -> unit))
+      (get_arg yojson_ast)
   | "AVERAGE" ->
-    let arg = get_arg yojson_ast in
-    let val_ = eval interp_data arg in
-    (match val_.type_ with
-     | List items -> eval_average (extract_numbers items)
-     | _ -> unit)
+    unary
+      (UnaryListWise
+         (fun items ->
+           let numbers = extract_numbers items in
+           match numbers with
+           | [] -> unit
+           | lst ->
+             let sum = List.fold lst ~init:0.0 ~f:( +. ) in
+             let avg = sum /. Float.of_int (List.length lst) in
+             value_type_only (NumberLiteral avg)))
+      (get_arg yojson_ast)
+  | "INCREASE" ->
+    unary
+      (UnaryListWise
+         (fun items ->
+           let numbers = extract_numbers items in
+           match numbers with
+           | [] | [ _ ] -> value_type_only (List [])
+           | lst ->
+             let diffs =
+               List.init
+                 (List.length lst - 1)
+                 ~f:(fun i ->
+                   let curr = List.nth_exn lst (i + 1) in
+                   let prev = List.nth_exn lst i in
+                   value_type_only (NumberLiteral (curr -. prev)))
+             in
+             value_type_only (List diffs)))
+      (get_arg yojson_ast)
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in
@@ -307,12 +386,6 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
            eval interp_data statements_block)
        in
        unit
-     | _ -> unit)
-  | "INCREASE" ->
-    let arg = get_arg yojson_ast in
-    let val_ = eval interp_data arg in
-    (match val_.type_ with
-     | List items -> eval_increase (extract_numbers items)
      | _ -> unit)
   | _ -> unit
 
