@@ -688,5 +688,11 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect {| Line 1:  "foo"  |}]
     ;;
+
+    (* let%expect_test "test power with minus" =
+      let input = {|TRACE -2 ** 10;|} in
+      input |> interpret;
+      [%expect {| Line 1:  "foo"  |}]
+    ;; *)
   end)
 ;;

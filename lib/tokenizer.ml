@@ -11,6 +11,7 @@ module TokenType = struct
     | CURRENTTIME
     | DIVIDE
     | DO
+    | DOT
     | EARLIEST
     | ELSE
     | ELSEIF
@@ -41,6 +42,7 @@ module TokenType = struct
     | NUMTOKEN of float
     | PLUS
     | POWER
+    | RANGE
     | READ
     | RPAR
     | RSPAR
@@ -62,6 +64,8 @@ module TokenType = struct
     match String.uppercase str with
     | "AVERAGE" -> AVERAGE
     | "CURRENTTIME" -> CURRENTTIME
+    | "RANGE" -> RANGE
+    | "DOT" -> DOT
     | "DO" -> DO
     | "EARLIEST" -> EARLIEST
     | "ELSE" -> ELSE
@@ -92,6 +96,8 @@ module TokenType = struct
   ;;
 
   let token_type_to_string = function
+    | DOT -> "DOT"
+    | RANGE -> "RANGE"
     | AMPERSAND -> "AMPERSAND"
     | ASSIGN -> "ASSIGN"
     | AVERAGE -> "AVERAGE"
@@ -159,6 +165,16 @@ module Token = struct
 
   let to_list t =
     [ Int.to_string t.row; TokenType.token_type_to_string t.type_; t.literal ]
+  ;;
+
+  let to_string t =
+    Printf.sprintf
+      "Token { type = %s; literal = \"%s\"; length = %d; row = %d; col = %d }"
+      (TokenType.token_type_to_string t.type_)
+      t.literal
+      t.length
+      t.row
+      t.col
   ;;
 end
 
@@ -242,16 +258,60 @@ let parse_number tokenizer =
   make_token tokenizer ~type_:(NUMTOKEN value) ~literal ~len
 ;;
 
-let time_parser tok =
+let time_parser =
   let digits = take_while1 is_digit in
   digits
   >>= fun p1 ->
   char ':' *> digits
   >>= fun p2 ->
   option "" (char ':' *> digits)
+  <* option "" (string "Z")
   >>= fun p3 ->
-  let lit = if String.is_empty p3 then p1 ^ ":" ^ p2 else p1 ^ ":" ^ p2 ^ ":" ^ p3 in
-  return (make_token tok ~type_:(TIMETOKEN lit) ~literal:lit ~len:(String.length lit))
+  if String.is_empty p3 then return (p1 ^ ":" ^ p2) else return (p1 ^ ":" ^ p2 ^ ":" ^ p3)
+;;
+
+let date_parser =
+  let digits = take_while1 is_digit in
+  digits
+  >>= fun p1 ->
+  char '-' *> digits
+  >>= fun p2 -> char '-' *> digits >>| fun p3 -> p1 ^ "-" ^ p2 ^ "-" ^ p3
+;;
+
+let date_parser_full tok =
+  date_parser
+  >>| fun literal ->
+  make_token tok ~type_:(TIMETOKEN literal) ~literal ~len:(String.length literal)
+;;
+
+let time_parser_full tok =
+  time_parser
+  >>| fun literal ->
+  make_token tok ~type_:(TIMETOKEN literal) ~literal ~len:(String.length literal)
+;;
+
+let date_time_parser tok =
+  date_parser
+  >>= fun date ->
+  option None (char 'T' *> time_parser >>| fun t -> Some t)
+  >>= fun maybe_time ->
+  let literal =
+    match maybe_time with
+    | Some time -> date ^ "T" ^ time
+    | None -> date
+  in
+  return (make_token tok ~type_:(TIMETOKEN literal) ~literal ~len:(String.length literal))
+;;
+
+let concat_char this other = Char.to_string this ^ Char.to_string other
+let concat_char_string this other = this ^ Char.to_string other
+
+let range_parser tok =
+  string "..." >>| fun literal -> make_token tok ~type_:RANGE ~literal ~len:3
+;;
+
+let dot_parser tok =
+  char '.' >>| fun c -> make_token tok ~type_:DOT ~literal:(Char.to_string c) ~len:1
 ;;
 
 let parse_language (tokenizer : t) =
@@ -321,9 +381,15 @@ let parse_language (tokenizer : t) =
          <|> (string ">"
               >>| fun s -> make_token tok ~type_:GT ~literal:s ~len:(String.length s))
          >>= loop
+       | '.' -> range_parser tok <|> dot_parser tok >>= loop
        | 'a' .. 'z' | 'A' .. 'Z' | '_' -> parse_ident tok >>= loop
        | '"' -> parse_language_string tok >>= loop
-       | '0' .. '9' -> time_parser tok <|> parse_number tok >>= loop
+       | '0' .. '9' ->
+         date_time_parser tok
+         <|> date_parser_full tok
+         <|> time_parser_full tok
+         <|> parse_number tok
+         >>= loop
        | other ->
          advance 1
          >>= fun () ->
@@ -613,6 +679,255 @@ that goes over two lines" IF|};
             [ "3", "SEMICOLON", ";" ]
           ]
           |}]
+    ;;
+
+    let%expect_test "with tokenize keyword capitalization" =
+      let input = {|x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false, now];|} in
+      (match tokenize input with
+       | Ok out -> Stdio.print_endline out
+       | Error msg -> Stdio.print_endline ("error " ^ msg));
+      [%expect {|
+        [
+          [ "1", "IDENTIFIER", "x" ],
+          [ "1", "ASSIGN", ":=" ],
+          [ "1", "LSPAR", "[" ],
+          [ "1", "STRTOKEN", " \"Hallo Welt\" " ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NULL", "null" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NUMTOKEN", "4711" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "TIMETOKEN", "2020-01-01T12:30:00" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "FALSE", "false" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NOW", "now" ],
+          [ "1", "RSPAR", "]" ],
+          [ "1", "SEMICOLON", ";" ]
+        ]
+        |}]
+    ;;
+
+    let%expect_test "with tokenize keyword capitalization" =
+      let input =
+        {|x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false, now];
+        trace x;
+        trace x is number;
+        trace 1 + 2 * 4 / 5 - -3 + 4 ** 3 ** 2;
+        trace -2 ** 10;
+        y := [100,200,150];
+        trace [maximum y, average y, increase y];
+        trace uppercase ["Hallo", "Welt", 4711];
+        trace sqrt y;
+        x := 1 ... 7;
+        trace x;
+        trace x < 5;
+        trace x is not within (x - 1) to 5;
+        trace "Hallo" where it is not number;
+        trace [10,20,50,100,70,40,55] where it / 2 is within 30 to 60;
+        x := 4711;
+        time of x := 1999-09-19;
+        // Kopie von x
+        y := x;
+        time of y := 2022-12-22;
+        trace time of x;
+        trace time of y;
+        trace time of time of y;|}
+      in
+      (match tokenize input with
+       | Ok out -> Stdio.print_endline out
+       | Error msg -> Stdio.print_endline ("error " ^ msg));
+      [%expect {|
+        [
+          [ "1", "IDENTIFIER", "x" ],
+          [ "1", "ASSIGN", ":=" ],
+          [ "1", "LSPAR", "[" ],
+          [ "1", "STRTOKEN", " \"Hallo Welt\" " ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NULL", "null" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NUMTOKEN", "4711" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "TIMETOKEN", "2020-01-01T12:30:00" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "FALSE", "false" ],
+          [ "1", "COMMA", "," ],
+          [ "1", "NOW", "now" ],
+          [ "1", "RSPAR", "]" ],
+          [ "1", "SEMICOLON", ";" ],
+          [ "2", "TRACE", "trace" ],
+          [ "2", "IDENTIFIER", "x" ],
+          [ "2", "SEMICOLON", ";" ],
+          [ "3", "TRACE", "trace" ],
+          [ "3", "IDENTIFIER", "x" ],
+          [ "3", "IDENTIFIER", "is" ],
+          [ "3", "IDENTIFIER", "number" ],
+          [ "3", "SEMICOLON", ";" ],
+          [ "4", "TRACE", "trace" ],
+          [ "4", "NUMTOKEN", "1" ],
+          [ "4", "PLUS", "+" ],
+          [ "4", "NUMTOKEN", "2" ],
+          [ "4", "TIMES", "*" ],
+          [ "4", "NUMTOKEN", "4" ],
+          [ "4", "DIVIDE", "/" ],
+          [ "4", "NUMTOKEN", "5" ],
+          [ "4", "MINUS", "-" ],
+          [ "4", "MINUS", "-" ],
+          [ "4", "NUMTOKEN", "3" ],
+          [ "4", "PLUS", "+" ],
+          [ "4", "NUMTOKEN", "4" ],
+          [ "4", "POWER", "**" ],
+          [ "4", "NUMTOKEN", "3" ],
+          [ "4", "POWER", "**" ],
+          [ "4", "NUMTOKEN", "2" ],
+          [ "4", "SEMICOLON", ";" ],
+          [ "5", "TRACE", "trace" ],
+          [ "5", "MINUS", "-" ],
+          [ "5", "NUMTOKEN", "2" ],
+          [ "5", "POWER", "**" ],
+          [ "5", "NUMTOKEN", "10" ],
+          [ "5", "SEMICOLON", ";" ],
+          [ "6", "IDENTIFIER", "y" ],
+          [ "6", "ASSIGN", ":=" ],
+          [ "6", "LSPAR", "[" ],
+          [ "6", "NUMTOKEN", "100" ],
+          [ "6", "COMMA", "," ],
+          [ "6", "NUMTOKEN", "200" ],
+          [ "6", "COMMA", "," ],
+          [ "6", "NUMTOKEN", "150" ],
+          [ "6", "RSPAR", "]" ],
+          [ "6", "SEMICOLON", ";" ],
+          [ "7", "TRACE", "trace" ],
+          [ "7", "LSPAR", "[" ],
+          [ "7", "MAXIMUM", "maximum" ],
+          [ "7", "IDENTIFIER", "y" ],
+          [ "7", "COMMA", "," ],
+          [ "7", "AVERAGE", "average" ],
+          [ "7", "IDENTIFIER", "y" ],
+          [ "7", "COMMA", "," ],
+          [ "7", "INCREASE", "increase" ],
+          [ "7", "IDENTIFIER", "y" ],
+          [ "7", "RSPAR", "]" ],
+          [ "7", "SEMICOLON", ";" ],
+          [ "8", "TRACE", "trace" ],
+          [ "8", "UPPERCASE", "uppercase" ],
+          [ "8", "LSPAR", "[" ],
+          [ "8", "STRTOKEN", " \"Hallo\" " ],
+          [ "8", "COMMA", "," ],
+          [ "8", "STRTOKEN", " \"Welt\" " ],
+          [ "8", "COMMA", "," ],
+          [ "8", "NUMTOKEN", "4711" ],
+          [ "8", "RSPAR", "]" ],
+          [ "8", "SEMICOLON", ";" ],
+          [ "9", "TRACE", "trace" ],
+          [ "9", "IDENTIFIER", "sqrt" ],
+          [ "9", "IDENTIFIER", "y" ],
+          [ "9", "SEMICOLON", ";" ],
+          [ "10", "IDENTIFIER", "x" ],
+          [ "10", "ASSIGN", ":=" ],
+          [ "10", "NUMTOKEN", "1" ],
+          [ "10", "RANGE", "..." ],
+          [ "10", "NUMTOKEN", "7" ],
+          [ "10", "SEMICOLON", ";" ],
+          [ "11", "TRACE", "trace" ],
+          [ "11", "IDENTIFIER", "x" ],
+          [ "11", "SEMICOLON", ";" ],
+          [ "12", "TRACE", "trace" ],
+          [ "12", "IDENTIFIER", "x" ],
+          [ "12", "LT", "<" ],
+          [ "12", "NUMTOKEN", "5" ],
+          [ "12", "SEMICOLON", ";" ],
+          [ "13", "TRACE", "trace" ],
+          [ "13", "IDENTIFIER", "x" ],
+          [ "13", "IDENTIFIER", "is" ],
+          [ "13", "IDENTIFIER", "not" ],
+          [ "13", "IDENTIFIER", "within" ],
+          [ "13", "LPAR", "(" ],
+          [ "13", "IDENTIFIER", "x" ],
+          [ "13", "MINUS", "-" ],
+          [ "13", "NUMTOKEN", "1" ],
+          [ "13", "RPAR", ")" ],
+          [ "13", "IDENTIFIER", "to" ],
+          [ "13", "NUMTOKEN", "5" ],
+          [ "13", "SEMICOLON", ";" ],
+          [ "14", "TRACE", "trace" ],
+          [ "14", "STRTOKEN", " \"Hallo\" " ],
+          [ "14", "IDENTIFIER", "where" ],
+          [ "14", "IDENTIFIER", "it" ],
+          [ "14", "IDENTIFIER", "is" ],
+          [ "14", "IDENTIFIER", "not" ],
+          [ "14", "IDENTIFIER", "number" ],
+          [ "14", "SEMICOLON", ";" ],
+          [ "15", "TRACE", "trace" ],
+          [ "15", "LSPAR", "[" ],
+          [ "15", "NUMTOKEN", "10" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "20" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "50" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "100" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "70" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "40" ],
+          [ "15", "COMMA", "," ],
+          [ "15", "NUMTOKEN", "55" ],
+          [ "15", "RSPAR", "]" ],
+          [ "15", "IDENTIFIER", "where" ],
+          [ "15", "IDENTIFIER", "it" ],
+          [ "15", "DIVIDE", "/" ],
+          [ "15", "NUMTOKEN", "2" ],
+          [ "15", "IDENTIFIER", "is" ],
+          [ "15", "IDENTIFIER", "within" ],
+          [ "15", "NUMTOKEN", "30" ],
+          [ "15", "IDENTIFIER", "to" ],
+          [ "15", "NUMTOKEN", "60" ],
+          [ "15", "SEMICOLON", ";" ],
+          [ "16", "IDENTIFIER", "x" ],
+          [ "16", "ASSIGN", ":=" ],
+          [ "16", "NUMTOKEN", "4711" ],
+          [ "16", "SEMICOLON", ";" ],
+          [ "17", "TIME", "time" ],
+          [ "17", "IDENTIFIER", "of" ],
+          [ "17", "IDENTIFIER", "x" ],
+          [ "17", "ASSIGN", ":=" ],
+          [ "17", "TIMETOKEN", "1999-09-19" ],
+          [ "17", "SEMICOLON", ";" ],
+          [ "18", "DIVIDE", "/" ],
+          [ "18", "DIVIDE", "/" ],
+          [ "18", "IDENTIFIER", "Kopie" ],
+          [ "18", "IDENTIFIER", "von" ],
+          [ "18", "IDENTIFIER", "x" ],
+          [ "19", "IDENTIFIER", "y" ],
+          [ "19", "ASSIGN", ":=" ],
+          [ "19", "IDENTIFIER", "x" ],
+          [ "19", "SEMICOLON", ";" ],
+          [ "20", "TIME", "time" ],
+          [ "20", "IDENTIFIER", "of" ],
+          [ "20", "IDENTIFIER", "y" ],
+          [ "20", "ASSIGN", ":=" ],
+          [ "20", "TIMETOKEN", "2022-12-22" ],
+          [ "20", "SEMICOLON", ";" ],
+          [ "21", "TRACE", "trace" ],
+          [ "21", "TIME", "time" ],
+          [ "21", "IDENTIFIER", "of" ],
+          [ "21", "IDENTIFIER", "x" ],
+          [ "21", "SEMICOLON", ";" ],
+          [ "22", "TRACE", "trace" ],
+          [ "22", "TIME", "time" ],
+          [ "22", "IDENTIFIER", "of" ],
+          [ "22", "IDENTIFIER", "y" ],
+          [ "22", "SEMICOLON", ";" ],
+          [ "23", "TRACE", "trace" ],
+          [ "23", "TIME", "time" ],
+          [ "23", "IDENTIFIER", "of" ],
+          [ "23", "TIME", "time" ],
+          [ "23", "IDENTIFIER", "of" ],
+          [ "23", "IDENTIFIER", "y" ],
+          [ "23", "SEMICOLON", ";" ]
+        ]
+        |}]
     ;;
   end)
 ;;
