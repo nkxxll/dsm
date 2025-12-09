@@ -155,9 +155,78 @@ let minus_operation this =
   | _ -> unit
 ;;
 
+(* String concatenation operation with mixed type support *)
+let concatenation_operation left right : value =
+  match left.type_, right.type_ with
+  | StringLiteral l, StringLiteral r -> value_type_only (StringLiteral (l ^ r))
+  | StringLiteral l, NumberLiteral r -> value_type_only (StringLiteral (l ^ Float.to_string r))
+  | NumberLiteral l, StringLiteral r -> value_type_only (StringLiteral (Float.to_string l ^ r))
+  | _, _ -> unit
+;;
+
+(* String uppercase transformation *)
+let string_uppercase_transform value : value =
+  match value with
+  | { type_ = StringLiteral s; time = value_time } ->
+    value_full (StringLiteral (String.uppercase s)) value_time
+  | _ -> value
+;;
+
+(* Extract numeric values from a list *)
+let extract_numbers items : float list =
+  List.filter_map items ~f:(fun item ->
+    match item.type_ with
+    | NumberLiteral n -> Some n
+    | _ -> None)
+;;
+
+(* Aggregation operation helper *)
+let aggregation_operation (op : float list -> float) (item : value) : value =
+  match item.type_ with
+  | List items ->
+    let numbers = extract_numbers items in
+    if List.is_empty numbers then unit else value_type_only (NumberLiteral (op numbers))
+  | _ -> unit
+;;
+
+(* Specific aggregation functions *)
+let maximum_op numbers : float =
+  match List.max_elt numbers ~compare:Float.compare with
+  | Some max_val -> max_val
+  | None -> 0.0
+;;
+
+let average_op numbers : float =
+  match numbers with
+  | [] -> 0.0
+  | lst ->
+    let sum = List.fold lst ~init:0.0 ~f:( +. ) in
+    sum /. Float.of_int (List.length lst)
+;;
+
+(* INCREASE handler - returns list of differences *)
+let increase_handler item : value =
+  match item.type_ with
+  | List items ->
+    let numbers = extract_numbers items in
+    (match numbers with
+     | [] | [ _ ] -> value_type_only (List [])
+     | lst ->
+       let diffs =
+         List.init
+           (List.length lst - 1)
+           ~f:(fun i ->
+             let curr = List.nth_exn lst (i + 1) in
+             let prev = List.nth_exn lst i in
+             value_type_only (NumberLiteral (curr -. prev)))
+       in
+       value_type_only (List diffs))
+  | _ -> unit
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   (* Binary operation dispatcher *)
-  let binary_operation ~execution_type (f : value -> value -> value) =
+  let binary_operation ~execution_type ~(f : value -> value -> value) =
     let args = get_arg_list yojson_ast in
     let first = eval interp_data (List.nth_exn args 0) in
     let second = eval interp_data (List.nth_exn args 1) in
@@ -243,43 +312,15 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | None -> unit)
   | "UNMINUS" -> unary_operation ~execution_type:NotElementWise ~f:minus_operation
   | "PLUS" ->
-    binary_operation ~execution_type:ElementWise (arithmetic_operation Float.add)
+    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( +. ))
   | "MINUS" ->
-    binary_operation ~execution_type:ElementWise (arithmetic_operation Float.sub)
+    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( -. ))
   | "TIMES" ->
-    let args = get_arg_list yojson_ast in
-    binary
-      (BinaryElementWise
-         (fun lval rval ->
-           match rval.type_, lval.type_ with
-           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l *. r))
-           | _, _ -> unit))
-      (List.nth_exn args 0)
-      (List.nth_exn args 1)
+    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( *. ))
   | "DIVIDE" ->
-    let args = get_arg_list yojson_ast in
-    binary
-      (BinaryElementWise
-         (fun lval rval ->
-           match rval.type_, lval.type_ with
-           | NumberLiteral r, NumberLiteral l -> value_type_only (NumberLiteral (l /. r))
-           | _, _ -> unit))
-      (List.nth_exn args 0)
-      (List.nth_exn args 1)
+    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( /. ))
   | "AMPERSAND" ->
-    let args = get_arg_list yojson_ast in
-    binary
-      (BinaryElementWise
-         (fun lval rval ->
-           match rval.type_, lval.type_ with
-           | StringLiteral r, StringLiteral l -> value_type_only (StringLiteral (l ^ r))
-           | NumberLiteral r, StringLiteral l ->
-             value_type_only (StringLiteral (l ^ Float.to_string r))
-           | StringLiteral r, NumberLiteral l ->
-             value_type_only (StringLiteral (Float.to_string l ^ r))
-           | _, _ -> unit))
-      (List.nth_exn args 0)
-      (List.nth_exn args 1)
+    binary_operation ~execution_type:ElementWise ~f:concatenation_operation
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
@@ -300,57 +341,13 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | None -> unit)
   | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
   | "UPPERCASE" ->
-    unary
-      (UnaryBoth
-         ( (fun val_ ->
-             match val_.type_ with
-             | StringLiteral s -> value_type_only (StringLiteral (String.uppercase s))
-             | _ -> val_)
-         , fun items ->
-             let transformed =
-               List.map items ~f:(apply_string_transform String.uppercase)
-             in
-             value_type_only (List transformed) ))
-      (get_arg yojson_ast)
+    unary_operation ~execution_type:ElementWise ~f:string_uppercase_transform
   | "MAXIMUM" ->
-    unary
-      (UnaryListWise
-         (fun items ->
-           let numbers = extract_numbers items in
-           match List.max_elt numbers ~compare:Float.compare with
-           | Some max_val -> value_type_only (NumberLiteral max_val)
-           | None -> unit))
-      (get_arg yojson_ast)
+    unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation maximum_op)
   | "AVERAGE" ->
-    unary
-      (UnaryListWise
-         (fun items ->
-           let numbers = extract_numbers items in
-           match numbers with
-           | [] -> unit
-           | lst ->
-             let sum = List.fold lst ~init:0.0 ~f:( +. ) in
-             let avg = sum /. Float.of_int (List.length lst) in
-             value_type_only (NumberLiteral avg)))
-      (get_arg yojson_ast)
+    unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation average_op)
   | "INCREASE" ->
-    unary
-      (UnaryListWise
-         (fun items ->
-           let numbers = extract_numbers items in
-           match numbers with
-           | [] | [ _ ] -> value_type_only (List [])
-           | lst ->
-             let diffs =
-               List.init
-                 (List.length lst - 1)
-                 ~f:(fun i ->
-                   let curr = List.nth_exn lst (i + 1) in
-                   let prev = List.nth_exn lst i in
-                   value_type_only (NumberLiteral (curr -. prev)))
-             in
-             value_type_only (List diffs)))
-      (get_arg yojson_ast)
+    unary_operation ~execution_type:NotElementWise ~f:increase_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in
