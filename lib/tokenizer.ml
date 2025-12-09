@@ -4,6 +4,7 @@ open Base
 
 module TokenType = struct
   type t =
+    | SQRT
     | WITHIN
     | NOT
     | IS
@@ -68,6 +69,7 @@ module TokenType = struct
 
   let token_type_from_string str =
     match String.uppercase str with
+    | "SQRT" -> SQRT
     | "WHERE" -> WHERE
     | "WITHIN" -> WITHIN
     | "NOT" -> NOT
@@ -108,6 +110,7 @@ module TokenType = struct
   ;;
 
   let token_type_to_string = function
+    | SQRT -> "SQRT"
     | WHERE -> "WHERE"
     | WITHIN -> "WITHIN"
     | NOT -> "NOT"

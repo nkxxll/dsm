@@ -7,17 +7,46 @@ type operation =
   | DIVIDE
 
 type value =
-  { type_ : value_type
+  { type_ : value_union
   ; time : float option
   }
 
-and value_type =
+and value_union =
   | List of value list
   | NumberLiteral of float
   | StringLiteral of string
   | BoolLiteral of bool
   | TimeLiteral of float
   | Unit
+
+type value_type =
+  | ListType
+  | NumberType
+  | StringType
+  | BoolType
+  | UnitType
+  | TimeType
+
+let value_type_eq this other =
+  match this, other with
+  | ListType, ListType -> true
+  | NumberType, NumberType -> true
+  | StringType, StringType -> true
+  | BoolType, BoolType -> true
+  | UnitType, UnitType -> true
+  | TimeType, TimeType -> true
+  | _, _ -> false
+;;
+
+let type_of value =
+  match value.type_ with
+  | NumberLiteral _ -> NumberType
+  | StringLiteral _ -> StringType
+  | BoolLiteral _ -> BoolType
+  | TimeLiteral _ -> TimeType
+  | List _ -> ListType
+  | Unit -> UnitType
+;;
 
 let unit = { type_ = Unit; time = None }
 let value_type_only type_ = { type_; time = None }
@@ -30,7 +59,9 @@ module InterpreterData = struct
     ; env : (string, value) Hashtbl.t
     }
 
-  let create () = { now = Unix.gettimeofday (); env = Hashtbl.create (module String) }
+  let create () =
+    { now = Unix.gettimeofday () *. 1000.0; env = Hashtbl.create (module String) }
+  ;;
 end
 
 let timestamp_to_iso_string time_float =
@@ -46,21 +77,53 @@ let timestamp_to_iso_string time_float =
     tm.tm_sec
 ;;
 
-(* Convert HH:MM or HH:MM:SS time string to unix timestamp (today's date) *)
 let time_string_to_float time_str =
-  let parts = String.split_on_chars time_str ~on:[ ':' ] in
-  match List.map parts ~f:Int.of_string with
-  | [ hours; minutes ] ->
-    let now = Unix.gettimeofday () in
-    let tm = Unix.localtime now in
-    let new_tm = { tm with tm_hour = hours; tm_min = minutes; tm_sec = 0 } in
-    fst (Unix.mktime new_tm)
-  | [ hours; minutes; seconds ] ->
-    let now = Unix.gettimeofday () in
-    let tm = Unix.localtime now in
-    let new_tm = { tm with tm_hour = hours; tm_min = minutes; tm_sec = seconds } in
-    fst (Unix.mktime new_tm)
-  | _ -> 0.0
+  let now = Unix.gettimeofday () in
+  let current_tm = Unix.localtime now in
+  (* Remove trailing Z if present *)
+  let normalized =
+    if String.is_suffix time_str ~suffix:"Z"
+    then String.sub time_str ~pos:0 ~len:(String.length time_str - 1)
+    else time_str
+  in
+  (* Check if it contains date and time separated by T *)
+  let date_part, time_part =
+    if String.contains normalized 'T'
+    then (
+      match String.split normalized ~on:'T' with
+      | [ d; t ] -> Some d, Some t
+      | _ -> None, None)
+    else if String.contains normalized '-' && not (String.contains normalized ':')
+    then
+      (* Just date *)
+      Some normalized, None
+    else
+      (* Just time *)
+      None, Some normalized
+  in
+  (* Parse date component *)
+  let tm_year, tm_mon, tm_mday =
+    match date_part with
+    | Some date_str ->
+      (match String.split date_str ~on:'-' with
+       | [ year_str; month_str; day_str ] ->
+         Int.of_string year_str - 1900, Int.of_string month_str - 1, Int.of_string day_str
+       | _ -> current_tm.tm_year, current_tm.tm_mon, current_tm.tm_mday)
+    | None -> current_tm.tm_year, current_tm.tm_mon, current_tm.tm_mday
+  in
+  (* Parse time component *)
+  let tm_hour, tm_min, tm_sec =
+    match time_part with
+    | Some time_str ->
+      let parts = String.split time_str ~on:':' in
+      (match List.map parts ~f:Int.of_string with
+       | [ hours; minutes ] -> hours, minutes, 0
+       | [ hours; minutes; seconds ] -> hours, minutes, seconds
+       | _ -> 0, 0, 0)
+    | None -> 0, 0, 0
+  in
+  let new_tm = { current_tm with tm_year; tm_mon; tm_mday; tm_hour; tm_min; tm_sec } in
+  fst (Unix.mktime new_tm) *. 1000.0
 ;;
 
 let get_arg node =
@@ -155,12 +218,20 @@ let minus_operation this =
   | _ -> unit
 ;;
 
+let is_type value_type value =
+  if value_type_eq (type_of value) value_type
+  then value_type_only (BoolLiteral true)
+  else value_type_only (BoolLiteral false)
+;;
+
 (* String concatenation operation with mixed type support *)
 let concatenation_operation left right : value =
   match left.type_, right.type_ with
   | StringLiteral l, StringLiteral r -> value_type_only (StringLiteral (l ^ r))
-  | StringLiteral l, NumberLiteral r -> value_type_only (StringLiteral (l ^ Float.to_string r))
-  | NumberLiteral l, StringLiteral r -> value_type_only (StringLiteral (Float.to_string l ^ r))
+  | StringLiteral l, NumberLiteral r ->
+    value_type_only (StringLiteral (l ^ Float.to_string r))
+  | NumberLiteral l, StringLiteral r ->
+    value_type_only (StringLiteral (Float.to_string l ^ r))
   | _, _ -> unit
 ;;
 
@@ -202,6 +273,12 @@ let average_op numbers : float =
   | lst ->
     let sum = List.fold lst ~init:0.0 ~f:( +. ) in
     sum /. Float.of_int (List.length lst)
+;;
+
+let unary_math_op op value =
+  match value.type_ with
+  | NumberLiteral n -> value_full (NumberLiteral (op n)) value.time
+  | _ -> unit
 ;;
 
 (* INCREASE handler - returns list of differences *)
@@ -283,12 +360,15 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     Stdio.printf "Line %s: " line;
     write_value val_;
     unit
+  | "ISNUMBER" -> unary_operation ~execution_type:ElementWise ~f:(is_type NumberType)
+  | "ISLIST" -> unary_operation ~execution_type:NotElementWise ~f:(is_type ListType)
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     Hashtbl.set interp_data.env ~key:ident ~data:val_;
     unit
+  | "SQRT" -> unary_operation ~execution_type:ElementWise ~f:(unary_math_op Float.sqrt)
   | "TIMEASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
@@ -319,8 +399,9 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( *. ))
   | "DIVIDE" ->
     binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( /. ))
-  | "AMPERSAND" ->
-    binary_operation ~execution_type:ElementWise ~f:concatenation_operation
+  | "POWER" ->
+    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( **. ))
+  | "AMPERSAND" -> binary_operation ~execution_type:ElementWise ~f:concatenation_operation
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
@@ -346,8 +427,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation maximum_op)
   | "AVERAGE" ->
     unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation average_op)
-  | "INCREASE" ->
-    unary_operation ~execution_type:NotElementWise ~f:increase_handler
+  | "INCREASE" -> unary_operation ~execution_type:NotElementWise ~f:increase_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in
@@ -746,10 +826,75 @@ let%test_module "Parser tests" =
       [%expect {| Line 1:  "foo"  |}]
     ;;
 
-    (* let%expect_test "test power with minus" =
+    let%expect_test "list binary operator like plus" =
+      let input = {|TRACE [1, 2, 3, 4] + 5;|} in
+      input |> interpret;
+      [%expect {| Line 1: [6., 7., 8., 9.] |}]
+    ;;
+
+    let%expect_test "test power with minus" =
       let input = {|TRACE -2 ** 10;|} in
       input |> interpret;
-      [%expect {| Line 1:  "foo"  |}]
-    ;; *)
+      [%expect {| Line 1: -1024. |}]
+    ;;
+
+    let%expect_test "test first small part of the studienleistung" =
+      let input =
+        {|x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false, now];
+      trace x;
+      trace x is number;
+      trace x is list;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 2: [ "Hallo Welt" , null, 4711., 2020-01-01T11:30:00Z, false, 2025-12-09T21:18:47Z]
+        Line 3: [false, false, true, false, false, false]
+        Line 4: true
+        |}]
+    ;;
+
+    let%expect_test "test second small part of the studienleistung" =
+      let input =
+        {|trace 1 + 2 * 4 / 5 - -3 + 4 ** 3 ** 2;
+        trace -2 ** 10;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 1: 262149.6
+        Line 2: -1024.
+        |}]
+    ;;
+
+    let%expect_test "test third small part of the studienleistung" =
+      let input =
+        {|y := [100,200,150];
+        trace [maximum y, average y, increase y];
+        trace uppercase ["Hallo", "Welt", 4711];
+        trace sqrt y;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 1: 262149.6
+        Line 2: -1024.
+        |}]
+    ;;
+
+    let%expect_test "test fourth small part of the studienleistung" =
+      let input =
+        {|x := 1 ... 7;
+        trace x;
+        trace x < 5;
+        trace x is not within (x - 1) to 5;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 1: 262149.6
+        Line 2: -1024.
+        |}]
+    ;;
   end)
 ;;

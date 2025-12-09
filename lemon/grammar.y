@@ -135,18 +135,21 @@ const char *parse_to_string(const char *input) {
 ///////////////////////
 
 int get_token_id (char *token) {
+	if (strcmp(token, "IS") == 0) return IS;
+	if (strcmp(token, "SQRT") == 0) return SQRT;
+	// if (strcmp(token, "NOT") == 0) return NOT;
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
-	// if (strcmp(token, "LISTTYPE") == 0) return LISTTYPE;
+	if (strcmp(token, "LIST") == 0) return LIST;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
 	if (strcmp(token, "LSPAR") == 0) return LSPAR;
 	if (strcmp(token, "MINUS") == 0) return MINUS;
 	if (strcmp(token, "NULL") == 0) return NULLTOK;
 	if (strcmp(token, "NUMTOKEN") == 0) return NUMTOKEN;
-	if (strcmp(token, "NUMBERTYPE") == 0) return NUMBERTYPE;
+	if (strcmp(token, "NUMBER") == 0) return NUMBER;
 	if (strcmp(token, "PLUS") == 0) return PLUS;
 	if (strcmp(token, "POWER") == 0) return POWER;
 	if (strcmp(token, "RPAR") == 0) return RPAR;
@@ -235,8 +238,9 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
-%right     POWER .
+%right     SQRT .
 %right     UNMINUS .
+%right     POWER .
 %left      RANGE .
 
 ///////////////////////
@@ -409,6 +413,9 @@ ex(r) ::= IDENTIFIER(a) .
 
 ex(r) ::= TIME ex(a) .
 { r = unary("TIME", a); }
+
+ex(r) ::= SQRT ex(a) .
+{ r = unary("SQRT", a); }
 
 ex(r) ::= UPPERCASE ex(a) .
 { r = unary("UPPERCASE", a); }
