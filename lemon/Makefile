@@ -31,8 +31,8 @@ $(BIN_DIR)/main: $(BIN_DIR)/main.o $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o | $(B
 
 $(BIN_DIR)/grammar.so: grammar.y $(BIN_DIR)/lemon | $(BIN_DIR)
 	./$(BIN_DIR)/lemon grammar.y
-	$(CC) $(BUILDF) -fPIC -c grammar.c -o $(BIN_DIR)/grammar.o
-	$(CC) $(BUILDF) -fPIC -c cjson.c -o $(BIN_DIR)/cjson.o
+	$(CC) $(CFLAGS) -fPIC -c grammar.c -o $(BIN_DIR)/grammar.o
+	$(CC) $(CFLAGS) -fPIC -c cjson.c -o $(BIN_DIR)/cjson.o
 	$(CC) -shared $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o -o $@
 
 $(BIN_DIR)/libgrammar.a: $(BIN_DIR)/grammar.o $(BIN_DIR)/cjson.o | $(BIN_DIR)

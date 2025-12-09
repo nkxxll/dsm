@@ -4,6 +4,9 @@ open Base
 
 module TokenType = struct
   type t =
+    | WITHIN
+    | NOT
+    | IS
     | AMPERSAND
     | ASSIGN
     | AVERAGE
@@ -33,6 +36,7 @@ module TokenType = struct
     | LSPAR
     | LT
     | LTEQ
+    | LISTTYPE
     | MAXIMUM
     | MINIMUM
     | MINUS
@@ -57,11 +61,18 @@ module TokenType = struct
     | TRUE
     | UPPERCASE
     | WRITE
+    | WHERE
+    | NUMBERTYPE
     | UNKNOWN of string
   [@@deriving yojson]
 
   let token_type_from_string str =
     match String.uppercase str with
+    | "WHERE" -> WHERE
+    | "WITHIN" -> WITHIN
+    | "NOT" -> NOT
+    | "IS" -> IS
+    | "LIST" -> LISTTYPE
     | "AVERAGE" -> AVERAGE
     | "CURRENTTIME" -> CURRENTTIME
     | "RANGE" -> RANGE
@@ -92,10 +103,17 @@ module TokenType = struct
     | "TRUE" -> TRUE
     | "UPPERCASE" -> UPPERCASE
     | "WRITE" -> WRITE
+    | "NUMBER" -> NUMBERTYPE
     | other -> IDENTIFIER other
   ;;
 
   let token_type_to_string = function
+    | WHERE -> "WHERE"
+    | WITHIN -> "WITHIN"
+    | NOT -> "NOT"
+    | IS -> "IS"
+    | NUMBERTYPE -> "NUMBER"
+    | LISTTYPE -> "LIST"
     | DOT -> "DOT"
     | RANGE -> "RANGE"
     | AMPERSAND -> "AMPERSAND"
@@ -686,7 +704,8 @@ that goes over two lines" IF|};
       (match tokenize input with
        | Ok out -> Stdio.print_endline out
        | Error msg -> Stdio.print_endline ("error " ^ msg));
-      [%expect {|
+      [%expect
+        {|
         [
           [ "1", "IDENTIFIER", "x" ],
           [ "1", "ASSIGN", ":=" ],
@@ -737,7 +756,8 @@ that goes over two lines" IF|};
       (match tokenize input with
        | Ok out -> Stdio.print_endline out
        | Error msg -> Stdio.print_endline ("error " ^ msg));
-      [%expect {|
+      [%expect
+        {|
         [
           [ "1", "IDENTIFIER", "x" ],
           [ "1", "ASSIGN", ":=" ],
@@ -760,8 +780,8 @@ that goes over two lines" IF|};
           [ "2", "SEMICOLON", ";" ],
           [ "3", "TRACE", "trace" ],
           [ "3", "IDENTIFIER", "x" ],
-          [ "3", "IDENTIFIER", "is" ],
-          [ "3", "IDENTIFIER", "number" ],
+          [ "3", "IS", "is" ],
+          [ "3", "NUMBER", "number" ],
           [ "3", "SEMICOLON", ";" ],
           [ "4", "TRACE", "trace" ],
           [ "4", "NUMTOKEN", "1" ],
@@ -839,9 +859,9 @@ that goes over two lines" IF|};
           [ "12", "SEMICOLON", ";" ],
           [ "13", "TRACE", "trace" ],
           [ "13", "IDENTIFIER", "x" ],
-          [ "13", "IDENTIFIER", "is" ],
-          [ "13", "IDENTIFIER", "not" ],
-          [ "13", "IDENTIFIER", "within" ],
+          [ "13", "IS", "is" ],
+          [ "13", "NOT", "not" ],
+          [ "13", "WITHIN", "within" ],
           [ "13", "LPAR", "(" ],
           [ "13", "IDENTIFIER", "x" ],
           [ "13", "MINUS", "-" ],
@@ -852,11 +872,11 @@ that goes over two lines" IF|};
           [ "13", "SEMICOLON", ";" ],
           [ "14", "TRACE", "trace" ],
           [ "14", "STRTOKEN", " \"Hallo\" " ],
-          [ "14", "IDENTIFIER", "where" ],
+          [ "14", "WHERE", "where" ],
           [ "14", "IDENTIFIER", "it" ],
-          [ "14", "IDENTIFIER", "is" ],
-          [ "14", "IDENTIFIER", "not" ],
-          [ "14", "IDENTIFIER", "number" ],
+          [ "14", "IS", "is" ],
+          [ "14", "NOT", "not" ],
+          [ "14", "NUMBER", "number" ],
           [ "14", "SEMICOLON", ";" ],
           [ "15", "TRACE", "trace" ],
           [ "15", "LSPAR", "[" ],
@@ -874,12 +894,12 @@ that goes over two lines" IF|};
           [ "15", "COMMA", "," ],
           [ "15", "NUMTOKEN", "55" ],
           [ "15", "RSPAR", "]" ],
-          [ "15", "IDENTIFIER", "where" ],
+          [ "15", "WHERE", "where" ],
           [ "15", "IDENTIFIER", "it" ],
           [ "15", "DIVIDE", "/" ],
           [ "15", "NUMTOKEN", "2" ],
-          [ "15", "IDENTIFIER", "is" ],
-          [ "15", "IDENTIFIER", "within" ],
+          [ "15", "IS", "is" ],
+          [ "15", "WITHIN", "within" ],
           [ "15", "NUMTOKEN", "30" ],
           [ "15", "IDENTIFIER", "to" ],
           [ "15", "NUMTOKEN", "60" ],

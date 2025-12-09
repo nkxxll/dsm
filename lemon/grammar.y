@@ -139,44 +139,42 @@ int get_token_id (char *token) {
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
-	if (strcmp(token, "TIMES") == 0) return TIMES;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
+	// if (strcmp(token, "LISTTYPE") == 0) return LISTTYPE;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
-	if (strcmp(token, "RPAR") == 0) return RPAR;
 	if (strcmp(token, "LSPAR") == 0) return LSPAR;
-	if (strcmp(token, "RSPAR") == 0) return RSPAR;
 	if (strcmp(token, "MINUS") == 0) return MINUS;
-	if (strcmp(token, "TIME") == 0) return TIME;
+	if (strcmp(token, "NULL") == 0) return NULLTOK;
 	if (strcmp(token, "NUMTOKEN") == 0) return NUMTOKEN;
-	if (strcmp(token, "TIMETOKEN") == 0) return TIMETOKEN;
+	if (strcmp(token, "NUMBERTYPE") == 0) return NUMBERTYPE;
 	if (strcmp(token, "PLUS") == 0) return PLUS;
 	if (strcmp(token, "POWER") == 0) return POWER;
+	if (strcmp(token, "RPAR") == 0) return RPAR;
+	if (strcmp(token, "RSPAR") == 0) return RSPAR;
 	if (strcmp(token, "SEMICOLON") == 0) return SEMICOLON;
 	if (strcmp(token, "STRTOKEN") == 0) return STRTOKEN;
+	if (strcmp(token, "TIME") == 0) return TIME;
+	if (strcmp(token, "TIMES") == 0) return TIMES;
+	if (strcmp(token, "TIMETOKEN") == 0) return TIMETOKEN;
 	if (strcmp(token, "TRACE") == 0) return TRACE;
 	if (strcmp(token, "WRITE") == 0) return WRITE;
-	if (strcmp(token, "NULL") == 0) return NULLTOK;
- 	if (strcmp(token, "TRUE") == 0) return TRUE;
+ 	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
+ 	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
+ 	if (strcmp(token, "DO") == 0) return DO;
+ 	if (strcmp(token, "ELSE") == 0) return ELSE;
+ 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
+ 	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "FALSE") == 0) return FALSE;
  	if (strcmp(token, "FOR") == 0) return FOR;
- 	if (strcmp(token, "NOW") == 0) return NOW;
- 	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
- 	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
- 	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
- 	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
+ 	if (strcmp(token, "IF") == 0) return IF;
+ 	if (strcmp(token, "IN") == 0) return IN;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
- 	if (strcmp(token, "IN") == 0) return IN;
- 	if (strcmp(token, "IF") == 0) return IF;
+ 	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
+ 	if (strcmp(token, "NOW") == 0) return NOW;
+ 	if (strcmp(token, "RANGE") == 0) return RANGE;
  	if (strcmp(token, "THEN") == 0) return THEN;
- 	if (strcmp(token, "ENDIF") == 0) return ENDIF;
- 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
- 	if (strcmp(token, "ELSE") == 0) return ELSE;
- 	if (strcmp(token, "DO") == 0) return DO;
- 	if (strcmp(token, "ENDDO") == 0) return ENDDO;
- 	if (strcmp(token, "ENDIF") == 0) return ENDIF;
- 	if (strcmp(token, "THEN") == 0) return THEN;
- 	if (strcmp(token, "IF") == 0) return IF;
- 	if (strcmp(token, "IN") == 0) return IN;
+ 	if (strcmp(token, "TRUE") == 0) return TRUE;
+ 	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
     curtoken = token;
     longjmp(s_jumpBuffer, 2);
 }
@@ -232,11 +230,14 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%right      TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
+%right     TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
+%right     IS .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
 %right     POWER .
+%right     UNMINUS .
+%left      RANGE .
 
 ///////////////////////
 // CODE
@@ -421,8 +422,23 @@ ex(r) ::= AVERAGE ex(a) .
 ex(r) ::= INCREASE ex(a) .
 { r = unary("INCREASE", a); }
 
+ex(r) ::= MINUS ex(a) . [UNMINUS]
+{ r = unary("UNMINUS", a); }
+
+ex(r) ::= ex(a) IS NUMBER .
+{ r = unary("ISNUMBER", a); }
+
+ex(r) ::= ex(a) IS LIST .
+{ r = unary("ISLIST", a); }
+
+ex(r) ::= ex(a) IS NULLTOK .
+{ r = unary("ISNULL", a); }
+
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }
+
+ex(r) ::= ex(a) RANGE ex(b) .
+{r = binary ("RANGE", a, b); }
 
 ex(r) ::= ex(a) PLUS ex(b) .
 {r = binary ("PLUS", a, b); }
