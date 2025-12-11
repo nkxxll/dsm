@@ -301,6 +301,25 @@ let increase_handler item : value =
   | _ -> unit
 ;;
 
+let range start end_range =
+  if start > end_range
+  then failwith "start has to be smaller than end_range"
+  else List.init (end_range - start) ~f:(fun i -> start + i + 1)
+;;
+
+let range_operator first second =
+  match first, second with
+  | { type_ = NumberLiteral first_number; _ }, { type_ = NumberLiteral second_number; _ }
+    ->
+    value_full
+      (List
+         (List.map
+            (range (Float.to_int first_number) (Float.to_int second_number))
+            ~f:(fun item -> value_type_only (NumberLiteral (Int.to_float item)))))
+      None
+  | _, _ -> unit
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   (* Binary operation dispatcher *)
   let binary_operation ~execution_type ~(f : value -> value -> value) =
@@ -353,6 +372,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     let arg = get_arg yojson_ast in
     eval interp_data arg |> write_value;
     unit
+  | "RANGE" -> binary_operation ~execution_type:NotElementWise ~f:range_operator
   | "TRACE" ->
     let line = get_line yojson_ast in
     let arg = get_arg yojson_ast in

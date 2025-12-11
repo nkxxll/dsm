@@ -137,7 +137,7 @@ const char *parse_to_string(const char *input) {
 int get_token_id (char *token) {
 	if (strcmp(token, "IS") == 0) return IS;
 	if (strcmp(token, "SQRT") == 0) return SQRT;
-	// if (strcmp(token, "NOT") == 0) return NOT;
+	if (strcmp(token, "NOT") == 0) return NOT;
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
@@ -152,6 +152,8 @@ int get_token_id (char *token) {
 	if (strcmp(token, "NUMBER") == 0) return NUMBER;
 	if (strcmp(token, "PLUS") == 0) return PLUS;
 	if (strcmp(token, "POWER") == 0) return POWER;
+	if (strcmp(token, "WITHIN") == 0) return WITHIN;
+	if (strcmp(token, "TO") == 0) return TO;
 	if (strcmp(token, "RPAR") == 0) return RPAR;
 	if (strcmp(token, "RSPAR") == 0) return RSPAR;
 	if (strcmp(token, "SEMICOLON") == 0) return SEMICOLON;
@@ -234,7 +236,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 
 %right     TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
-%right     IS .
+%right     IS ISNULL ISLIST ISNUMBER ISNOTWITHIN .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
@@ -432,13 +434,13 @@ ex(r) ::= INCREASE ex(a) .
 ex(r) ::= MINUS ex(a) . [UNMINUS]
 { r = unary("UNMINUS", a); }
 
-ex(r) ::= ex(a) IS NUMBER .
+ex(r) ::= ex(a) IS NUMBER . [ISNUMBER]
 { r = unary("ISNUMBER", a); }
 
-ex(r) ::= ex(a) IS LIST .
+ex(r) ::= ex(a) IS LIST . [ISLIST]
 { r = unary("ISLIST", a); }
 
-ex(r) ::= ex(a) IS NULLTOK .
+ex(r) ::= ex(a) IS NULLTOK . [ISNULL]
 { r = unary("ISNULL", a); }
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
@@ -461,6 +463,9 @@ ex(r) ::= ex(a) DIVIDE ex(b) .
 
 ex(r) ::= ex(a) POWER ex(b) .
 {r = binary ("POWER", a, b); }
+
+ex(r) ::= ex(a) IS NOT WITHIN ex(b) TO ex(c) . [ISNOTWITHIN]
+{r = ternary ("ISNOTWITHIN", a, b, c); }
 
 ex(r) ::= NULLTOK .
 {
