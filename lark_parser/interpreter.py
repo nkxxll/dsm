@@ -1,6 +1,6 @@
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Union
+Time.from datetime import datetime, timezone
+Time.from typing import Any, Dict, Optional, Union
 
 from lark import Tree
 
