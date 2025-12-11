@@ -518,7 +518,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     let arg = get_arg yojson_ast in
     let val_ = eval interp_data arg in
     (match val_.time with
-     | Some t -> value_type_only (TimeLiteral t)
+     | Some t -> value_full (TimeLiteral t) (Some t)
      | None -> unit)
   | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
   | "UPPERCASE" ->
@@ -946,6 +946,7 @@ let%test_module "Parser tests" =
       trace x is list;|}
       in
       input |> interpret;
+      [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
         Line 2: [ "Hallo Welt" , null, 4711., 2020-01-01T11:30:00Z, false, 2025-12-11T19:38:54Z]
@@ -989,6 +990,25 @@ let%test_module "Parser tests" =
         trace x;
         trace x < 5;
         trace x is not within (x - 1) to 5;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 2: [1., 2., 3., 4., 5., 6., 7.]
+        Line 3: [true, true, true, true, false, false, false]
+        Line 4: [false, false, false, false, false, true, true]
+        |}]
+    ;;
+
+    let%expect_test "test five small part of the studienleistung" =
+      let input =
+        {|x := 4711;
+        time x := 1999-09-19;
+        y := x;
+        time y := 2022-12-22;
+        trace time of x;
+        trace time y;
+        trace time of time of y;|}
       in
       input |> interpret;
       [%expect

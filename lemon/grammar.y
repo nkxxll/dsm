@@ -139,6 +139,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "SQRT") == 0) return SQRT;
 	if (strcmp(token, "NOT") == 0) return NOT;
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
+	if (strcmp(token, "OF") == 0) return OF;
 	if (strcmp(token, "LT") == 0) return LT;
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
@@ -416,6 +417,9 @@ ex(r) ::= IDENTIFIER(a) .
 }
 
 ex(r) ::= TIME ex(a) .
+{ r = unary("TIME", a); }
+
+ex(r) ::= TIME OF ex(a) .
 { r = unary("TIME", a); }
 
 ex(r) ::= SQRT ex(a) .
