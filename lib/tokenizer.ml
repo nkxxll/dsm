@@ -64,11 +64,13 @@ module TokenType = struct
     | WRITE
     | WHERE
     | NUMBERTYPE
+    | TO
     | UNKNOWN of string
   [@@deriving yojson]
 
   let token_type_from_string str =
     match String.uppercase str with
+    | "TO" -> TO
     | "SQRT" -> SQRT
     | "WHERE" -> WHERE
     | "WITHIN" -> WITHIN
@@ -110,6 +112,7 @@ module TokenType = struct
   ;;
 
   let token_type_to_string = function
+    | TO -> "TO"
     | SQRT -> "SQRT"
     | WHERE -> "WHERE"
     | WITHIN -> "WITHIN"
@@ -843,7 +846,7 @@ that goes over two lines" IF|};
           [ "8", "RSPAR", "]" ],
           [ "8", "SEMICOLON", ";" ],
           [ "9", "TRACE", "trace" ],
-          [ "9", "IDENTIFIER", "sqrt" ],
+          [ "9", "SQRT", "sqrt" ],
           [ "9", "IDENTIFIER", "y" ],
           [ "9", "SEMICOLON", ";" ],
           [ "10", "IDENTIFIER", "x" ],
@@ -870,7 +873,7 @@ that goes over two lines" IF|};
           [ "13", "MINUS", "-" ],
           [ "13", "NUMTOKEN", "1" ],
           [ "13", "RPAR", ")" ],
-          [ "13", "IDENTIFIER", "to" ],
+          [ "13", "TO", "to" ],
           [ "13", "NUMTOKEN", "5" ],
           [ "13", "SEMICOLON", ";" ],
           [ "14", "TRACE", "trace" ],
@@ -904,7 +907,7 @@ that goes over two lines" IF|};
           [ "15", "IS", "is" ],
           [ "15", "WITHIN", "within" ],
           [ "15", "NUMTOKEN", "30" ],
-          [ "15", "IDENTIFIER", "to" ],
+          [ "15", "TO", "to" ],
           [ "15", "NUMTOKEN", "60" ],
           [ "15", "SEMICOLON", ";" ],
           [ "16", "IDENTIFIER", "x" ],

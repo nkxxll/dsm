@@ -139,6 +139,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "SQRT") == 0) return SQRT;
 	if (strcmp(token, "NOT") == 0) return NOT;
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
+	if (strcmp(token, "LT") == 0) return LT;
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
@@ -237,6 +238,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 
 %right     TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
 %right     IS ISNULL ISLIST ISNUMBER ISNOTWITHIN .
+%left      LT .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
 %left 	   TIMES DIVIDE .
@@ -445,6 +447,9 @@ ex(r) ::= ex(a) IS NULLTOK . [ISNULL]
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }
+
+ex(r) ::= ex(a) LT ex(b) .
+{r = binary ("LT", a, b); }
 
 ex(r) ::= ex(a) RANGE ex(b) .
 {r = binary ("RANGE", a, b); }

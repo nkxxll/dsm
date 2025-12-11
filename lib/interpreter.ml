@@ -304,7 +304,7 @@ let increase_handler item : value =
 let range start end_range =
   if start > end_range
   then failwith "start has to be smaller than end_range"
-  else List.init (end_range - start) ~f:(fun i -> start + i + 1)
+  else List.init (end_range - start + 1) ~f:(fun i -> start + i)
 ;;
 
 let range_operator first second =
@@ -317,6 +317,35 @@ let range_operator first second =
             (range (Float.to_int first_number) (Float.to_int second_number))
             ~f:(fun item -> value_type_only (NumberLiteral (Int.to_float item)))))
       None
+  | _, _ -> unit
+;;
+
+let is_withing first second third =
+  let ( <= ) = Float.( <= ) in
+  let ( >= ) = Float.( >= ) in
+  match first, second, third with
+  | ( { type_ = NumberLiteral first; _ }
+    , { type_ = NumberLiteral second; _ }
+    , { type_ = NumberLiteral third; _ } )
+    when first >= second && first <= third -> value_type_only (BoolLiteral true)
+  | ( { type_ = NumberLiteral _; _ }
+    , { type_ = NumberLiteral _; _ }
+    , { type_ = NumberLiteral _; _ } ) -> value_type_only (BoolLiteral false)
+  | _, _, _ -> unit
+;;
+
+let is_not_within first second third =
+  match is_withing first second third with
+  | { type_ = BoolLiteral true_or_false; time = bool_time } ->
+    value_full (BoolLiteral (not true_or_false)) bool_time
+  | _ -> unit
+;;
+
+let less_than first second =
+  let ( < ) = Float.( < ) in
+  match first, second with
+  | { type_ = NumberLiteral first; _ }, { type_ = NumberLiteral second; _ } ->
+    value_type_only (BoolLiteral (first < second))
   | _, _ -> unit
 ;;
 
@@ -362,6 +391,55 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
        | any -> f any)
     | NotElementWise -> f first
   in
+  let ternary_operation ~execution_type ~(f : value -> value -> value -> value) =
+    let args = get_arg_list yojson_ast in
+    let first = eval interp_data (List.nth_exn args 0) in
+    let second = eval interp_data (List.nth_exn args 1) in
+    let third = eval interp_data (List.nth_exn args 2) in
+    let get_list_length v =
+      match v.type_ with
+      | List lst -> Some (List.length lst)
+      | _ -> None
+    in
+    let max_len =
+      [ get_list_length first; get_list_length second; get_list_length third ]
+      |> List.filter_map ~f:Fn.id
+      |> List.max_elt ~compare:Int.compare
+    in
+    match execution_type with
+    | ElementWise ->
+      (match max_len with
+       | None -> f first second third
+       | Some n ->
+         let expand_to_list v n =
+           match v.type_ with
+           | List lst when List.length lst = n ->
+             Some lst (* if its a list with the max length then everything is fine *)
+           | List _ ->
+             None
+             (* if its not a list with the max length then it is a list with a wrong length we have to return null *)
+           | _ -> Some (List.init n ~f:(fun _ -> v))
+         in
+         let first_list = expand_to_list first n in
+         let second_list = expand_to_list second n in
+         let third_list = expand_to_list third n in
+         (match first_list, second_list, third_list with
+          | Some first_list, Some second_list, Some third_list ->
+            let combined =
+              List.zip_exn (List.zip_exn first_list second_list) third_list
+            in
+            let new_list = List.map combined ~f:(fun ((a, b), c) -> f a b c) in
+            let time =
+              match first.time, second.time, third.time with
+              | Some t, _, _ -> Some t
+              | _, Some t, _ -> Some t
+              | _, _, Some t -> Some t
+              | _, _, _ -> None
+            in
+            { type_ = List new_list; time }
+          | _, _, _ -> unit))
+    | NotElementWise -> f first second third
+  in
   let type_ = get_type yojson_ast in
   match type_ with
   | "STATEMENTBLOCK" ->
@@ -380,8 +458,10 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     Stdio.printf "Line %s: " line;
     write_value val_;
     unit
+  | "LT" -> binary_operation ~execution_type:ElementWise ~f:less_than
   | "ISNUMBER" -> unary_operation ~execution_type:ElementWise ~f:(is_type NumberType)
   | "ISLIST" -> unary_operation ~execution_type:NotElementWise ~f:(is_type ListType)
+  | "ISNOTWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:is_not_within
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
@@ -868,7 +948,7 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 2: [ "Hallo Welt" , null, 4711., 2020-01-01T11:30:00Z, false, 2025-12-09T21:18:47Z]
+        Line 2: [ "Hallo Welt" , null, 4711., 2020-01-01T11:30:00Z, false, 2025-12-11T19:38:54Z]
         Line 3: [false, false, true, false, false, false]
         Line 4: true
         |}]
@@ -897,8 +977,9 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 1: 262149.6
-        Line 2: -1024.
+        Line 2: [200., 150., [...]]
+        Line 3: [ "HALLO" ,  "WELT" , 4711.]
+        Line 4: [10., 14.142135623730951, 12.24744871391589]
         |}]
     ;;
 
@@ -912,8 +993,9 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 1: 262149.6
-        Line 2: -1024.
+        Line 2: [1., 2., 3., 4., 5., 6., 7.]
+        Line 3: [true, true, true, true, false, false, false]
+        Line 4: [false, false, false, false, false, true, true]
         |}]
     ;;
   end)
