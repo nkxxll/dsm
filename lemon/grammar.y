@@ -182,6 +182,7 @@ int get_token_id (char *token) {
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "TRUE") == 0) return TRUE;
  	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
+	if (strcmp(token, "WHERE") == 0) return WHERE;
     curtoken = token;
     longjmp(s_jumpBuffer, 2);
 }
@@ -238,7 +239,9 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 
 %right     TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
-%right     IS ISNULL ISLIST ISNUMBER ISNOTWITHIN .
+%left      WHERE .
+%right     IS ISNULL ISLIST ISNUMBER .
+%left      ISWITHIN ISNOTWITHIN .
 %left      LT .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
@@ -443,6 +446,9 @@ ex(r) ::= MINUS ex(a) . [UNMINUS]
 ex(r) ::= ex(a) IS NUMBER . [ISNUMBER]
 { r = unary("ISNUMBER", a); }
 
+ex(r) ::= ex(a) IS NOT NUMBER . [ISNOTNUMBER]
+{ r = unary("ISNOTNUMBER", a); }
+
 ex(r) ::= ex(a) IS LIST . [ISLIST]
 { r = unary("ISLIST", a); }
 
@@ -454,6 +460,9 @@ ex(r) ::= ex(a) AMPERSAND ex(b) .
 
 ex(r) ::= ex(a) LT ex(b) .
 {r = binary ("LT", a, b); }
+
+ex(r) ::= ex(a) WHERE ex(b) .
+{r = binary ("WHERE", a, b); }
 
 ex(r) ::= ex(a) RANGE ex(b) .
 {r = binary ("RANGE", a, b); }
@@ -475,6 +484,9 @@ ex(r) ::= ex(a) POWER ex(b) .
 
 ex(r) ::= ex(a) IS NOT WITHIN ex(b) TO ex(c) . [ISNOTWITHIN]
 {r = ternary ("ISNOTWITHIN", a, b, c); }
+
+ex(r) ::= ex(a) IS WITHIN ex(b) TO ex(c) . [ISWITHIN]
+{r = ternary ("ISWITHIN", a, b, c); }
 
 ex(r) ::= NULLTOK .
 {

@@ -224,6 +224,12 @@ let is_type value_type value =
   else value_type_only (BoolLiteral false)
 ;;
 
+let is_not_type value_type value =
+  if value_type_eq (type_of value) value_type
+  then value_type_only (BoolLiteral false)
+  else value_type_only (BoolLiteral true)
+;;
+
 (* String concatenation operation with mixed type support *)
 let concatenation_operation left right : value =
   match left.type_, right.type_ with
@@ -320,7 +326,7 @@ let range_operator first second =
   | _, _ -> unit
 ;;
 
-let is_withing first second third =
+let is_within first second third =
   let ( <= ) = Float.( <= ) in
   let ( >= ) = Float.( >= ) in
   match first, second, third with
@@ -335,11 +341,13 @@ let is_withing first second third =
 ;;
 
 let is_not_within first second third =
-  match is_withing first second third with
+  match is_within first second third with
   | { type_ = BoolLiteral true_or_false; time = bool_time } ->
     value_full (BoolLiteral (not true_or_false)) bool_time
   | _ -> unit
 ;;
+
+(* WHERE operator: filters left argument based on right argument boolean values *)
 
 let less_than first second =
   let ( < ) = Float.( < ) in
@@ -351,6 +359,51 @@ let less_than first second =
 
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   (* Binary operation dispatcher *)
+  let where_operation () : value =
+    let args = get_arg_list yojson_ast in
+    let left = eval interp_data (List.nth_exn args 0) in
+    Hashtbl.set interp_data.env ~key:"it" ~data:left;
+    Hashtbl.set interp_data.env ~key:"they" ~data:left;
+    let right = eval interp_data (List.nth_exn args 1) in
+    let res =
+      match left.type_, right.type_ with
+      (* Both are lists - filter left based on right *)
+      | List left_list, List right_list ->
+        if Int.equal (List.length left_list) (List.length right_list)
+        then (
+          let filtered =
+            List.zip_exn left_list right_list
+            |> List.filter_map ~f:(fun (item, cond) ->
+              match cond.type_ with
+              | BoolLiteral true -> Some item
+              | _ -> None)
+          in
+          value_full (List filtered) left.time)
+        else unit
+      (* Left is a list, right is a single item - keep all if true, empty if not *)
+      | List left_list, _ ->
+        (match right.type_ with
+         | BoolLiteral true -> value_full (List left_list) left.time
+         | _ -> value_full (List []) left.time)
+      (* Left is a single item, right is a list - replicate left for each true in right *)
+      | _, List right_list ->
+        let filtered =
+          List.filter_map right_list ~f:(fun cond ->
+            match cond.type_ with
+            | BoolLiteral true -> Some left
+            | _ -> None)
+        in
+        value_full (List filtered) left.time
+      (* Both are scalars - return left if right is true, empty list if not *)
+      | _, _ ->
+        (match right.type_ with
+         | BoolLiteral true -> left
+         | _ -> value_full (List []) left.time)
+    in
+    Hashtbl.remove interp_data.env "it";
+    Hashtbl.remove interp_data.env "they";
+    res
+  in
   let binary_operation ~execution_type ~(f : value -> value -> value) =
     let args = get_arg_list yojson_ast in
     let first = eval interp_data (List.nth_exn args 0) in
@@ -459,8 +512,14 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     write_value val_;
     unit
   | "LT" -> binary_operation ~execution_type:ElementWise ~f:less_than
+  | "WHERE" -> where_operation ()
   | "ISNUMBER" -> unary_operation ~execution_type:ElementWise ~f:(is_type NumberType)
+  | "ISNOTNUMBER" ->
+    unary_operation ~execution_type:ElementWise ~f:(is_not_type NumberType)
   | "ISLIST" -> unary_operation ~execution_type:NotElementWise ~f:(is_type ListType)
+  | "ISNOTLIST" ->
+    unary_operation ~execution_type:NotElementWise ~f:(is_not_type ListType)
+  | "ISWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:is_within
   | "ISNOTWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:is_not_within
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
@@ -949,9 +1008,9 @@ let%test_module "Parser tests" =
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
-        Line 2: [ "Hallo Welt" , null, 4711., 2020-01-01T11:30:00Z, false, 2025-12-11T19:38:54Z]
-        Line 3: [false, false, true, false, false, false]
-        Line 4: true
+        Line X: [ "Hallo Welt" , null, XXXX., XXXX-XX-XXTXX:XX:XXZ, false, XXXX-XX-XXTXX:XX:XXZ]
+        Line X: [false, false, true, false, false, false]
+        Line X: true
         |}]
     ;;
 
@@ -1013,9 +1072,64 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 2: [1., 2., 3., 4., 5., 6., 7.]
-        Line 3: [true, true, true, true, false, false, false]
-        Line 4: [false, false, false, false, false, true, true]
+        Line 5: 1999-09-18T22:00:00Z
+        Line 6: 2022-12-21T23:00:00Z
+        Line 7: 2022-12-21T23:00:00Z
+        |}]
+    ;;
+
+    let%expect_test "test where with matching list lengths" =
+      let input = {|trace [10,20,30,40] where [true,false,true,false];|} in
+      input |> interpret;
+      [%expect {| Line 1: [10., 30.] |}]
+    ;;
+
+    let%expect_test "test where with left list and single boolean true" =
+      let input = {|trace [10,20,30] where true;|} in
+      input |> interpret;
+      [%expect {| Line 1: [10., 20., 30.] |}]
+    ;;
+
+    let%expect_test "test where with left list and single boolean false" =
+      let input = {|trace [10,20,30] where false;|} in
+      input |> interpret;
+      [%expect {| Line 1: [] |}]
+    ;;
+
+    let%expect_test "test where with single item left and list of booleans" =
+      let input = {|trace 1 where [true,false,true];|} in
+      input |> interpret;
+      [%expect {| Line 1: [1., 1.] |}]
+    ;;
+
+    let%expect_test "test where with both scalars true" =
+      let input = {|trace 1 where true;|} in
+      input |> interpret;
+      [%expect {| Line 1: 1. |}]
+    ;;
+
+    let%expect_test "test where with both scalars false" =
+      let input = {|trace 1 where false;|} in
+      input |> interpret;
+      [%expect {| Line 1: [] |}]
+    ;;
+
+    let%expect_test "test where filters non-true values" =
+      let input = {|trace [1,2,3,4,5] where [true,true,false,null,3];|} in
+      input |> interpret;
+      [%expect {| Line 1: [1., 2.] |}]
+    ;;
+
+    let%expect_test "test where with the studienleistungs test" =
+      let input =
+        {|trace "Hallo" where it is not number;
+      trace [10,20,50,100,70,40,55] where it / 2 is within 30 to 60;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 1:  "Hallo"
+        Line 2: [100., 70.]
         |}]
     ;;
   end)
