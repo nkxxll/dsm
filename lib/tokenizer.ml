@@ -365,7 +365,14 @@ let parse_language (tokenizer : t) =
        | '-' ->
          advance 1 >>= fun () -> loop (make_token tok ~type_:MINUS ~literal:"-" ~len:1)
        | '/' ->
-         advance 1 >>= fun () -> loop (make_token tok ~type_:DIVIDE ~literal:"/" ~len:1)
+         string "//"
+         >>= (fun _ ->
+         take_while (function
+           | '\n' -> false
+           | _ -> true)
+         >>= fun _ -> loop tok)
+         <|> (advance 1
+              >>= fun () -> loop (make_token tok ~type_:DIVIDE ~literal:"/" ~len:1))
        | '(' ->
          advance 1 >>= fun () -> loop (make_token tok ~type_:LPAR ~literal:"(" ~len:1)
        | ')' ->
@@ -923,11 +930,6 @@ that goes over two lines" IF|};
           [ "17", "ASSIGN", ":=" ],
           [ "17", "TIMETOKEN", "1999-09-19" ],
           [ "17", "SEMICOLON", ";" ],
-          [ "18", "DIVIDE", "/" ],
-          [ "18", "DIVIDE", "/" ],
-          [ "18", "IDENTIFIER", "Kopie" ],
-          [ "18", "IDENTIFIER", "von" ],
-          [ "18", "IDENTIFIER", "x" ],
           [ "19", "IDENTIFIER", "y" ],
           [ "19", "ASSIGN", ":=" ],
           [ "19", "IDENTIFIER", "x" ],
