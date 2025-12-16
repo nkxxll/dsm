@@ -174,7 +174,6 @@ int get_token_id (char *token) {
  	if (strcmp(token, "COUNT") == 0) return COUNT;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
  	if (strcmp(token, "DO") == 0) return DO;
- 	if (strcmp(token, "MINUTES") == 0) return MINUTES;
  	if (strcmp(token, "ELSE") == 0) return ELSE;
  	if (strcmp(token, "ENDDO") == 0) return ENDDO;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
@@ -198,6 +197,12 @@ int get_token_id (char *token) {
  	if (strcmp(token, "EARLIEST") == 0) return EARLIEST;
  	if (strcmp(token, "AS") == 0) return AS;
  	if (strcmp(token, "WHERE") == 0) return WHERE;
+ 	if (strcmp(token, "YEAR") == 0) return YEAR;
+ 	if (strcmp(token, "MONTH") == 0) return MONTH;
+ 	if (strcmp(token, "WEEK") == 0) return WEEK;
+ 	if (strcmp(token, "HOURS") == 0) return HOURS;
+ 	if (strcmp(token, "MINUTES") == 0) return MINUTES;
+ 	if (strcmp(token, "SECONDS") == 0) return SECONDS;
  	curtoken = token;
  	longjmp(s_jumpBuffer, 2);
 }
@@ -267,7 +272,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     UNMINUS .
 %right     POWER .
 %left      RANGE .
-%left      YEAR MONTH WEEK DAY HOURS MINUTES SECONDS .
+%left      YEAR MONTH DAY WEEK HOURS MINUTES SECONDS .
 
 ///////////////////////
 // CODE
@@ -491,6 +496,28 @@ ex(r) ::= INCREASE optional_of ex(a) .
 
 ex(r) ::= INTERVAL optional_of ex(a) .
 { r = unary("INTERVAL", a); }
+
+// Duration operators
+ex(r) ::= ex(a) YEAR .
+{ r = unary("YEAR", a); }
+
+ex(r) ::= ex(a) MONTH .
+{ r = unary("MONTH", a); }
+
+ex(r) ::= ex(a) WEEK .
+{ r = unary("WEEK", a); }
+
+ex(r) ::= ex(a) DAY .
+{ r = unary("DAY", a); }
+
+ex(r) ::= ex(a) HOURS .
+{ r = unary("HOURS", a); }
+
+ex(r) ::= ex(a) MINUTES .
+{ r = unary("MINUTES", a); }
+
+ex(r) ::= ex(a) SECONDS .
+{ r = unary("SECONDS", a); }
 
 ex(r) ::= MINUS ex(a) . [UNMINUS]
 { r = unary("UNMINUS", a); }

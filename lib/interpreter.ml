@@ -359,59 +359,64 @@ let increase_handler item : value =
   | _ -> unit
   ;;
 
-  (* Duration operators - convert numbers to durations in seconds *)
+  (* Duration operators - convert numbers to durations *)
+  (* YEAR: converts number to months duration (1 year = 12 months) *)
   let duration_year_handler item : value =
   match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 365.0 *. 24.0 *. 3600.0))
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
   | List items ->
     let converted = List.map items ~f:(fun v ->
       match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 365.0 *. 24.0 *. 3600.0))
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
       | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
   ;;
 
+  (* MONTH: keeps as months duration *)
   let duration_month_handler item : value =
   match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 30.0 *. 24.0 *. 3600.0))
+  | NumberLiteral n -> value_type_only (NumberLiteral n)
   | List items ->
     let converted = List.map items ~f:(fun v ->
       match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 30.0 *. 24.0 *. 3600.0))
+      | NumberLiteral n -> value_type_only (NumberLiteral n)
       | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
   ;;
 
+  (* WEEK: converts to seconds duration (1 week = 604800 seconds) *)
   let duration_week_handler item : value =
   match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 7.0 *. 24.0 *. 3600.0))
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
   | List items ->
     let converted = List.map items ~f:(fun v ->
       match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 7.0 *. 24.0 *. 3600.0))
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
       | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
   ;;
 
+  (* DAY: converts to seconds duration (1 day = 86400 seconds) *)
   let duration_day_handler item : value =
   match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 24.0 *. 3600.0))
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
   | List items ->
     let converted = List.map items ~f:(fun v ->
       match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 24.0 *. 3600.0))
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
       | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
   ;;
 
+  (* HOURS: converts to seconds duration (1 hour = 3600 seconds) *)
   let duration_hours_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
@@ -425,6 +430,7 @@ let increase_handler item : value =
   | _ -> unit
   ;;
 
+  (* MINUTES: converts to seconds duration (1 minute = 60 seconds) *)
   let duration_minutes_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
@@ -438,6 +444,7 @@ let increase_handler item : value =
   | _ -> unit
   ;;
 
+  (* SECONDS: returns as seconds duration *)
   let duration_seconds_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral n)
