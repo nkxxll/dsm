@@ -79,7 +79,9 @@ module TokenType = struct
     | WHERE
     | NUMBERTYPE
     | TO
-    | DURATIONTOKEN of string
+    | YEAR
+    | MONTH
+    | WEEK
     | UNKNOWN of string
   [@@deriving yojson]
 
@@ -143,6 +145,12 @@ module TokenType = struct
     | "UPPERCASE" -> UPPERCASE
     | "WRITE" -> WRITE
     | "NUMBER" -> NUMBERTYPE
+    | "YEAR" -> YEAR
+    | "YEARS" -> YEAR
+    | "MONTH" -> MONTH
+    | "MONTHS" -> MONTH
+    | "WEEK" -> WEEK
+    | "WEEKS" -> WEEK
     | other -> IDENTIFIER other
   ;;
 
@@ -222,6 +230,9 @@ module TokenType = struct
     | TRUE -> "TRUE"
     | UPPERCASE -> "UPPERCASE"
     | WRITE -> "WRITE"
+    | YEAR -> "YEAR"
+    | MONTH -> "MONTH"
+    | WEEK -> "WEEK"
     | UNKNOWN s -> Printf.sprintf "UNKNOWN %s" s
   ;;
 end

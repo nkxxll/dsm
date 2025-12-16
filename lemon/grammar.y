@@ -174,6 +174,7 @@ int get_token_id (char *token) {
  	if (strcmp(token, "COUNT") == 0) return COUNT;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
  	if (strcmp(token, "DO") == 0) return DO;
+ 	if (strcmp(token, "MINUTES") == 0) return MINUTES;
  	if (strcmp(token, "ELSE") == 0) return ELSE;
  	if (strcmp(token, "ENDDO") == 0) return ENDDO;
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
@@ -255,7 +256,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     READ .
 %right     TIME .
 %left      WHERE .
-%right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM .
+%right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM OF INTERVAL .
 %right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
 %left      ISWITHIN ISNOTWITHIN .
 %left      LT .
@@ -266,6 +267,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     UNMINUS .
 %right     POWER .
 %left      RANGE .
+%left      YEAR MONTH WEEK DAY HOURS MINUTES SECONDS .
 
 ///////////////////////
 // CODE
@@ -445,8 +447,8 @@ ex(r) ::= IDENTIFIER(a) .
 	r = res;
 }
 
-optional_of ::= OF .
-optional_of ::= .
+optional_of ::= OF . [OF]
+optional_of ::= . [OF]
 
 ex(r) ::= TIME optional_of ex(a) .
 { r = unary("TIME", a); }

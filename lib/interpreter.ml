@@ -359,13 +359,105 @@ let increase_handler item : value =
   | _ -> unit
   ;;
 
+  (* Duration operators - convert numbers to durations in seconds *)
+  let duration_year_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 365.0 *. 24.0 *. 3600.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 365.0 *. 24.0 *. 3600.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_month_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 30.0 *. 24.0 *. 3600.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 30.0 *. 24.0 *. 3600.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_week_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 7.0 *. 24.0 *. 3600.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 7.0 *. 24.0 *. 3600.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_day_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 24.0 *. 3600.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 24.0 *. 3600.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_hours_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_minutes_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
+  let duration_seconds_handler item : value =
+  match item.type_ with
+  | NumberLiteral n -> value_type_only (NumberLiteral n)
+  | List items ->
+    let converted = List.map items ~f:(fun v ->
+      match v.type_ with
+      | NumberLiteral n -> value_type_only (NumberLiteral n)
+      | _ -> v)
+    in
+    value_type_only (List converted)
+  | _ -> unit
+  ;;
+
   let range start end_range =
   if start > end_range
   then failwith "start has to be smaller than end_range"
   else List.init (end_range - start + 1) ~f:(fun i -> start + i)
   ;;
 
-let range_operator first second =
+  let range_operator first second =
   match first, second with
   | { type_ = NumberLiteral first_number; _ }, { type_ = NumberLiteral second_number; _ }
     ->
@@ -745,6 +837,13 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "EARLIEST" -> unary_operation ~execution_type:NotElementWise ~f:earliest_handler
   | "INCREASE" -> unary_operation ~execution_type:NotElementWise ~f:increase_handler
   | "INTERVAL" -> unary_operation ~execution_type:NotElementWise ~f:interval_handler
+  | "YEAR" -> unary_operation ~execution_type:ElementWise ~f:duration_year_handler
+  | "MONTH" -> unary_operation ~execution_type:ElementWise ~f:duration_month_handler
+  | "WEEK" -> unary_operation ~execution_type:ElementWise ~f:duration_week_handler
+  | "DAY" -> unary_operation ~execution_type:ElementWise ~f:duration_day_handler
+  | "HOURS" -> unary_operation ~execution_type:ElementWise ~f:duration_hours_handler
+  | "MINUTES" -> unary_operation ~execution_type:ElementWise ~f:duration_minutes_handler
+  | "SECONDS" -> unary_operation ~execution_type:ElementWise ~f:duration_seconds_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in
