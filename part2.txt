@@ -1,0 +1,34 @@
+// READ liest eine Zeitreihe (Liste) aus einer csv-Datei
+// Verwenden Sie folgenden Dateiinhalt:
+//     81;2025-11-04T15:21:00
+//    92;2025-11-04T18:24:00
+//    137;2025-11-04T21:10:00
+//    102;2025-11-05T00:15:00
+//    112;2025-11-05T03:19:00
+
+glucose := read "time_series.xml";
+trace the count of glucose;
+trace any (glucose is greater than 100);
+trace [time of first glucose, average time of glucose, minimum time of glucose];
+trace time of (glucose + glucose);
+trace glucose where it occurred within the same day as latest glucose;
+
+// den Datentyp DURATION müssen Sie nicht voll implementieren,
+// es reicht die simpelste Form, bei der der Value als Anzahl Sekunden
+// gespeichert wird. Die Ausgabe kann auch einfach in Sekunden erfolgen,
+// also z.B. "120 Sekunden".
+trace the interval of glucose;
+trace time of earliest of glucose + 23 minutes - 12 seconds;
+trace (time latest glucose - time earliest glucose) / 7180;
+trace 2 hours / 5 minutes;
+midtime := average [time of earliest glucose, time of latest glucose];
+trace [2,3,4] days before midtime;
+
+for g in glucose do
+    if the time of g is before midtime then
+        relativ := "früh";
+    else
+        relativ := "spät";
+    endif;
+    trace "Wert " & g & " war relativ " & relativ;
+enddo;

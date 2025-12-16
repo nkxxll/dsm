@@ -1,4 +1,4 @@
-open Base
+open Core
 
 type operation =
   | PLUS
@@ -60,7 +60,7 @@ module InterpreterData = struct
     }
 
   let create () =
-    { now = Unix.gettimeofday () *. 1000.0; env = Hashtbl.create (module String) }
+    { now = Caml_unix.gettimeofday () *. 1000.0; env = Hashtbl.create (module String) }
   ;;
 end
 
@@ -295,6 +295,23 @@ let less_than first second =
   | _, _ -> unit
 ;;
 
+let read_csv first =
+  match first.type_ with
+  | StringLiteral file ->
+    let list : value list =
+      In_channel.read_lines file
+      |> List.map ~f:(String.split ~on:',')
+      |> List.map ~f:(fun line ->
+        let value = List.nth_exn line 0 in
+        let time = List.nth_exn line 1 in
+        NumberLiteral (Float.of_string value), Helper.time_string_to_float time)
+      |> List.fold ~init:[] ~f:(fun acc (value, time) ->
+        value_full value (Some time) :: acc)
+    in
+    value_type_only (List (List.rev list))
+  | _ -> unit
+;;
+
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   (* Binary operation dispatcher *)
   let where_operation () : value =
@@ -442,6 +459,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     eval interp_data arg |> write_value;
     unit
   | "RANGE" -> binary_operation ~execution_type:NotElementWise ~f:range_operator
+  | "READ" -> unary_operation ~execution_type:NotElementWise ~f:read_csv
   | "TRACE" ->
     let line = get_line yojson_ast in
     let arg = get_arg yojson_ast in
@@ -480,7 +498,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     unit
   | "TIMETOKEN" ->
     let time_str = get_value yojson_ast in
-    let time_float = Time.time_string_to_float time_str in
+    let time_float = Helper.time_string_to_float time_str in
     value_type_only (TimeLiteral time_float)
   | "VARIABLE" ->
     let name = get_name yojson_ast in
@@ -517,7 +535,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     (match val_.time with
      | Some t -> value_full (TimeLiteral t) (Some t)
      | None -> unit)
-  | "CURRENTTIME" -> value_type_only (TimeLiteral (Unix.gettimeofday ()))
+  | "CURRENTTIME" -> value_type_only (TimeLiteral (Caml_unix.gettimeofday ()))
   | "UPPERCASE" ->
     unary_operation ~execution_type:ElementWise ~f:string_uppercase_transform
   | "MAXIMUM" ->
@@ -573,13 +591,13 @@ and write_value (expr : value) =
         | { type_ = BoolLiteral b; _ } -> Bool.to_string b
         | { type_ = Unit; _ } -> "null"
         | { type_ = List _; _ } -> "[...]"
-        | { type_ = TimeLiteral t; _ } -> Time.timestamp_to_iso_string t)
+        | { type_ = TimeLiteral t; _ } -> Helper.timestamp_to_iso_string t)
       |> String.concat ~sep:", "
     in
     Stdio.print_endline ("[" ^ formatted ^ "]");
     ()
   | TimeLiteral t ->
-    Stdio.print_endline Time.(timestamp_to_iso_string t);
+    Stdio.print_endline Helper.(timestamp_to_iso_string t);
     ()
 ;;
 

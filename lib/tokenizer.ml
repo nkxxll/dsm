@@ -4,6 +4,7 @@ open Base
 
 module TokenType = struct
   type t =
+    | THE
     | OF
     | SQRT
     | WITHIN
@@ -13,6 +14,7 @@ module TokenType = struct
     | ASSIGN
     | AVERAGE
     | COMMA
+    | COUNT
     | CURRENTTIME
     | DIVIDE
     | DO
@@ -67,10 +69,11 @@ module TokenType = struct
     | NUMBERTYPE
     | TO
     | UNKNOWN of string
-  [@@deriving yojson]
+   [@@deriving yojson]
 
   let token_type_from_string str =
     match String.uppercase str with
+    | "THE" -> THE
     | "OF" -> OF
     | "TO" -> TO
     | "SQRT" -> SQRT
@@ -121,6 +124,7 @@ module TokenType = struct
     | WITHIN -> "WITHIN"
     | NOT -> "NOT"
     | IS -> "IS"
+    | THE -> "THE"
     | NUMBERTYPE -> "NUMBER"
     | LISTTYPE -> "LIST"
     | DOT -> "DOT"
@@ -443,6 +447,10 @@ let tokenize input =
   let tokenizer = create () in
   exec tokenizer input
   |> Result.map ~f:(fun tokens ->
+    (* filter out the tokens *)
+    let tokens =
+      List.filter tokens ~f:(fun item -> not (String.equal (Token.to_string item) "THE"))
+    in
     yojson_of_list (fun t -> yojson_of_list yojson_of_string (Token.to_list t)) tokens
     |> Yojson.Safe.pretty_to_string)
 ;;

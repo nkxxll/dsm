@@ -176,6 +176,7 @@ int get_token_id (char *token) {
  	if (strcmp(token, "IF") == 0) return IF;
  	if (strcmp(token, "IN") == 0) return IN;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
+ 	if (strcmp(token, "READ") == 0) return READ;
  	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
  	if (strcmp(token, "NOW") == 0) return NOW;
  	if (strcmp(token, "RANGE") == 0) return RANGE;
@@ -238,8 +239,10 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%right     TIME UPPERCASE AVERAGE INCREASE MAXIMUM .
+%right     READ .
+%right     TIME .
 %left      WHERE .
+%right     UPPERCASE AVERAGE INCREASE MAXIMUM .
 %right     IS ISNULL ISLIST ISNUMBER .
 %left      ISWITHIN ISNOTWITHIN .
 %left      LT .
@@ -364,6 +367,16 @@ statement(r) ::= TIME IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
 	r = res;
 }
 
+// TIME ASSIGNMENT
+statement(r) ::= TIME OF IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
+{
+	cJSON *res = cJSON_CreateObject();
+	cJSON_AddStringToObject(res, "type", "TIMEASSIGN");
+	cJSON_AddStringToObject(res, "ident", getValue(i));
+	cJSON_AddItemToObject(res, "arg", e);
+	r = res;
+}
+
 ex(r) ::= NOW .
 {
 	cJSON *res = cJSON_CreateObject();
@@ -419,25 +432,28 @@ ex(r) ::= IDENTIFIER(a) .
 	r = res;
 }
 
-ex(r) ::= TIME ex(a) .
+optional_of ::= OF .
+optional_of ::= .
+
+ex(r) ::= TIME optional_of ex(a) .
 { r = unary("TIME", a); }
 
-ex(r) ::= TIME OF ex(a) .
-{ r = unary("TIME", a); }
+ex(r) ::= READ ex(a) .
+{ r = unary("READ", a); }
 
 ex(r) ::= SQRT ex(a) .
 { r = unary("SQRT", a); }
 
-ex(r) ::= UPPERCASE ex(a) .
+ex(r) ::= UPPERCASE optional_of ex(a) .
 { r = unary("UPPERCASE", a); }
 
-ex(r) ::= MAXIMUM ex(a) .
+ex(r) ::= MAXIMUM optional_of ex(a) .
 { r = unary("MAXIMUM", a); }
 
-ex(r) ::= AVERAGE ex(a) .
+ex(r) ::= AVERAGE optional_of ex(a) .
 { r = unary("AVERAGE", a); }
 
-ex(r) ::= INCREASE ex(a) .
+ex(r) ::= INCREASE optional_of ex(a) .
 { r = unary("INCREASE", a); }
 
 ex(r) ::= MINUS ex(a) . [UNMINUS]
