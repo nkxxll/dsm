@@ -138,6 +138,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "IS") == 0) return IS;
 	if (strcmp(token, "SQRT") == 0) return SQRT;
 	if (strcmp(token, "NOT") == 0) return NOT;
+	if (strcmp(token, "SAME") == 0) return SAME;
 	if (strcmp(token, "AMPERSAND") == 0) return AMPERSAND;
 	if (strcmp(token, "OF") == 0) return OF;
 	if (strcmp(token, "LT") == 0) return LT;
@@ -178,6 +179,7 @@ int get_token_id (char *token) {
  	if (strcmp(token, "FALSE") == 0) return FALSE;
  	if (strcmp(token, "FOR") == 0) return FOR;
  	if (strcmp(token, "GREATER") == 0) return GREATER;
+ 	if (strcmp(token, "OCCUR") == 0) return OCCUR;
  	if (strcmp(token, "IF") == 0) return IF;
  	if (strcmp(token, "IN") == 0) return IN;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
@@ -249,7 +251,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     TIME .
 %left      WHERE .
 %right     UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM .
-%right     IS ISNULL ISLIST ISNUMBER GREATER .
+%right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
 %left      ISWITHIN ISNOTWITHIN .
 %left      LT .
 %left      AMPERSAND .
@@ -491,6 +493,24 @@ ex(r) ::= ex(a) IS NULLTOK . [ISNULL]
 
 ex(r) ::= ex(a) IS GREATER THAN ex(b) . [GREATER]
 { r = binary("ISGREATERT", a, b); }
+
+ex(r) ::= ex(a) OCCUR EQUAL ex(b) . [OCCUR]
+{ r = binary("OCCUREQUAL", a, b); }
+
+ex(r) ::= ex(a) OCCUR AT ex(b) . [OCCUR]
+{ r = binary("OCCUREQUAL", a, b); }
+
+ex(r) ::= ex(a) OCCUR BEFORE ex(b) . [OCCUR]
+{ r = binary("OCCURBEFORE", a, b); }
+
+ex(r) ::= ex(a) OCCUR AFTER ex(b) . [OCCUR]
+{ r = binary("OCCURAFTER", a, b); }
+
+ex(r) ::= ex(a) OCCUR WITHIN ex(b) TO ex(c) . [OCCUR]
+{ r = ternary("OCCURWITHIN", a, b, c); }
+
+ex(r) ::= ex(a) OCCUR WITHIN SAME DAY AS ex(b) . [OCCUR]
+{ r = binary("OCCURSAMEDAYAS", a, b); }
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }

@@ -11,6 +11,8 @@ module TokenType = struct
     | WITHIN
     | NOT
     | IS
+    | OCCUR
+    | SAME
     | AMPERSAND
     | ANY
     | ASSIGN
@@ -85,6 +87,7 @@ module TokenType = struct
     | "WITHIN" -> WITHIN
     | "NOT" -> NOT
     | "IS" -> IS
+    | "SAME" -> SAME
     | "LIST" -> LISTTYPE
     | "ANY" -> ANY
     | "AVERAGE" -> AVERAGE
@@ -111,6 +114,9 @@ module TokenType = struct
     | "MINIMUM" -> MINIMUM
     | "NOW" -> NOW
     | "NULL" -> NULL
+    | "OCCUR" -> OCCUR
+    | "OCCURS" -> OCCUR
+    | "OCCURRED" -> OCCUR
     | "READ" -> READ
     | "SUM" -> SUM
     | "THEN" -> THEN
@@ -132,6 +138,7 @@ module TokenType = struct
     | NOT -> "NOT"
     | THAN -> "THAN"
     | IS -> "IS"
+    | SAME -> "SAME"
     | THE -> "THE"
     | NUMBERTYPE -> "NUMBER"
     | LISTTYPE -> "LIST"
@@ -174,6 +181,7 @@ module TokenType = struct
     | NEQ -> "NEQ"
     | NOW -> "NOW"
     | NULL -> "NULL"
+    | OCCUR -> "OCCUR"
     | NUMTOKEN _ -> "NUMTOKEN"
     | PLUS -> "PLUS"
     | POWER -> "POWER"

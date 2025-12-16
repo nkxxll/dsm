@@ -341,6 +341,72 @@ let greater_than first second =
   | _, _ -> unit
 ;;
 
+(* OCCUR operators - compare primary time of left argument with right argument *)
+let occur_equal first second =
+  (* Use primary time of left argument *)
+  match first.time, second.type_ with
+  | Some left_time, TimeLiteral right_time ->
+    value_type_only (BoolLiteral (Float.equal left_time right_time))
+  | Some left_time, NumberLiteral right_time ->
+    value_type_only (BoolLiteral (Float.equal left_time right_time))
+  | _, _ -> unit
+;;
+
+let occur_before first second =
+  let ( < ) = Float.( < ) in
+  match first.time, second.type_ with
+  | Some left_time, TimeLiteral right_time ->
+    value_type_only (BoolLiteral (left_time < right_time))
+  | Some left_time, NumberLiteral right_time ->
+    value_type_only (BoolLiteral (left_time < right_time))
+  | _, _ -> unit
+;;
+
+let occur_after first second =
+  let ( > ) = Float.( > ) in
+  match first.time, second.type_ with
+  | Some left_time, TimeLiteral right_time ->
+    value_type_only (BoolLiteral (left_time > right_time))
+  | Some left_time, NumberLiteral right_time ->
+    value_type_only (BoolLiteral (left_time > right_time))
+  | _, _ -> unit
+;;
+
+let occur_within first second third =
+  let ( <= ) = Float.( <= ) in
+  let ( >= ) = Float.( >= ) in
+  match first.time, second.type_, third.type_ with
+  | Some first_time, TimeLiteral second_time, TimeLiteral third_time ->
+    if first_time >= second_time && first_time <= third_time
+    then value_type_only (BoolLiteral true)
+    else value_type_only (BoolLiteral false)
+  | Some first_time, NumberLiteral second_time, NumberLiteral third_time ->
+    if first_time >= second_time && first_time <= third_time
+    then value_type_only (BoolLiteral true)
+    else value_type_only (BoolLiteral false)
+  | Some first_time, TimeLiteral second_time, NumberLiteral third_time ->
+    if first_time >= second_time && first_time <= third_time
+    then value_type_only (BoolLiteral true)
+    else value_type_only (BoolLiteral false)
+  | Some first_time, NumberLiteral second_time, TimeLiteral third_time ->
+    if first_time >= second_time && first_time <= third_time
+    then value_type_only (BoolLiteral true)
+    else value_type_only (BoolLiteral false)
+  | _, _, _ -> unit
+;;
+
+let occur_same_day_as first second =
+  (* Extract day from timestamp (milliseconds since epoch) *)
+  (* Day boundary is 86400000 milliseconds (24 hours) *)
+  let day_ms = 86400000.0 in
+  match first.time, second.time with
+  | Some first_time, Some second_time ->
+    let first_day = Float.to_int (first_time /. day_ms) in
+    let second_day = Float.to_int (second_time /. day_ms) in
+    value_type_only (BoolLiteral (Int.equal first_day second_day))
+  | _, _ -> unit
+;;
+
 let read_csv first =
   match first.type_ with
   | StringLiteral file ->
@@ -515,6 +581,11 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     unit
   | "LT" -> binary_operation ~execution_type:ElementWise ~f:less_than
   | "ISGREATERT" -> binary_operation ~execution_type:ElementWise ~f:greater_than
+  | "OCCUREQUAL" -> binary_operation ~execution_type:ElementWise ~f:occur_equal
+  | "OCCURBEFORE" -> binary_operation ~execution_type:ElementWise ~f:occur_before
+  | "OCCURAFTER" -> binary_operation ~execution_type:ElementWise ~f:occur_after
+  | "OCCURWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:occur_within
+  | "OCCURSAMEDAYAS" -> binary_operation ~execution_type:ElementWise ~f:occur_same_day_as
   | "WHERE" -> where_operation ()
   | "ISNUMBER" -> unary_operation ~execution_type:ElementWise ~f:(is_type NumberType)
   | "ISNOTNUMBER" ->
