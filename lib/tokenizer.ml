@@ -36,6 +36,7 @@ module TokenType = struct
     | GREATER
     | GT
     | GTEQ
+    | HOURS
     | IDENTIFIER of string
     | IF
     | IN
@@ -50,6 +51,7 @@ module TokenType = struct
     | LISTTYPE
     | MAXIMUM
     | MINIMUM
+    | MINUTES
     | MINUS
     | NEQ
     | NOW
@@ -61,6 +63,7 @@ module TokenType = struct
     | READ
     | RPAR
     | RSPAR
+    | SECONDS
     | SEMICOLON
     | STRTOKEN of string
     | SUM
@@ -76,6 +79,7 @@ module TokenType = struct
     | WHERE
     | NUMBERTYPE
     | TO
+    | DURATIONTOKEN of string
     | UNKNOWN of string
   [@@deriving yojson]
 
@@ -88,6 +92,7 @@ module TokenType = struct
     | "TO" -> TO
     | "SQRT" -> SQRT
     | "DAY" -> DAY
+    | "DAYS" -> DAY
     | "WHERE" -> WHERE
     | "WITHIN" -> WITHIN
     | "NOT" -> NOT
@@ -110,6 +115,8 @@ module TokenType = struct
     | "FIRST" -> FIRST
     | "FOR" -> FOR
     | "GREATER" -> GREATER
+    | "HOURS" -> HOURS
+    | "HOUR" -> HOURS
     | "IF" -> IF
     | "IN" -> IN
     | "INCREASE" -> INCREASE
@@ -118,12 +125,16 @@ module TokenType = struct
     | "LATEST" -> LATEST
     | "MAXIMUM" -> MAXIMUM
     | "MINIMUM" -> MINIMUM
+    | "MINUTES" -> MINUTES
+    | "MINUTE" -> MINUTES
     | "NOW" -> NOW
     | "NULL" -> NULL
     | "OCCUR" -> OCCUR
     | "OCCURS" -> OCCUR
     | "OCCURRED" -> OCCUR
     | "READ" -> READ
+    | "SECONDS" -> SECONDS
+    | "SECOND" -> SECONDS
     | "SUM" -> SUM
     | "THEN" -> THEN
     | "TIME" -> TIME
@@ -173,6 +184,7 @@ module TokenType = struct
     | GREATER -> "GREATER"
     | GT -> "GT"
     | GTEQ -> "GTEQ"
+    | HOURS -> "HOURS"
     | IDENTIFIER _ -> "IDENTIFIER"
     | IF -> "IF"
     | IN -> "IN"
@@ -186,6 +198,7 @@ module TokenType = struct
     | LTEQ -> "LTEQ"
     | MAXIMUM -> "MAXIMUM"
     | MINIMUM -> "MINIMUM"
+    | MINUTES -> "MINUTES"
     | MINUS -> "MINUS"
     | NEQ -> "NEQ"
     | NOW -> "NOW"
@@ -197,6 +210,7 @@ module TokenType = struct
     | READ -> "READ"
     | RPAR -> "RPAR"
     | RSPAR -> "RSPAR"
+    | SECONDS -> "SECONDS"
     | SEMICOLON -> "SEMICOLON"
     | STRTOKEN _ -> "STRTOKEN"
     | SUM -> "SUM"
