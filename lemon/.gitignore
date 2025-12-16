@@ -2,3 +2,6 @@ lemon
 grammar
 grammar.so
 main
+grammar.c
+grammar.h
+grammar.out
