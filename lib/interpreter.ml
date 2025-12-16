@@ -211,12 +211,50 @@ let maximum_op numbers : float =
   | None -> 0.0
 ;;
 
+let minimum_op numbers : float =
+  match List.min_elt numbers ~compare:Float.compare with
+  | Some min_val -> min_val
+  | None -> 0.0
+;;
+
 let average_op numbers : float =
   match numbers with
   | [] -> 0.0
   | lst ->
     let sum = List.fold lst ~init:0.0 ~f:( +. ) in
     sum /. Float.of_int (List.length lst)
+;;
+
+(* COUNT handler - returns the count of items in a list *)
+let count_handler item : value =
+  match item.type_ with
+  | List items -> value_type_only (NumberLiteral (Float.of_int (List.length items)))
+  | _ -> unit
+;;
+
+(* ANY handler - returns true if any item in list is true *)
+let any_handler item : value =
+  match item.type_ with
+  | List items ->
+    let has_true =
+      List.exists items ~f:(fun v ->
+        match v.type_ with
+        | BoolLiteral true -> true
+        | _ -> false)
+    in
+    value_type_only (BoolLiteral has_true)
+  | BoolLiteral b -> value_type_only (BoolLiteral b)
+  | _ -> unit
+;;
+
+(* FIRST handler - returns the first item in a list *)
+let first_handler item : value =
+  match item.type_ with
+  | List items ->
+    (match items with
+     | first :: _ -> first
+     | [] -> unit)
+  | _ -> item
 ;;
 
 let unary_math_op op value =
@@ -292,6 +330,14 @@ let less_than first second =
   match first, second with
   | { type_ = NumberLiteral first; _ }, { type_ = NumberLiteral second; _ } ->
     value_type_only (BoolLiteral (first < second))
+  | _, _ -> unit
+;;
+
+let greater_than first second =
+  let ( > ) = Float.( > ) in
+  match first, second with
+  | { type_ = NumberLiteral first; _ }, { type_ = NumberLiteral second; _ } ->
+    value_type_only (BoolLiteral (first > second))
   | _, _ -> unit
 ;;
 
@@ -468,6 +514,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     write_value val_;
     unit
   | "LT" -> binary_operation ~execution_type:ElementWise ~f:less_than
+  | "ISGREATERT" -> binary_operation ~execution_type:ElementWise ~f:greater_than
   | "WHERE" -> where_operation ()
   | "ISNUMBER" -> unary_operation ~execution_type:ElementWise ~f:(is_type NumberType)
   | "ISNOTNUMBER" ->
@@ -540,8 +587,13 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     unary_operation ~execution_type:ElementWise ~f:string_uppercase_transform
   | "MAXIMUM" ->
     unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation maximum_op)
+  | "MINIMUM" ->
+    unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation minimum_op)
   | "AVERAGE" ->
     unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation average_op)
+  | "COUNT" -> unary_operation ~execution_type:NotElementWise ~f:count_handler
+  | "ANY" -> unary_operation ~execution_type:NotElementWise ~f:any_handler
+  | "FIRST" -> unary_operation ~execution_type:NotElementWise ~f:first_handler
   | "INCREASE" -> unary_operation ~execution_type:NotElementWise ~f:increase_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
@@ -996,6 +1048,18 @@ let%test_module "Parser tests" =
         Line 2: [200., 150., [...]]
         Line 3: [ "HALLO" ,  "WELT" , 4711.]
         Line 4: [10., 14.142135623730951, 12.24744871391589]
+        |}]
+    ;;
+
+    let%expect_test "test minimum operator" =
+      let input =
+        {|y := [100, 200, 150];
+        trace minimum y;|}
+      in
+      input |> interpret;
+      [%expect
+        {|
+        Line 2: 100.
         |}]
     ;;
 

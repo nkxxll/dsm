@@ -4,7 +4,7 @@ State 0:
           statementblock ::= * statementblock statement
 
                           code accept
-                statementblock shift        36     
+                statementblock shift        41     
                      {default} reduce       1      statementblock ::=
 
 State 1:
@@ -20,13 +20,18 @@ State 1:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -48,28 +53,32 @@ State 1:
           exlist ::= * ex
           exlist ::= * exlist COMMA ex
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                         RSPAR shift-reduce 47     ex ::= LSPAR RSPAR
-                            ex shift        56     
-                        exlist shift        74     
+                         RSPAR shift-reduce 52     ex ::= LSPAR RSPAR
+                            ex shift        65     
+                        exlist shift        89     
 
 State 2:
           if_then_else ::= * ex THEN statementblock elseif
@@ -86,13 +95,18 @@ State 2:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -110,26 +124,30 @@ State 2:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        48     
+                            ex shift        57     
                   if_then_else shift-reduce 10     elseif ::= ELSEIF if_then_else
 
 State 3:
@@ -147,13 +165,18 @@ State 3:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -171,26 +194,30 @@ State 3:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        48     
+                            ex shift        57     
                   if_then_else shift-reduce 6      statement ::= IF if_then_else
 
 State 4:
@@ -207,15 +234,15 @@ State 4:
           statement ::= * TIME IDENTIFIER ASSIGN ex SEMICOLON
           statement ::= * TIME OF IDENTIFIER ASSIGN ex SEMICOLON
 
-                          TIME shift        71     
-                         WRITE shift        33     
+                          TIME shift        85     
+                         WRITE shift        38     
                          TRACE shift        9      
-                    IDENTIFIER shift        87     
+                    IDENTIFIER shift        101    
                             IF shift        3      
-                         ENDIF shift        86     
-                          ELSE shift        43     
+                         ENDIF shift        100    
+                          ELSE shift        52     
                         ELSEIF shift        2      
-                           FOR shift        84     
+                           FOR shift        98     
                      statement shift-reduce 2      statementblock ::= statementblock statement
                         elseif shift-reduce 7      if_then_else ::= ex THEN statementblock elseif
 
@@ -233,13 +260,18 @@ State 5:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -257,26 +289,30 @@ State 5:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        45     
+                            ex shift        54     
 
 State 6:
           statement ::= TIME IDENTIFIER ASSIGN * ex SEMICOLON
@@ -292,13 +328,18 @@ State 6:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -316,26 +357,30 @@ State 6:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        46     
+                            ex shift        55     
 
 State 7:
           statement ::= FOR IDENTIFIER IN * ex DO statementblock ENDDO SEMICOLON
@@ -351,13 +396,18 @@ State 7:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -375,26 +425,30 @@ State 7:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        47     
+                            ex shift        56     
 
 State 8:
           statement ::= IDENTIFIER ASSIGN * ex SEMICOLON
@@ -410,13 +464,18 @@ State 8:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -434,26 +493,30 @@ State 8:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        49     
+                            ex shift        58     
 
 State 9:
           statement ::= TRACE * ex SEMICOLON
@@ -469,13 +532,18 @@ State 9:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -493,26 +561,30 @@ State 9:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        50     
+                            ex shift        59     
 
 State 10:
           ex ::= * NOW
@@ -527,13 +599,18 @@ State 10:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -552,26 +629,30 @@ State 10:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        64     
+                            ex shift        78     
 
 State 11:
           ex ::= * NOW
@@ -586,13 +667,18 @@ State 11:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -611,26 +697,30 @@ State 11:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        51     
+                            ex shift        60     
 
 State 12:
           ex ::= * NOW
@@ -645,13 +735,86 @@ State 12:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
+          ex ::= ex IS GREATER THAN * ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex LT ex
+          ex ::= * ex WHERE ex
+          ex ::= * ex RANGE ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * ex IS NOT WITHIN ex TO ex
+          ex ::= * ex IS WITHIN ex TO ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
+                         MINUS shift        15     
+                          SQRT shift        30     
+                    IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
+                           NOW shift-reduce 14     ex ::= NOW
+                   CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
+                          LPAR shift        36     
+                      NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 19     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        68     
+
+State 13:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME optional_of ex
+          ex ::= * READ ex
+          ex ::= * SQRT ex
+          ex ::= * UPPERCASE optional_of ex
+          ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
+          ex ::= * INCREASE optional_of ex
+          ex ::= * MINUS ex
+          ex ::= * ex IS NUMBER
+          ex ::= * ex IS NOT NUMBER
+          ex ::= * ex IS LIST
+          ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -670,28 +833,32 @@ State 12:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        65     
+                            ex shift        79     
 
-State 13:
+State 14:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -704,13 +871,18 @@ State 13:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -729,28 +901,32 @@ State 13:
           ex ::= * LSPAR exlist RSPAR
           exlist ::= exlist COMMA * ex
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        55     
+                            ex shift        64     
 
-State 14:
+State 15:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -763,13 +939,290 @@ State 14:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
+          ex ::= * INCREASE optional_of ex
+          ex ::= * MINUS ex
+          ex ::= MINUS * ex
+          ex ::= * ex IS NUMBER
+          ex ::= * ex IS NOT NUMBER
+          ex ::= * ex IS LIST
+          ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex LT ex
+          ex ::= * ex WHERE ex
+          ex ::= * ex RANGE ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * ex IS NOT WITHIN ex TO ex
+          ex ::= * ex IS WITHIN ex TO ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
+                         MINUS shift        15     
+                          SQRT shift        30     
+                    IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
+                           NOW shift-reduce 14     ex ::= NOW
+                   CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
+                          LPAR shift        36     
+                      NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 19     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        90     
+
+State 16:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME optional_of ex
+          ex ::= * READ ex
+          ex ::= * SQRT ex
+          ex ::= * UPPERCASE optional_of ex
+          ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
+          ex ::= * INCREASE optional_of ex
+          ex ::= INCREASE optional_of * ex
+          ex ::= * MINUS ex
+          ex ::= * ex IS NUMBER
+          ex ::= * ex IS NOT NUMBER
+          ex ::= * ex IS LIST
+          ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex LT ex
+          ex ::= * ex WHERE ex
+          ex ::= * ex RANGE ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * ex IS NOT WITHIN ex TO ex
+          ex ::= * ex IS WITHIN ex TO ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
+                         MINUS shift        15     
+                          SQRT shift        30     
+                    IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
+                           NOW shift-reduce 14     ex ::= NOW
+                   CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
+                          LPAR shift        36     
+                      NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 19     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        70     
+
+State 17:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME optional_of ex
+          ex ::= * READ ex
+          ex ::= * SQRT ex
+          ex ::= * UPPERCASE optional_of ex
+          ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
+          ex ::= COUNT optional_of * ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex LT ex
+          ex ::= * ex WHERE ex
+          ex ::= * ex RANGE ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * ex IS NOT WITHIN ex TO ex
+          ex ::= * ex IS WITHIN ex TO ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
+                         MINUS shift        15     
+                          SQRT shift        30     
+                    IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
+                           NOW shift-reduce 14     ex ::= NOW
+                   CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
+                          LPAR shift        36     
+                      NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 19     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        71     
+
+State 18:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME optional_of ex
+          ex ::= * READ ex
+          ex ::= * SQRT ex
+          ex ::= * UPPERCASE optional_of ex
+          ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= FIRST optional_of * ex
+          ex ::= * COUNT optional_of ex
+          ex ::= * INCREASE optional_of ex
+          ex ::= * MINUS ex
+          ex ::= * ex IS NUMBER
+          ex ::= * ex IS NOT NUMBER
+          ex ::= * ex IS LIST
+          ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
+          ex ::= * ex AMPERSAND ex
+          ex ::= * ex LT ex
+          ex ::= * ex WHERE ex
+          ex ::= * ex RANGE ex
+          ex ::= * ex PLUS ex
+          ex ::= * ex MINUS ex
+          ex ::= * ex TIMES ex
+          ex ::= * ex DIVIDE ex
+          ex ::= * ex POWER ex
+          ex ::= * ex IS NOT WITHIN ex TO ex
+          ex ::= * ex IS WITHIN ex TO ex
+          ex ::= * NULLTOK
+          ex ::= * TRUE
+          ex ::= * FALSE
+          ex ::= * LSPAR RSPAR
+          ex ::= * LSPAR exlist RSPAR
+
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
+                         MINUS shift        15     
+                          SQRT shift        30     
+                    IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
+                           NOW shift-reduce 14     ex ::= NOW
+                   CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
+                          LPAR shift        36     
+                      NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
+                     TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
+                      STRTOKEN shift-reduce 19     ex ::= STRTOKEN
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
+                         LSPAR shift        1      
+                            ex shift        72     
+
+State 19:
+          ex ::= * NOW
+          ex ::= * CURRENTTIME
+          ex ::= * LPAR ex RPAR
+          ex ::= * NUMTOKEN
+          ex ::= * TIMETOKEN
+          ex ::= * STRTOKEN
+          ex ::= * IDENTIFIER
+          ex ::= * TIME optional_of ex
+          ex ::= * READ ex
+          ex ::= * SQRT ex
+          ex ::= * UPPERCASE optional_of ex
+          ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
+          ex ::= * INCREASE optional_of ex
+          ex ::= * MINUS ex
+          ex ::= * ex IS NUMBER
+          ex ::= * ex IS NOT NUMBER
+          ex ::= * ex IS LIST
+          ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -788,28 +1241,32 @@ State 14:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        75     
+                            ex shift        88     
 
-State 15:
+State 20:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -822,14 +1279,19 @@ State 15:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= ANY optional_of * ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
-          ex ::= MINUS * ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -847,28 +1309,32 @@ State 15:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        76     
+                            ex shift        73     
 
-State 16:
+State 21:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -881,13 +1347,18 @@ State 16:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -906,28 +1377,32 @@ State 16:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        73     
+                            ex shift        87     
 
-State 17:
+State 22:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -940,14 +1415,19 @@ State 17:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= AVERAGE optional_of * ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
-          ex ::= INCREASE optional_of * ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -965,28 +1445,32 @@ State 17:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        60     
+                            ex shift        74     
 
-State 18:
+State 23:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -999,13 +1483,18 @@ State 18:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1024,28 +1513,32 @@ State 18:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        72     
+                            ex shift        86     
 
-State 19:
+State 24:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1058,14 +1551,19 @@ State 19:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
+          ex ::= MINIMUM optional_of * ex
           ex ::= * AVERAGE optional_of ex
-          ex ::= AVERAGE optional_of * ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1083,28 +1581,32 @@ State 19:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        61     
+                            ex shift        75     
 
-State 20:
+State 25:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1117,13 +1619,18 @@ State 20:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1142,28 +1649,32 @@ State 20:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        70     
+                            ex shift        84     
 
-State 21:
+State 26:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1177,13 +1688,18 @@ State 21:
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
           ex ::= MAXIMUM optional_of * ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1201,28 +1717,32 @@ State 21:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        62     
+                            ex shift        76     
 
-State 22:
+State 27:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1235,13 +1755,18 @@ State 22:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1260,28 +1785,32 @@ State 22:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        69     
+                            ex shift        83     
 
-State 23:
+State 28:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1295,13 +1824,18 @@ State 23:
           ex ::= * UPPERCASE optional_of ex
           ex ::= UPPERCASE optional_of * ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1319,28 +1853,32 @@ State 23:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        63     
+                            ex shift        77     
 
-State 24:
+State 29:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1353,13 +1891,18 @@ State 24:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1378,28 +1921,32 @@ State 24:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift-reduce 36     ex ::= ex RANGE ex
+                            ex shift-reduce 41     ex ::= ex RANGE ex
 
-State 25:
+State 30:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1413,13 +1960,18 @@ State 25:
           ex ::= SQRT * ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1437,28 +1989,32 @@ State 25:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        77     
+                            ex shift        91     
 
-State 26:
+State 31:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1471,13 +2027,18 @@ State 26:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1496,28 +2057,32 @@ State 26:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        59     
+                            ex shift        69     
 
-State 27:
+State 32:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1531,13 +2096,18 @@ State 27:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1555,28 +2125,32 @@ State 27:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        57     
+                            ex shift        66     
 
-State 28:
+State 33:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1589,13 +2163,18 @@ State 28:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= ex LT * ex
@@ -1614,28 +2193,32 @@ State 28:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        66     
+                            ex shift        80     
 
-State 29:
+State 34:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1649,13 +2232,18 @@ State 29:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1673,28 +2261,32 @@ State 29:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        58     
+                            ex shift        67     
 
-State 30:
+State 35:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1707,13 +2299,18 @@ State 30:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= ex AMPERSAND * ex
           ex ::= * ex LT ex
@@ -1732,28 +2329,32 @@ State 30:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        67     
+                            ex shift        81     
 
-State 31:
+State 36:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1767,13 +2368,18 @@ State 31:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1791,28 +2397,32 @@ State 31:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        53     
+                            ex shift        62     
 
-State 32:
+State 37:
           ex ::= * NOW
           ex ::= * CURRENTTIME
           ex ::= * LPAR ex RPAR
@@ -1825,13 +2435,18 @@ State 32:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1850,28 +2465,32 @@ State 32:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        52     
+                            ex shift        61     
 
-State 33:
+State 38:
           statement ::= WRITE * ex SEMICOLON
           ex ::= * NOW
           ex ::= * CURRENTTIME
@@ -1885,13 +2504,18 @@ State 33:
           ex ::= * SQRT ex
           ex ::= * UPPERCASE optional_of ex
           ex ::= * MAXIMUM optional_of ex
+          ex ::= * MINIMUM optional_of ex
           ex ::= * AVERAGE optional_of ex
+          ex ::= * ANY optional_of ex
+          ex ::= * FIRST optional_of ex
+          ex ::= * COUNT optional_of ex
           ex ::= * INCREASE optional_of ex
           ex ::= * MINUS ex
           ex ::= * ex IS NUMBER
           ex ::= * ex IS NOT NUMBER
           ex ::= * ex IS LIST
           ex ::= * ex IS NULLTOK
+          ex ::= * ex IS GREATER THAN ex
           ex ::= * ex AMPERSAND ex
           ex ::= * ex LT ex
           ex ::= * ex WHERE ex
@@ -1909,28 +2533,32 @@ State 33:
           ex ::= * LSPAR RSPAR
           ex ::= * LSPAR exlist RSPAR
 
-                          READ shift        27     
-                          TIME shift        41     
-                     UPPERCASE shift        40     
-                       AVERAGE shift        38     
-                      INCREASE shift        37     
-                       MAXIMUM shift        39     
+                          READ shift        32     
+                          TIME shift        50     
+                     UPPERCASE shift        49     
+                       AVERAGE shift        46     
+                           ANY shift        45     
+                         FIRST shift        44     
+                         COUNT shift        43     
+                      INCREASE shift        42     
+                       MAXIMUM shift        48     
+                       MINIMUM shift        47     
                          MINUS shift        15     
-                          SQRT shift        25     
+                          SQRT shift        30     
                     IDENTIFIER shift-reduce 20     ex ::= IDENTIFIER
                            NOW shift-reduce 14     ex ::= NOW
                    CURRENTTIME shift-reduce 15     ex ::= CURRENTTIME
-                          LPAR shift        31     
+                          LPAR shift        36     
                       NUMTOKEN shift-reduce 17     ex ::= NUMTOKEN
                      TIMETOKEN shift-reduce 18     ex ::= TIMETOKEN
                       STRTOKEN shift-reduce 19     ex ::= STRTOKEN
-                       NULLTOK shift-reduce 44     ex ::= NULLTOK
-                          TRUE shift-reduce 45     ex ::= TRUE
-                         FALSE shift-reduce 46     ex ::= FALSE
+                       NULLTOK shift-reduce 49     ex ::= NULLTOK
+                          TRUE shift-reduce 50     ex ::= TRUE
+                         FALSE shift-reduce 51     ex ::= FALSE
                          LSPAR shift        1      
-                            ex shift        54     
+                            ex shift        63     
 
-State 34:
+State 39:
           statementblock ::= statementblock * statement
           statement ::= * WRITE ex SEMICOLON
           statement ::= * TRACE ex SEMICOLON
@@ -1941,16 +2569,16 @@ State 34:
           statement ::= * TIME IDENTIFIER ASSIGN ex SEMICOLON
           statement ::= * TIME OF IDENTIFIER ASSIGN ex SEMICOLON
 
-                          TIME shift        71     
-                         WRITE shift        33     
+                          TIME shift        85     
+                         WRITE shift        38     
                          TRACE shift        9      
-                    IDENTIFIER shift        87     
+                    IDENTIFIER shift        101    
                             IF shift        3      
-                           FOR shift        84     
-                         ENDDO shift        82     
+                           FOR shift        98     
+                         ENDDO shift        96     
                      statement shift-reduce 2      statementblock ::= statementblock statement
 
-State 35:
+State 40:
           statementblock ::= statementblock * statement
           statement ::= * WRITE ex SEMICOLON
           statement ::= * TRACE ex SEMICOLON
@@ -1961,16 +2589,16 @@ State 35:
           statement ::= * TIME IDENTIFIER ASSIGN ex SEMICOLON
           statement ::= * TIME OF IDENTIFIER ASSIGN ex SEMICOLON
 
-                          TIME shift        71     
-                         WRITE shift        33     
+                          TIME shift        85     
+                         WRITE shift        38     
                          TRACE shift        9      
-                    IDENTIFIER shift        87     
+                    IDENTIFIER shift        101    
                             IF shift        3      
-                         ENDIF shift        85     
-                           FOR shift        84     
+                         ENDIF shift        99     
+                           FOR shift        98     
                      statement shift-reduce 2      statementblock ::= statementblock statement
 
-State 36:
+State 41:
       (0) code ::= statementblock *
           statementblock ::= statementblock * statement
           statement ::= * WRITE ex SEMICOLON
@@ -1982,76 +2610,112 @@ State 36:
           statement ::= * TIME OF IDENTIFIER ASSIGN ex SEMICOLON
 
                              $ reduce       0      code ::= statementblock
-                          TIME shift        71     
-                         WRITE shift        33     
+                          TIME shift        85     
+                         WRITE shift        38     
                          TRACE shift        9      
-                    IDENTIFIER shift        87     
+                    IDENTIFIER shift        101    
                             IF shift        3      
-                           FOR shift        84     
+                           FOR shift        98     
                      statement shift-reduce 2      statementblock ::= statementblock statement
 
-State 37:
+State 42:
           optional_of ::= * OF
-     (52) optional_of ::= *
+     (57) optional_of ::= *
           ex ::= INCREASE * optional_of ex
 
-                            OF shift-reduce 51     optional_of ::= OF
-                   optional_of shift        17     
-                     {default} reduce       52     optional_of ::=
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        16     
+                     {default} reduce       57     optional_of ::=
 
-State 38:
+State 43:
           optional_of ::= * OF
-     (52) optional_of ::= *
+     (57) optional_of ::= *
+          ex ::= COUNT * optional_of ex
+
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        17     
+                     {default} reduce       57     optional_of ::=
+
+State 44:
+          optional_of ::= * OF
+     (57) optional_of ::= *
+          ex ::= FIRST * optional_of ex
+
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        18     
+                     {default} reduce       57     optional_of ::=
+
+State 45:
+          optional_of ::= * OF
+     (57) optional_of ::= *
+          ex ::= ANY * optional_of ex
+
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        20     
+                     {default} reduce       57     optional_of ::=
+
+State 46:
+          optional_of ::= * OF
+     (57) optional_of ::= *
           ex ::= AVERAGE * optional_of ex
 
-                            OF shift-reduce 51     optional_of ::= OF
-                   optional_of shift        19     
-                     {default} reduce       52     optional_of ::=
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        22     
+                     {default} reduce       57     optional_of ::=
 
-State 39:
+State 47:
           optional_of ::= * OF
-     (52) optional_of ::= *
+     (57) optional_of ::= *
+          ex ::= MINIMUM * optional_of ex
+
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        24     
+                     {default} reduce       57     optional_of ::=
+
+State 48:
+          optional_of ::= * OF
+     (57) optional_of ::= *
           ex ::= MAXIMUM * optional_of ex
 
-                            OF shift-reduce 51     optional_of ::= OF
-                   optional_of shift        21     
-                     {default} reduce       52     optional_of ::=
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        26     
+                     {default} reduce       57     optional_of ::=
 
-State 40:
+State 49:
           optional_of ::= * OF
-     (52) optional_of ::= *
+     (57) optional_of ::= *
           ex ::= UPPERCASE * optional_of ex
 
-                            OF shift-reduce 51     optional_of ::= OF
-                   optional_of shift        23     
-                     {default} reduce       52     optional_of ::=
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        28     
+                     {default} reduce       57     optional_of ::=
 
-State 41:
+State 50:
           optional_of ::= * OF
-     (52) optional_of ::= *
+     (57) optional_of ::= *
           ex ::= TIME * optional_of ex
 
-                            OF shift-reduce 51     optional_of ::= OF
-                   optional_of shift        29     
-                     {default} reduce       52     optional_of ::=
+                            OF shift-reduce 56     optional_of ::= OF
+                   optional_of shift        34     
+                     {default} reduce       57     optional_of ::=
 
-State 42:
+State 51:
       (1) statementblock ::= *
           statementblock ::= * statementblock statement
           statement ::= FOR IDENTIFIER IN ex DO * statementblock ENDDO SEMICOLON
 
-                statementblock shift        34     
+                statementblock shift        39     
                      {default} reduce       1      statementblock ::=
 
-State 43:
+State 52:
       (1) statementblock ::= *
           statementblock ::= * statementblock statement
           elseif ::= ELSE * statementblock ENDIF SEMICOLON
 
-                statementblock shift        35     
+                statementblock shift        40     
                      {default} reduce       1      statementblock ::=
 
-State 44:
+State 53:
       (1) statementblock ::= *
           statementblock ::= * statementblock statement
           if_then_else ::= ex THEN * statementblock elseif
@@ -2059,12 +2723,13 @@ State 44:
                 statementblock shift        4      
                      {default} reduce       1      statementblock ::=
 
-State 45:
+State 54:
           statement ::= TIME OF IDENTIFIER ASSIGN ex * SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2077,24 +2742,25 @@ State 45:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                      SEMICOLON shift-reduce 13     statement ::= TIME OF IDENTIFIER ASSIGN ex SEMICOLON
 
-State 46:
+State 55:
           statement ::= TIME IDENTIFIER ASSIGN ex * SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2107,24 +2773,25 @@ State 46:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                      SEMICOLON shift-reduce 12     statement ::= TIME IDENTIFIER ASSIGN ex SEMICOLON
 
-State 47:
+State 56:
           statement ::= FOR IDENTIFIER IN ex * DO statementblock ENDDO SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2137,24 +2804,25 @@ State 47:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                            DO shift        42     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                            DO shift        51     
 
-State 48:
+State 57:
           if_then_else ::= ex * THEN statementblock elseif
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2167,24 +2835,25 @@ State 48:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                          THEN shift        44     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                          THEN shift        53     
 
-State 49:
+State 58:
           statement ::= IDENTIFIER ASSIGN ex * SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2197,24 +2866,25 @@ State 49:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                      SEMICOLON shift-reduce 5      statement ::= IDENTIFIER ASSIGN ex SEMICOLON
 
-State 50:
+State 59:
           statement ::= TRACE ex * SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2227,23 +2897,24 @@ State 50:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                      SEMICOLON shift-reduce 4      statement ::= TRACE ex SEMICOLON
 
-State 51:
+State 60:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2257,23 +2928,24 @@ State 51:
           ex ::= ex * IS WITHIN ex TO ex
           ex ::= ex IS WITHIN ex * TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                             TO shift        10     
 
-State 52:
+State 61:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2287,24 +2959,25 @@ State 52:
           ex ::= ex IS NOT WITHIN ex * TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                            TO shift        12     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                            TO shift        13     
 
-State 53:
+State 62:
           ex ::= LPAR ex * RPAR
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2317,24 +2990,25 @@ State 53:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                           RPAR shift-reduce 16     ex ::= LPAR ex RPAR
 
-State 54:
+State 63:
           statement ::= WRITE ex * SEMICOLON
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2347,288 +3021,24 @@ State 54:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
                      SEMICOLON shift-reduce 3      statement ::= WRITE ex SEMICOLON
-
-State 55:
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-     (50) exlist ::= exlist COMMA ex *
-
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       50     exlist ::= exlist COMMA ex
-
-State 56:
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-     (49) exlist ::= ex *
-
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       49     exlist ::= ex
-
-State 57:
-     (22) ex ::= READ ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       22     ex ::= READ ex
-
-State 58:
-     (21) ex ::= TIME optional_of ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                         WHERE shift        26     
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       21     ex ::= TIME optional_of ex
-
-State 59:
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-     (35) ex ::= ex WHERE ex *
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       35     ex ::= ex WHERE ex
-
-State 60:
-     (27) ex ::= INCREASE optional_of ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       27     ex ::= INCREASE optional_of ex
-
-State 61:
-     (26) ex ::= AVERAGE optional_of ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       26     ex ::= AVERAGE optional_of ex
-
-State 62:
-     (25) ex ::= MAXIMUM optional_of ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       25     ex ::= MAXIMUM optional_of ex
-
-State 63:
-     (24) ex ::= UPPERCASE optional_of ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                            IS shift        68     
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       24     ex ::= UPPERCASE optional_of ex
 
 State 64:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2640,23 +3050,26 @@ State 64:
           ex ::= ex * POWER ex
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
-     (43) ex ::= ex IS WITHIN ex TO ex *
+     (55) exlist ::= exlist COMMA ex *
 
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       43     ex ::= ex IS WITHIN ex TO ex
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       55     exlist ::= exlist COMMA ex
 
 State 65:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2667,27 +3080,30 @@ State 65:
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
           ex ::= ex * IS NOT WITHIN ex TO ex
-     (42) ex ::= ex IS NOT WITHIN ex TO ex *
           ex ::= ex * IS WITHIN ex TO ex
+     (54) exlist ::= ex *
 
-                            LT shift        28     
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       42     ex ::= ex IS NOT WITHIN ex TO ex
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       54     exlist ::= ex
 
 State 66:
+     (22) ex ::= READ ex *
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
-     (34) ex ::= ex LT ex *
           ex ::= ex * WHERE ex
           ex ::= ex * RANGE ex
           ex ::= ex * PLUS ex
@@ -2698,22 +3114,26 @@ State 66:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                     AMPERSAND shift        30     
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       34     ex ::= ex LT ex
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       22     ex ::= READ ex
 
 State 67:
+     (21) ex ::= TIME optional_of ex *
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
-     (33) ex ::= ex AMPERSAND ex *
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
           ex ::= ex * RANGE ex
@@ -2725,39 +3145,60 @@ State 67:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                          PLUS shift        22     
-                         MINUS shift        20     
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       33     ex ::= ex AMPERSAND ex
+                         WHERE shift        31     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       21     ex ::= TIME optional_of ex
 
 State 68:
-          ex ::= ex IS * NUMBER
-          ex ::= ex IS * NOT NUMBER
-          ex ::= ex IS * LIST
-          ex ::= ex IS * NULLTOK
-          ex ::= ex IS * NOT WITHIN ex TO ex
-          ex ::= ex IS * WITHIN ex TO ex
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+     (37) ex ::= ex IS GREATER THAN ex *
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
 
-                        NUMBER shift-reduce 29     ex ::= ex IS NUMBER
-                           NOT shift        78     
-                          LIST shift-reduce 31     ex ::= ex IS LIST
-                       NULLTOK shift-reduce 32     ex ::= ex IS NULLTOK
-                        WITHIN shift        11     
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       37     ex ::= ex IS GREATER THAN ex
 
 State 69:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
+     (40) ex ::= ex WHERE ex *
           ex ::= ex * RANGE ex
           ex ::= ex * PLUS ex
-     (37) ex ::= ex PLUS ex *
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
@@ -2765,48 +3206,449 @@ State 69:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       37     ex ::= ex PLUS ex
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       40     ex ::= ex WHERE ex
 
 State 70:
+     (31) ex ::= INCREASE optional_of ex *
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
           ex ::= ex * RANGE ex
           ex ::= ex * PLUS ex
           ex ::= ex * MINUS ex
-     (38) ex ::= ex MINUS ex *
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         TIMES shift        18     
-                        DIVIDE shift        16     
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       38     ex ::= ex MINUS ex
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       31     ex ::= INCREASE optional_of ex
 
 State 71:
+     (30) ex ::= COUNT optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       30     ex ::= COUNT optional_of ex
+
+State 72:
+     (29) ex ::= FIRST optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       29     ex ::= FIRST optional_of ex
+
+State 73:
+     (28) ex ::= ANY optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       28     ex ::= ANY optional_of ex
+
+State 74:
+     (27) ex ::= AVERAGE optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       27     ex ::= AVERAGE optional_of ex
+
+State 75:
+     (26) ex ::= MINIMUM optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       26     ex ::= MINIMUM optional_of ex
+
+State 76:
+     (25) ex ::= MAXIMUM optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       25     ex ::= MAXIMUM optional_of ex
+
+State 77:
+     (24) ex ::= UPPERCASE optional_of ex *
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            IS shift        82     
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       24     ex ::= UPPERCASE optional_of ex
+
+State 78:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+     (48) ex ::= ex IS WITHIN ex TO ex *
+
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       48     ex ::= ex IS WITHIN ex TO ex
+
+State 79:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+     (47) ex ::= ex IS NOT WITHIN ex TO ex *
+          ex ::= ex * IS WITHIN ex TO ex
+
+                            LT shift        33     
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       47     ex ::= ex IS NOT WITHIN ex TO ex
+
+State 80:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+     (39) ex ::= ex LT ex *
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                     AMPERSAND shift        35     
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       39     ex ::= ex LT ex
+
+State 81:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+     (38) ex ::= ex AMPERSAND ex *
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                          PLUS shift        27     
+                         MINUS shift        25     
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       38     ex ::= ex AMPERSAND ex
+
+State 82:
+          ex ::= ex IS * NUMBER
+          ex ::= ex IS * NOT NUMBER
+          ex ::= ex IS * LIST
+          ex ::= ex IS * NULLTOK
+          ex ::= ex IS * GREATER THAN ex
+          ex ::= ex IS * NOT WITHIN ex TO ex
+          ex ::= ex IS * WITHIN ex TO ex
+
+                       GREATER shift        102    
+                        NUMBER shift-reduce 33     ex ::= ex IS NUMBER
+                           NOT shift        92     
+                          LIST shift-reduce 35     ex ::= ex IS LIST
+                       NULLTOK shift-reduce 36     ex ::= ex IS NULLTOK
+                        WITHIN shift        11     
+
+State 83:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+     (42) ex ::= ex PLUS ex *
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       42     ex ::= ex PLUS ex
+
+State 84:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+     (43) ex ::= ex MINUS ex *
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                         TIMES shift        23     
+                        DIVIDE shift        21     
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       43     ex ::= ex MINUS ex
+
+State 85:
           statement ::= TIME * IDENTIFIER ASSIGN ex SEMICOLON
           statement ::= TIME * OF IDENTIFIER ASSIGN ex SEMICOLON
 
-                    IDENTIFIER shift        81     
-                            OF shift        80     
+                    IDENTIFIER shift        95     
+                            OF shift        94     
 
-State 72:
+State 86:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2814,21 +3656,22 @@ State 72:
           ex ::= ex * PLUS ex
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
-     (39) ex ::= ex TIMES ex *
+     (44) ex ::= ex TIMES ex *
           ex ::= ex * DIVIDE ex
           ex ::= ex * POWER ex
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       39     ex ::= ex TIMES ex
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       44     ex ::= ex TIMES ex
 
-State 73:
+State 87:
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2837,50 +3680,52 @@ State 73:
           ex ::= ex * MINUS ex
           ex ::= ex * TIMES ex
           ex ::= ex * DIVIDE ex
-     (40) ex ::= ex DIVIDE ex *
+     (45) ex ::= ex DIVIDE ex *
           ex ::= ex * POWER ex
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       40     ex ::= ex DIVIDE ex
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       45     ex ::= ex DIVIDE ex
 
-State 74:
+State 88:
+          ex ::= ex * IS NUMBER
+          ex ::= ex * IS NOT NUMBER
+          ex ::= ex * IS LIST
+          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
+          ex ::= ex * AMPERSAND ex
+          ex ::= ex * LT ex
+          ex ::= ex * WHERE ex
+          ex ::= ex * RANGE ex
+          ex ::= ex * PLUS ex
+          ex ::= ex * MINUS ex
+          ex ::= ex * TIMES ex
+          ex ::= ex * DIVIDE ex
+          ex ::= ex * POWER ex
+     (46) ex ::= ex POWER ex *
+          ex ::= ex * IS NOT WITHIN ex TO ex
+          ex ::= ex * IS WITHIN ex TO ex
+
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       46     ex ::= ex POWER ex
+
+State 89:
           ex ::= LSPAR exlist * RSPAR
           exlist ::= exlist * COMMA ex
 
-                         RSPAR shift-reduce 48     ex ::= LSPAR exlist RSPAR
-                         COMMA shift        13     
+                         RSPAR shift-reduce 53     ex ::= LSPAR exlist RSPAR
+                         COMMA shift        14     
 
-State 75:
+State 90:
+     (32) ex ::= MINUS ex *
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
-          ex ::= ex * AMPERSAND ex
-          ex ::= ex * LT ex
-          ex ::= ex * WHERE ex
-          ex ::= ex * RANGE ex
-          ex ::= ex * PLUS ex
-          ex ::= ex * MINUS ex
-          ex ::= ex * TIMES ex
-          ex ::= ex * DIVIDE ex
-          ex ::= ex * POWER ex
-     (41) ex ::= ex POWER ex *
-          ex ::= ex * IS NOT WITHIN ex TO ex
-          ex ::= ex * IS WITHIN ex TO ex
-
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       41     ex ::= ex POWER ex
-
-State 76:
-     (28) ex ::= MINUS ex *
-          ex ::= ex * IS NUMBER
-          ex ::= ex * IS NOT NUMBER
-          ex ::= ex * IS LIST
-          ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2893,16 +3738,17 @@ State 76:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         POWER shift        14     
-                         RANGE shift        24     
-                     {default} reduce       28     ex ::= MINUS ex
+                         POWER shift        19     
+                         RANGE shift        29     
+                     {default} reduce       32     ex ::= MINUS ex
 
-State 77:
+State 91:
      (23) ex ::= SQRT ex *
           ex ::= ex * IS NUMBER
           ex ::= ex * IS NOT NUMBER
           ex ::= ex * IS LIST
           ex ::= ex * IS NULLTOK
+          ex ::= ex * IS GREATER THAN ex
           ex ::= ex * AMPERSAND ex
           ex ::= ex * LT ex
           ex ::= ex * WHERE ex
@@ -2915,61 +3761,66 @@ State 77:
           ex ::= ex * IS NOT WITHIN ex TO ex
           ex ::= ex * IS WITHIN ex TO ex
 
-                         POWER shift        14     
-                         RANGE shift        24     
+                         POWER shift        19     
+                         RANGE shift        29     
                      {default} reduce       23     ex ::= SQRT ex
 
-State 78:
+State 92:
           ex ::= ex IS NOT * NUMBER
           ex ::= ex IS NOT * WITHIN ex TO ex
 
-                        NUMBER shift-reduce 30     ex ::= ex IS NOT NUMBER
-                        WITHIN shift        32     
+                        NUMBER shift-reduce 34     ex ::= ex IS NOT NUMBER
+                        WITHIN shift        37     
 
-State 79:
+State 93:
           statement ::= TIME OF IDENTIFIER * ASSIGN ex SEMICOLON
 
                         ASSIGN shift        5      
 
-State 80:
+State 94:
           statement ::= TIME OF * IDENTIFIER ASSIGN ex SEMICOLON
 
-                    IDENTIFIER shift        79     
+                    IDENTIFIER shift        93     
 
-State 81:
+State 95:
           statement ::= TIME IDENTIFIER * ASSIGN ex SEMICOLON
 
                         ASSIGN shift        6      
 
-State 82:
+State 96:
           statement ::= FOR IDENTIFIER IN ex DO statementblock ENDDO * SEMICOLON
 
                      SEMICOLON shift-reduce 11     statement ::= FOR IDENTIFIER IN ex DO statementblock ENDDO SEMICOLON
 
-State 83:
+State 97:
           statement ::= FOR IDENTIFIER * IN ex DO statementblock ENDDO SEMICOLON
 
                             IN shift        7      
 
-State 84:
+State 98:
           statement ::= FOR * IDENTIFIER IN ex DO statementblock ENDDO SEMICOLON
 
-                    IDENTIFIER shift        83     
+                    IDENTIFIER shift        97     
 
-State 85:
+State 99:
           elseif ::= ELSE statementblock ENDIF * SEMICOLON
 
                      SEMICOLON shift-reduce 9      elseif ::= ELSE statementblock ENDIF SEMICOLON
 
-State 86:
+State 100:
           elseif ::= ENDIF * SEMICOLON
 
                      SEMICOLON shift-reduce 8      elseif ::= ENDIF SEMICOLON
 
-State 87:
+State 101:
           statement ::= IDENTIFIER * ASSIGN ex SEMICOLON
 
                         ASSIGN shift        8      
+
+State 102:
+          ex ::= ex IS GREATER * THAN ex
+
+                          THAN shift        12     
 
 ----------------------------------------------------
 Symbols:
@@ -2981,75 +3832,82 @@ The first-set of non-terminals is shown after the name.
     3: WHERE (precedence=3)
     4: UPPERCASE (precedence=4)
     5: AVERAGE (precedence=4)
-    6: INCREASE (precedence=4)
-    7: MAXIMUM (precedence=4)
-    8: IS (precedence=5)
-    9: ISNULL (precedence=5)
-   10: ISLIST (precedence=5)
-   11: ISNUMBER (precedence=5)
-   12: ISWITHIN (precedence=6)
-   13: ISNOTWITHIN (precedence=6)
-   14: LT (precedence=7)
-   15: AMPERSAND (precedence=8)
-   16: PLUS (precedence=9)
-   17: MINUS (precedence=9)
-   18: TIMES (precedence=10)
-   19: DIVIDE (precedence=10)
-   20: SQRT (precedence=11)
-   21: UNMINUS (precedence=12)
-   22: POWER (precedence=13)
-   23: RANGE (precedence=14)
-   24: WRITE
-   25: SEMICOLON
-   26: TRACE
-   27: IDENTIFIER
-   28: ASSIGN
-   29: IF
-   30: THEN
-   31: ENDIF
-   32: ELSE
-   33: ELSEIF
-   34: FOR
-   35: IN
-   36: DO
-   37: ENDDO
-   38: OF
-   39: NOW
-   40: CURRENTTIME
-   41: LPAR
-   42: RPAR
-   43: NUMTOKEN
-   44: TIMETOKEN
-   45: STRTOKEN
-   46: NUMBER
-   47: NOT
-   48: ISNOTNUMBER
-   49: LIST
-   50: NULLTOK
-   51: WITHIN
-   52: TO
-   53: TRUE
-   54: FALSE
-   55: LSPAR
-   56: RSPAR
-   57: COMMA
-   58: code: <lambda> TIME WRITE TRACE IDENTIFIER IF FOR
-   59: statementblock: <lambda> TIME WRITE TRACE IDENTIFIER IF FOR
-   60: statement: TIME WRITE TRACE IDENTIFIER IF FOR
-   61: ex: READ TIME UPPERCASE AVERAGE INCREASE MAXIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
-   62: if_then_else: READ TIME UPPERCASE AVERAGE INCREASE MAXIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
-   63: elseif: ENDIF ELSE ELSEIF
-   64: optional_of: <lambda> OF
-   65: exlist: READ TIME UPPERCASE AVERAGE INCREASE MAXIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
+    6: ANY (precedence=4)
+    7: FIRST (precedence=4)
+    8: COUNT (precedence=4)
+    9: INCREASE (precedence=4)
+   10: MAXIMUM (precedence=4)
+   11: MINIMUM (precedence=4)
+   12: IS (precedence=5)
+   13: ISNULL (precedence=5)
+   14: ISLIST (precedence=5)
+   15: ISNUMBER (precedence=5)
+   16: GREATER (precedence=5)
+   17: ISWITHIN (precedence=6)
+   18: ISNOTWITHIN (precedence=6)
+   19: LT (precedence=7)
+   20: AMPERSAND (precedence=8)
+   21: PLUS (precedence=9)
+   22: MINUS (precedence=9)
+   23: TIMES (precedence=10)
+   24: DIVIDE (precedence=10)
+   25: SQRT (precedence=11)
+   26: UNMINUS (precedence=12)
+   27: POWER (precedence=13)
+   28: RANGE (precedence=14)
+   29: WRITE
+   30: SEMICOLON
+   31: TRACE
+   32: IDENTIFIER
+   33: ASSIGN
+   34: IF
+   35: THEN
+   36: ENDIF
+   37: ELSE
+   38: ELSEIF
+   39: FOR
+   40: IN
+   41: DO
+   42: ENDDO
+   43: OF
+   44: NOW
+   45: CURRENTTIME
+   46: LPAR
+   47: RPAR
+   48: NUMTOKEN
+   49: TIMETOKEN
+   50: STRTOKEN
+   51: NUMBER
+   52: NOT
+   53: ISNOTNUMBER
+   54: LIST
+   55: NULLTOK
+   56: THAN
+   57: WITHIN
+   58: TO
+   59: TRUE
+   60: FALSE
+   61: LSPAR
+   62: RSPAR
+   63: COMMA
+   64: code: <lambda> TIME WRITE TRACE IDENTIFIER IF FOR
+   65: statementblock: <lambda> TIME WRITE TRACE IDENTIFIER IF FOR
+   66: statement: TIME WRITE TRACE IDENTIFIER IF FOR
+   67: ex: READ TIME UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
+   68: if_then_else: READ TIME UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
+   69: elseif: ENDIF ELSE ELSEIF
+   70: optional_of: <lambda> OF
+   71: exlist: READ TIME UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM MINUS SQRT IDENTIFIER NOW CURRENTTIME LPAR NUMTOKEN TIMETOKEN STRTOKEN NULLTOK TRUE FALSE LSPAR
 ----------------------------------------------------
 Syntax-only Symbols:
 The following symbols never carry semantic content.
 
-$ READ TIME WHERE UPPERCASE AVERAGE INCREASE MAXIMUM IS ISNULL ISLIST
-ISNUMBER ISWITHIN ISNOTWITHIN LT AMPERSAND PLUS MINUS TIMES DIVIDE SQRT
-UNMINUS POWER RANGE WRITE SEMICOLON ASSIGN IF THEN ENDIF ELSE ELSEIF FOR IN
-DO ENDDO OF NOW CURRENTTIME LPAR RPAR NUMBER NOT ISNOTNUMBER LIST NULLTOK
-WITHIN TO TRUE FALSE LSPAR RSPAR COMMA code optional_of
+$ READ TIME WHERE UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM
+IS ISNULL ISLIST ISNUMBER GREATER ISWITHIN ISNOTWITHIN LT AMPERSAND PLUS
+MINUS TIMES DIVIDE SQRT UNMINUS POWER RANGE WRITE SEMICOLON ASSIGN IF THEN
+ENDIF ELSE ELSEIF FOR IN DO ENDDO OF NOW CURRENTTIME LPAR RPAR NUMBER NOT
+ISNOTNUMBER LIST NULLTOK THAN WITHIN TO TRUE FALSE LSPAR RSPAR COMMA code
+optional_of
 ----------------------------------------------------
 Rules:
    0: code ::= statementblock.
@@ -3078,30 +3936,35 @@ Rules:
   23: ex ::= SQRT ex. [SQRT precedence=11]
   24: ex ::= UPPERCASE optional_of ex. [UPPERCASE precedence=4]
   25: ex ::= MAXIMUM optional_of ex. [MAXIMUM precedence=4]
-  26: ex ::= AVERAGE optional_of ex. [AVERAGE precedence=4]
-  27: ex ::= INCREASE optional_of ex. [INCREASE precedence=4]
-  28: ex ::= MINUS ex. [UNMINUS precedence=12]
-  29: ex ::= ex IS NUMBER. [ISNUMBER precedence=5]
-  30: ex ::= ex IS NOT NUMBER. [ISNOTNUMBER precedence=-1]
-  31: ex ::= ex IS LIST. [ISLIST precedence=5]
-  32: ex ::= ex IS NULLTOK. [ISNULL precedence=5]
-  33: ex ::= ex AMPERSAND ex. [AMPERSAND precedence=8]
-  34: ex ::= ex LT ex. [LT precedence=7]
-  35: ex ::= ex WHERE ex. [WHERE precedence=3]
-  36: ex ::= ex RANGE ex. [RANGE precedence=14]
-  37: ex ::= ex PLUS ex. [PLUS precedence=9]
-  38: ex ::= ex MINUS ex. [MINUS precedence=9]
-  39: ex ::= ex TIMES ex. [TIMES precedence=10]
-  40: ex ::= ex DIVIDE ex. [DIVIDE precedence=10]
-  41: ex ::= ex POWER ex. [POWER precedence=13]
-  42: ex ::= ex IS NOT WITHIN ex TO ex. [ISNOTWITHIN precedence=6]
-  43: ex ::= ex IS WITHIN ex TO ex. [ISWITHIN precedence=6]
-  44: ex ::= NULLTOK.
-  45: ex ::= TRUE.
-  46: ex ::= FALSE.
-  47: ex ::= LSPAR RSPAR.
-  48: ex ::= LSPAR exlist RSPAR.
-  49: exlist ::= ex.
-  50: exlist ::= exlist COMMA ex.
-  51: optional_of ::= OF.
-  52: optional_of ::=.
+  26: ex ::= MINIMUM optional_of ex. [MINIMUM precedence=4]
+  27: ex ::= AVERAGE optional_of ex. [AVERAGE precedence=4]
+  28: ex ::= ANY optional_of ex. [ANY precedence=4]
+  29: ex ::= FIRST optional_of ex. [FIRST precedence=4]
+  30: ex ::= COUNT optional_of ex. [COUNT precedence=4]
+  31: ex ::= INCREASE optional_of ex. [INCREASE precedence=4]
+  32: ex ::= MINUS ex. [UNMINUS precedence=12]
+  33: ex ::= ex IS NUMBER. [ISNUMBER precedence=5]
+  34: ex ::= ex IS NOT NUMBER. [ISNOTNUMBER precedence=-1]
+  35: ex ::= ex IS LIST. [ISLIST precedence=5]
+  36: ex ::= ex IS NULLTOK. [ISNULL precedence=5]
+  37: ex ::= ex IS GREATER THAN ex. [GREATER precedence=5]
+  38: ex ::= ex AMPERSAND ex. [AMPERSAND precedence=8]
+  39: ex ::= ex LT ex. [LT precedence=7]
+  40: ex ::= ex WHERE ex. [WHERE precedence=3]
+  41: ex ::= ex RANGE ex. [RANGE precedence=14]
+  42: ex ::= ex PLUS ex. [PLUS precedence=9]
+  43: ex ::= ex MINUS ex. [MINUS precedence=9]
+  44: ex ::= ex TIMES ex. [TIMES precedence=10]
+  45: ex ::= ex DIVIDE ex. [DIVIDE precedence=10]
+  46: ex ::= ex POWER ex. [POWER precedence=13]
+  47: ex ::= ex IS NOT WITHIN ex TO ex. [ISNOTWITHIN precedence=6]
+  48: ex ::= ex IS WITHIN ex TO ex. [ISWITHIN precedence=6]
+  49: ex ::= NULLTOK.
+  50: ex ::= TRUE.
+  51: ex ::= FALSE.
+  52: ex ::= LSPAR RSPAR.
+  53: ex ::= LSPAR exlist RSPAR.
+  54: exlist ::= ex.
+  55: exlist ::= exlist COMMA ex.
+  56: optional_of ::= OF.
+  57: optional_of ::=.

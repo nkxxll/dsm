@@ -5,12 +5,14 @@ open Base
 module TokenType = struct
   type t =
     | THE
+    | THAN
     | OF
     | SQRT
     | WITHIN
     | NOT
     | IS
     | AMPERSAND
+    | ANY
     | ASSIGN
     | AVERAGE
     | COMMA
@@ -28,6 +30,7 @@ module TokenType = struct
     | FALSE
     | FIRST
     | FOR
+    | GREATER
     | GT
     | GTEQ
     | IDENTIFIER of string
@@ -69,11 +72,12 @@ module TokenType = struct
     | NUMBERTYPE
     | TO
     | UNKNOWN of string
-   [@@deriving yojson]
+  [@@deriving yojson]
 
   let token_type_from_string str =
     match String.uppercase str with
     | "THE" -> THE
+    | "THAN" -> THAN
     | "OF" -> OF
     | "TO" -> TO
     | "SQRT" -> SQRT
@@ -82,7 +86,9 @@ module TokenType = struct
     | "NOT" -> NOT
     | "IS" -> IS
     | "LIST" -> LISTTYPE
+    | "ANY" -> ANY
     | "AVERAGE" -> AVERAGE
+    | "COUNT" -> COUNT
     | "CURRENTTIME" -> CURRENTTIME
     | "RANGE" -> RANGE
     | "DOT" -> DOT
@@ -95,6 +101,7 @@ module TokenType = struct
     | "FALSE" -> FALSE
     | "FIRST" -> FIRST
     | "FOR" -> FOR
+    | "GREATER" -> GREATER
     | "IF" -> IF
     | "IN" -> IN
     | "INCREASE" -> INCREASE
@@ -123,6 +130,7 @@ module TokenType = struct
     | WHERE -> "WHERE"
     | WITHIN -> "WITHIN"
     | NOT -> "NOT"
+    | THAN -> "THAN"
     | IS -> "IS"
     | THE -> "THE"
     | NUMBERTYPE -> "NUMBER"
@@ -130,9 +138,11 @@ module TokenType = struct
     | DOT -> "DOT"
     | RANGE -> "RANGE"
     | AMPERSAND -> "AMPERSAND"
+    | ANY -> "ANY"
     | ASSIGN -> "ASSIGN"
     | AVERAGE -> "AVERAGE"
     | COMMA -> "COMMA"
+    | COUNT -> "COUNT"
     | CURRENTTIME -> "CURRENTTIME"
     | DIVIDE -> "DIVIDE"
     | DO -> "DO"
@@ -145,6 +155,7 @@ module TokenType = struct
     | FALSE -> "FALSE"
     | FIRST -> "FIRST"
     | FOR -> "FOR"
+    | GREATER -> "GREATER"
     | GT -> "GT"
     | GTEQ -> "GTEQ"
     | IDENTIFIER _ -> "IDENTIFIER"

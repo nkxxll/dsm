@@ -144,6 +144,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "ASSIGN") == 0) return ASSIGN;
 	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
+	if (strcmp(token, "THAN") == 0) return THAN;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
 	if (strcmp(token, "LIST") == 0) return LIST;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
@@ -166,6 +167,9 @@ int get_token_id (char *token) {
 	if (strcmp(token, "TRACE") == 0) return TRACE;
 	if (strcmp(token, "WRITE") == 0) return WRITE;
  	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
+ 	if (strcmp(token, "ANY") == 0) return ANY;
+ 	if (strcmp(token, "FIRST") == 0) return FIRST;
+ 	if (strcmp(token, "COUNT") == 0) return COUNT;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
  	if (strcmp(token, "DO") == 0) return DO;
  	if (strcmp(token, "ELSE") == 0) return ELSE;
@@ -173,11 +177,13 @@ int get_token_id (char *token) {
  	if (strcmp(token, "ENDIF") == 0) return ENDIF;
  	if (strcmp(token, "FALSE") == 0) return FALSE;
  	if (strcmp(token, "FOR") == 0) return FOR;
+ 	if (strcmp(token, "GREATER") == 0) return GREATER;
  	if (strcmp(token, "IF") == 0) return IF;
  	if (strcmp(token, "IN") == 0) return IN;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
  	if (strcmp(token, "READ") == 0) return READ;
  	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
+ 	if (strcmp(token, "MINIMUM") == 0) return MINIMUM;
  	if (strcmp(token, "NOW") == 0) return NOW;
  	if (strcmp(token, "RANGE") == 0) return RANGE;
  	if (strcmp(token, "THEN") == 0) return THEN;
@@ -242,8 +248,8 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     READ .
 %right     TIME .
 %left      WHERE .
-%right     UPPERCASE AVERAGE INCREASE MAXIMUM .
-%right     IS ISNULL ISLIST ISNUMBER .
+%right     UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM .
+%right     IS ISNULL ISLIST ISNUMBER GREATER .
 %left      ISWITHIN ISNOTWITHIN .
 %left      LT .
 %left      AMPERSAND .
@@ -450,8 +456,20 @@ ex(r) ::= UPPERCASE optional_of ex(a) .
 ex(r) ::= MAXIMUM optional_of ex(a) .
 { r = unary("MAXIMUM", a); }
 
+ex(r) ::= MINIMUM optional_of ex(a) .
+{ r = unary("MINIMUM", a); }
+
 ex(r) ::= AVERAGE optional_of ex(a) .
 { r = unary("AVERAGE", a); }
+
+ex(r) ::= ANY optional_of ex(a) .
+{ r = unary("ANY", a); }
+
+ex(r) ::= FIRST optional_of ex(a) .
+{ r = unary("FIRST", a); }
+
+ex(r) ::= COUNT optional_of ex(a) .
+{ r = unary("COUNT", a); }
 
 ex(r) ::= INCREASE optional_of ex(a) .
 { r = unary("INCREASE", a); }
@@ -470,6 +488,9 @@ ex(r) ::= ex(a) IS LIST . [ISLIST]
 
 ex(r) ::= ex(a) IS NULLTOK . [ISNULL]
 { r = unary("ISNULL", a); }
+
+ex(r) ::= ex(a) IS GREATER THAN ex(b) . [GREATER]
+{ r = binary("ISGREATERT", a, b); }
 
 ex(r) ::= ex(a) AMPERSAND ex(b) .
 {r = binary ("AMPERSAND", a, b); }
