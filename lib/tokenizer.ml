@@ -5,6 +5,7 @@ open Base
 module TokenType = struct
   type t =
     | THE
+    | DAY
     | THAN
     | OF
     | SQRT
@@ -69,6 +70,7 @@ module TokenType = struct
     | TRACE
     | TRUE
     | UPPERCASE
+    | AS
     | WRITE
     | WHERE
     | NUMBERTYPE
@@ -79,10 +81,12 @@ module TokenType = struct
   let token_type_from_string str =
     match String.uppercase str with
     | "THE" -> THE
+    | "AS" -> AS
     | "THAN" -> THAN
     | "OF" -> OF
     | "TO" -> TO
     | "SQRT" -> SQRT
+    | "DAY" -> DAY
     | "WHERE" -> WHERE
     | "WITHIN" -> WITHIN
     | "NOT" -> NOT
@@ -135,12 +139,14 @@ module TokenType = struct
     | SQRT -> "SQRT"
     | WHERE -> "WHERE"
     | WITHIN -> "WITHIN"
+    | DAY -> "DAY"
     | NOT -> "NOT"
     | THAN -> "THAN"
     | IS -> "IS"
     | SAME -> "SAME"
     | THE -> "THE"
     | NUMBERTYPE -> "NUMBER"
+    | AS -> "AS"
     | LISTTYPE -> "LIST"
     | DOT -> "DOT"
     | RANGE -> "RANGE"

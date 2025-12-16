@@ -146,6 +146,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "COMMA") == 0) return COMMA;
 	if (strcmp(token, "DIVIDE") == 0) return DIVIDE;
 	if (strcmp(token, "THAN") == 0) return THAN;
+	if (strcmp(token, "DAY") == 0) return DAY;
 	if (strcmp(token, "IDENTIFIER") == 0) return IDENTIFIER;
 	if (strcmp(token, "LIST") == 0) return LIST;
 	if (strcmp(token, "LPAR") == 0) return LPAR;
@@ -191,9 +192,12 @@ int get_token_id (char *token) {
  	if (strcmp(token, "THEN") == 0) return THEN;
  	if (strcmp(token, "TRUE") == 0) return TRUE;
  	if (strcmp(token, "UPPERCASE") == 0) return UPPERCASE;
-	if (strcmp(token, "WHERE") == 0) return WHERE;
-    curtoken = token;
-    longjmp(s_jumpBuffer, 2);
+ 	if (strcmp(token, "LATEST") == 0) return LATEST;
+ 	if (strcmp(token, "EARLIEST") == 0) return EARLIEST;
+ 	if (strcmp(token, "AS") == 0) return AS;
+ 	if (strcmp(token, "WHERE") == 0) return WHERE;
+ 	curtoken = token;
+ 	longjmp(s_jumpBuffer, 2);
 }
 
 
@@ -250,7 +254,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     READ .
 %right     TIME .
 %left      WHERE .
-%right     UPPERCASE AVERAGE ANY FIRST COUNT INCREASE MAXIMUM MINIMUM .
+%right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM .
 %right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
 %left      ISWITHIN ISNOTWITHIN .
 %left      LT .
@@ -469,6 +473,12 @@ ex(r) ::= ANY optional_of ex(a) .
 
 ex(r) ::= FIRST optional_of ex(a) .
 { r = unary("FIRST", a); }
+
+ex(r) ::= LATEST optional_of ex(a) .
+{ r = unary("LATEST", a); }
+
+ex(r) ::= EARLIEST optional_of ex(a) .
+{ r = unary("EARLIEST", a); }
 
 ex(r) ::= COUNT optional_of ex(a) .
 { r = unary("COUNT", a); }

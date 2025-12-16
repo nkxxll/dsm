@@ -257,6 +257,54 @@ let first_handler item : value =
   | _ -> item
 ;;
 
+(* LATEST handler - returns the value with the latest primary time in a list *)
+let latest_handler item : value =
+  match item.type_ with
+  | List items ->
+    (* Filter items that have a primary time *)
+    let items_with_time =
+      List.filter_map items ~f:(fun v ->
+        match v.time with
+        | Some t -> Some (v, t)
+        | None -> None)
+    in
+    (match items_with_time with
+     | [] -> unit
+     | items_with_time ->
+       (* Find the item with the maximum time *)
+       let latest, _ =
+         List.max_elt items_with_time ~compare:(fun (_, t1) (_, t2) ->
+           Float.compare t1 t2)
+         |> Option.value_exn
+       in
+       latest)
+  | _ -> item
+;;
+
+(* EARLIEST handler - returns the value with the earliest primary time in a list *)
+let earliest_handler item : value =
+  match item.type_ with
+  | List items ->
+    (* Filter items that have a primary time *)
+    let items_with_time =
+      List.filter_map items ~f:(fun v ->
+        match v.time with
+        | Some t -> Some (v, t)
+        | None -> None)
+    in
+    (match items_with_time with
+     | [] -> unit
+     | items_with_time ->
+       (* Find the item with the minimum time *)
+       let earliest, _ =
+         List.min_elt items_with_time ~compare:(fun (_, t1) (_, t2) ->
+           Float.compare t1 t2)
+         |> Option.value_exn
+       in
+       earliest)
+  | _ -> item
+;;
+
 let unary_math_op op value =
   match value.type_ with
   | NumberLiteral n -> value_full (NumberLiteral (op n)) value.time
@@ -665,6 +713,8 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "COUNT" -> unary_operation ~execution_type:NotElementWise ~f:count_handler
   | "ANY" -> unary_operation ~execution_type:NotElementWise ~f:any_handler
   | "FIRST" -> unary_operation ~execution_type:NotElementWise ~f:first_handler
+  | "LATEST" -> unary_operation ~execution_type:NotElementWise ~f:latest_handler
+  | "EARLIEST" -> unary_operation ~execution_type:NotElementWise ~f:earliest_handler
   | "INCREASE" -> unary_operation ~execution_type:NotElementWise ~f:increase_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
