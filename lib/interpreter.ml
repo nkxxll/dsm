@@ -329,13 +329,41 @@ let increase_handler item : value =
        in
        value_type_only (List diffs))
   | _ -> unit
-;;
+  ;;
 
-let range start end_range =
+  (* INTERVAL handler - returns list of time differences between successive items *)
+  let interval_handler item : value =
+  match item.type_ with
+  | List items ->
+   let times =
+     List.filter_map items ~f:(fun v ->
+       match v.time with
+       | Some t -> Some t
+       | None -> None)
+   in
+   (match times with
+    | [] | [ _ ] -> value_type_only (List [])
+    | lst ->
+      let intervals =
+        List.init
+          (List.length lst - 1)
+          ~f:(fun i ->
+            let curr = List.nth_exn lst (i + 1) in
+            let prev = List.nth_exn lst i in
+            (* Convert milliseconds to days for readability *)
+            let diff_ms = curr -. prev in
+            let diff_days = diff_ms /. (1000.0 *. 60.0 *. 60.0 *. 24.0) in
+            value_type_only (NumberLiteral diff_days))
+      in
+      value_type_only (List intervals))
+  | _ -> unit
+  ;;
+
+  let range start end_range =
   if start > end_range
   then failwith "start has to be smaller than end_range"
   else List.init (end_range - start + 1) ~f:(fun i -> start + i)
-;;
+  ;;
 
 let range_operator first second =
   match first, second with
@@ -716,6 +744,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "LATEST" -> unary_operation ~execution_type:NotElementWise ~f:latest_handler
   | "EARLIEST" -> unary_operation ~execution_type:NotElementWise ~f:earliest_handler
   | "INCREASE" -> unary_operation ~execution_type:NotElementWise ~f:increase_handler
+  | "INTERVAL" -> unary_operation ~execution_type:NotElementWise ~f:interval_handler
   | "IF" ->
     let condition = get_condition yojson_ast in
     let thenbranch = get_thenbranch yojson_ast in

@@ -40,6 +40,7 @@ module TokenType = struct
     | IF
     | IN
     | INCREASE
+    | INTERVAL
     | LAST
     | LATEST
     | LPAR
@@ -112,6 +113,7 @@ module TokenType = struct
     | "IF" -> IF
     | "IN" -> IN
     | "INCREASE" -> INCREASE
+    | "INTERVAL" -> INTERVAL
     | "LAST" -> LAST
     | "LATEST" -> LATEST
     | "MAXIMUM" -> MAXIMUM
@@ -175,6 +177,7 @@ module TokenType = struct
     | IF -> "IF"
     | IN -> "IN"
     | INCREASE -> "INCREASE"
+    | INTERVAL -> "INTERVAL"
     | LAST -> "LAST"
     | LATEST -> "LATEST"
     | LPAR -> "LPAR"

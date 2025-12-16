@@ -184,6 +184,7 @@ int get_token_id (char *token) {
  	if (strcmp(token, "IF") == 0) return IF;
  	if (strcmp(token, "IN") == 0) return IN;
  	if (strcmp(token, "INCREASE") == 0) return INCREASE;
+ 	if (strcmp(token, "INTERVAL") == 0) return INTERVAL;
  	if (strcmp(token, "READ") == 0) return READ;
  	if (strcmp(token, "MAXIMUM") == 0) return MAXIMUM;
  	if (strcmp(token, "MINIMUM") == 0) return MINIMUM;
@@ -485,6 +486,9 @@ ex(r) ::= COUNT optional_of ex(a) .
 
 ex(r) ::= INCREASE optional_of ex(a) .
 { r = unary("INCREASE", a); }
+
+ex(r) ::= INTERVAL optional_of ex(a) .
+{ r = unary("INTERVAL", a); }
 
 ex(r) ::= MINUS ex(a) . [UNMINUS]
 { r = unary("UNMINUS", a); }
