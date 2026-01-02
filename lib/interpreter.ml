@@ -17,6 +17,7 @@ and value_union =
   | StringLiteral of string
   | BoolLiteral of bool
   | TimeLiteral of float
+  | DurationLiteral of float
   | Unit
 
 type value_type =
@@ -26,6 +27,7 @@ type value_type =
   | BoolType
   | UnitType
   | TimeType
+  | DurationType
 
 let value_type_eq this other =
   match this, other with
@@ -35,6 +37,7 @@ let value_type_eq this other =
   | BoolType, BoolType -> true
   | UnitType, UnitType -> true
   | TimeType, TimeType -> true
+  | DurationType, DurationType -> true
   | _, _ -> false
 ;;
 
@@ -44,6 +47,7 @@ let type_of value =
   | StringLiteral _ -> StringType
   | BoolLiteral _ -> BoolType
   | TimeLiteral _ -> TimeType
+  | DurationLiteral _ -> DurationType
   | List _ -> ListType
   | Unit -> UnitType
 ;;
@@ -143,10 +147,66 @@ type execution_type =
   | ElementWise
   | NotElementWise
 
-let arithmetic_operation (op : 'a -> 'a -> 'a) this other : value =
-  match this, other with
-  | { type_ = NumberLiteral n; time = this_time }, { type_ = NumberLiteral m; time = _ }
-    -> { type_ = NumberLiteral (op n m); time = this_time }
+let plus_op left right =
+  match left.type_, right.type_ with
+  | NumberLiteral l, NumberLiteral r ->
+    { type_ = NumberLiteral (l +. r); time = left.time }
+  | DurationLiteral l, DurationLiteral r ->
+    { type_ = DurationLiteral (l +. r); time = left.time }
+  | DurationLiteral l, NumberLiteral r ->
+    { type_ = DurationLiteral (l +. r); time = left.time }
+  | NumberLiteral l, DurationLiteral r ->
+    { type_ = DurationLiteral (l +. r); time = left.time }
+  | TimeLiteral t, DurationLiteral d -> { type_ = TimeLiteral (t +. d); time = left.time }
+  | DurationLiteral d, TimeLiteral t -> { type_ = TimeLiteral (t +. d); time = left.time }
+  | TimeLiteral t, NumberLiteral n -> { type_ = TimeLiteral (t +. n); time = left.time }
+  | NumberLiteral n, TimeLiteral t -> { type_ = TimeLiteral (t +. n); time = left.time }
+  | _, _ -> unit
+;;
+
+let minus_op left right =
+  match left.type_, right.type_ with
+  | NumberLiteral l, NumberLiteral r ->
+    { type_ = NumberLiteral (l -. r); time = left.time }
+  | DurationLiteral l, DurationLiteral r ->
+    { type_ = DurationLiteral (l -. r); time = left.time }
+  | DurationLiteral l, NumberLiteral r ->
+    { type_ = DurationLiteral (l -. r); time = left.time }
+  | NumberLiteral l, DurationLiteral r ->
+    { type_ = DurationLiteral (l -. r); time = left.time }
+  | TimeLiteral t, DurationLiteral d -> { type_ = TimeLiteral (t -. d); time = left.time }
+  | TimeLiteral t, NumberLiteral n -> { type_ = TimeLiteral (t -. n); time = left.time }
+  | TimeLiteral t1, TimeLiteral t2 ->
+    { type_ = DurationLiteral (t1 -. t2); time = left.time }
+  | _, _ -> unit
+;;
+
+let times_op left right =
+  match left.type_, right.type_ with
+  | NumberLiteral l, NumberLiteral r ->
+    { type_ = NumberLiteral (l *. r); time = left.time }
+  | DurationLiteral l, NumberLiteral r ->
+    { type_ = DurationLiteral (l *. r); time = left.time }
+  | NumberLiteral l, DurationLiteral r ->
+    { type_ = DurationLiteral (l *. r); time = left.time }
+  | _, _ -> unit
+;;
+
+let divide_op left right =
+  match left.type_, right.type_ with
+  | NumberLiteral l, NumberLiteral r ->
+    { type_ = NumberLiteral (l /. r); time = left.time }
+  | DurationLiteral l, NumberLiteral r ->
+    { type_ = DurationLiteral (l /. r); time = left.time }
+  | DurationLiteral l, DurationLiteral r ->
+    { type_ = NumberLiteral (l /. r); time = left.time }
+  | _, _ -> unit
+;;
+
+let power_op left right =
+  match left.type_, right.type_ with
+  | NumberLiteral l, NumberLiteral r ->
+    { type_ = NumberLiteral (l **. r); time = left.time }
   | _, _ -> unit
 ;;
 
@@ -188,19 +248,76 @@ let string_uppercase_transform value : value =
 ;;
 
 (* Extract numeric values from a list *)
-let extract_numbers items : float list =
+let extract_type_and_numbers items : value_union list =
   List.filter_map items ~f:(fun item ->
     match item.type_ with
-    | NumberLiteral n -> Some n
+    | NumberLiteral n -> Some (NumberLiteral n)
+    | TimeLiteral n -> Some (TimeLiteral n)
+    | DurationLiteral n -> Some (DurationLiteral n)
     | _ -> None)
+;;
+
+let get_number value =
+  match value.type_ with
+  | NumberLiteral n -> n
+  | TimeLiteral n -> n
+  | DurationLiteral n -> n
+  | _ -> failwith "this cannot happen because we filter before"
+;;
+
+let all_of_same_type acc current =
+  let last, bool_acc = acc in
+  if not bool_acc
+  then last, false
+  else if value_type_eq (type_of last) (type_of current)
+  then current, true
+  else current, false
+;;
+
+let is_list_same items =
+  let _, same = List.fold items ~init:(List.nth_exn items 0, true) ~f:all_of_same_type in
+  same
+;;
+
+(* todo if all times are the same then the time is the time else it is none *)
+let aggregate_times op items =
+  if is_list_same items
+  then (
+    let numbers = List.map items ~f:get_number in
+    if List.is_empty numbers then unit else value_type_only (TimeLiteral (op numbers)))
+  else unit
+;;
+
+let aggregate_durations op items =
+  if is_list_same items
+  then (
+    let numbers = List.map items ~f:get_number in
+    if List.is_empty numbers then unit else value_type_only (DurationLiteral (op numbers)))
+  else unit
+;;
+
+(* todo if all times are the same then the time is the time else it is none *)
+let aggregate_numbers op items =
+  if is_list_same items
+  then (
+    let numbers = List.map items ~f:get_number in
+    if List.is_empty numbers then unit else value_type_only (NumberLiteral (op numbers)))
+  else unit
 ;;
 
 (* Aggregation operation helper *)
 let aggregation_operation (op : float list -> float) (item : value) : value =
   match item.type_ with
   | List items ->
-    let numbers = extract_numbers items in
-    if List.is_empty numbers then unit else value_type_only (NumberLiteral (op numbers))
+    if List.is_empty items
+    then unit
+    else (
+      let first = List.nth_exn items 0 in
+      match first.type_ with
+      | NumberLiteral _ -> aggregate_numbers op items
+      | TimeLiteral _ -> aggregate_times op items
+      | DurationLiteral _ -> aggregate_times op items
+      | _ -> unit)
   | _ -> unit
 ;;
 
@@ -311,7 +428,15 @@ let unary_math_op op value =
   | _ -> unit
 ;;
 
+let extract_numbers items : float list =
+  List.filter_map items ~f:(fun item ->
+    match item.type_ with
+    | NumberLiteral n -> Some n
+    | _ -> None)
+;;
+
 (* INCREASE handler - returns list of differences *)
+(* todo: make the increase operator also operate on times and durations *)
 let increase_handler item : value =
   match item.type_ with
   | List items ->
@@ -359,111 +484,40 @@ let interval_handler item : value =
   | _ -> unit
 ;;
 
-(* Duration operators - convert numbers to durations *)
-(* YEAR: converts number to months duration (1 year = 12 months) *)
-let duration_year_handler item : value =
+(* Duration operators - convert numbers to durations in milliseconds *)
+(* Generic duration handler that multiplies by the given milliseconds factor *)
+let duration_handler ~(ms_per_unit : float) (item : value) : value =
+  let ms_rounded = Float.round_nearest ms_per_unit in
   match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
+  | NumberLiteral n ->
+    value_type_only (DurationLiteral (Float.round_nearest (n *. ms_rounded)))
   | List items ->
     let converted =
       List.map items ~f:(fun v ->
         match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
+        | NumberLiteral n ->
+          value_type_only (DurationLiteral (Float.round_nearest (n *. ms_rounded)))
         | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
 ;;
 
-(* MONTH: keeps as months duration *)
-let duration_month_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral n)
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral n)
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
-
-(* WEEK: converts to seconds duration (1 week = 604800 seconds) *)
-let duration_week_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
-
-(* DAY: converts to seconds duration (1 day = 86400 seconds) *)
-let duration_day_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
-
-(* HOURS: converts to seconds duration (1 hour = 3600 seconds) *)
-let duration_hours_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
-
-(* MINUTES: converts to seconds duration (1 minute = 60 seconds) *)
-let duration_minutes_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
-
-(* SECONDS: returns as seconds duration *)
-let duration_seconds_handler item : value =
-  match item.type_ with
-  | NumberLiteral n -> value_type_only (NumberLiteral n)
-  | List items ->
-    let converted =
-      List.map items ~f:(fun v ->
-        match v.type_ with
-        | NumberLiteral n -> value_type_only (NumberLiteral n)
-        | _ -> v)
-    in
-    value_type_only (List converted)
-  | _ -> unit
-;;
+(* Millisecond constants for each duration unit *)
+let ms_per_second = 1000.0
+let ms_per_minute = 60.0 *. ms_per_second
+let ms_per_hour = 60.0 *. ms_per_minute
+let ms_per_day = 24.0 *. ms_per_hour
+let ms_per_week = 7.0 *. ms_per_day
+let ms_per_month = 30.0 *. ms_per_day
+let ms_per_year = 365.0 *. ms_per_day
+let duration_year_handler = duration_handler ~ms_per_unit:ms_per_year
+let duration_month_handler = duration_handler ~ms_per_unit:ms_per_month
+let duration_week_handler = duration_handler ~ms_per_unit:ms_per_week
+let duration_day_handler = duration_handler ~ms_per_unit:ms_per_day
+let duration_hours_handler = duration_handler ~ms_per_unit:ms_per_hour
+let duration_minutes_handler = duration_handler ~ms_per_unit:ms_per_minute
+let duration_seconds_handler = duration_handler ~ms_per_unit:ms_per_second
 
 let range start end_range =
   if start > end_range
@@ -475,6 +529,9 @@ let before_op left right =
   match left.type_, right.type_ with
   (* duration (in seconds) before time *)
   | NumberLiteral n, TimeLiteral t ->
+    let new_time = t -. n in
+    value_type_only (TimeLiteral new_time)
+  | DurationLiteral n, TimeLiteral t ->
     let new_time = t -. n in
     value_type_only (TimeLiteral new_time)
   | _ -> unit
@@ -835,16 +892,11 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | None -> unit)
   | "UNMINUS" -> unary_operation ~execution_type:NotElementWise ~f:minus_operation
   | "BEFORE" -> binary_operation ~execution_type:ElementWise ~f:before_op
-  | "PLUS" ->
-    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( +. ))
-  | "MINUS" ->
-    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( -. ))
-  | "TIMES" ->
-    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( *. ))
-  | "DIVIDE" ->
-    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( /. ))
-  | "POWER" ->
-    binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( **. ))
+  | "PLUS" -> binary_operation ~execution_type:ElementWise ~f:plus_op
+  | "MINUS" -> binary_operation ~execution_type:ElementWise ~f:minus_op
+  | "TIMES" -> binary_operation ~execution_type:ElementWise ~f:times_op
+  | "DIVIDE" -> binary_operation ~execution_type:ElementWise ~f:divide_op
+  | "POWER" -> binary_operation ~execution_type:ElementWise ~f:power_op
   | "AMPERSAND" -> binary_operation ~execution_type:ElementWise ~f:concatenation_operation
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
@@ -926,6 +978,10 @@ and write_value (expr : value) =
   | Unit ->
     Stdio.print_endline "null";
     ()
+  | DurationLiteral f ->
+    let seconds = Float.round_nearest (f /. 1000.0) in
+    Stdio.print_endline (Int.to_string (Float.to_int seconds) ^ " Seconds");
+    ()
   | List items ->
     let formatted =
       items
@@ -935,7 +991,9 @@ and write_value (expr : value) =
         | { type_ = BoolLiteral b; _ } -> Bool.to_string b
         | { type_ = Unit; _ } -> "null"
         | { type_ = List _; _ } -> "[...]"
-        | { type_ = TimeLiteral t; _ } -> Helper.timestamp_to_iso_string t)
+        | { type_ = TimeLiteral t; _ } -> Helper.timestamp_to_iso_string t
+        | { type_ = DurationLiteral f; _ } ->
+          Int.to_string (Float.to_int (Float.round_nearest (f /. 1000.0))) ^ " Seconds")
       |> String.concat ~sep:", "
     in
     Stdio.print_endline ("[" ^ formatted ^ "]");
@@ -967,10 +1025,10 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-       "Hello world"
-      5.52
-       "Hello "  "World"
-      |}]
+        Hello world
+        5.52
+        Hello World
+        |}]
     ;;
 
     let%expect_test "test interpretation null" =
@@ -1004,7 +1062,7 @@ let%test_module "Parser tests" =
     WRITE msg;|}
       in
       input |> interpret;
-      [%expect {| "Hello" |}]
+      [%expect {| Hello |}]
     ;;
 
     let%expect_test "test assignment with arithmetic expression" =
@@ -1019,19 +1077,19 @@ let%test_module "Parser tests" =
     let%expect_test "test string concatenation with number (string & number)" =
       let input = {|WRITE "Value: " & 42;|} in
       input |> interpret;
-      [%expect {| "Value: " 42. |}]
+      [%expect {| Value: 42. |}]
     ;;
 
     let%expect_test "test string concatenation with number (number & string)" =
       let input = {|WRITE 42 & " is the answer";|} in
       input |> interpret;
-      [%expect {| 42. " is the answer" |}]
+      [%expect {| 42. is the answer |}]
     ;;
 
     let%expect_test "test string concatenation with multiple numbers" =
       let input = {|WRITE "Result: " & 10 + 5 & " total";|} in
       input |> interpret;
-      [%expect {| "Result: " 15. " total" |}]
+      [%expect {| Result: 15. total |}]
     ;;
 
     let%expect_test "test the write and expression thing" =
@@ -1053,8 +1111,8 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        [1., 2., 3.,  "hello" ]
-        [ "a" ,  "b" ]
+        [1., 2., 3., hello]
+        [a, b]
         |}]
     ;;
 
@@ -1108,7 +1166,7 @@ let%test_module "Parser tests" =
       in
       input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| [XXXX-XX-XXTXX:XX:XXZ, XXXX-XX-XXTXX:XX:XXZ,  "meeting" ] |}]
+      [%expect {| [XXXX-XX-XXTXX:XX:XXZ, XXXX-XX-XXTXX:XX:XXZ, meeting] |}]
     ;;
 
     let%expect_test "test now in list" =
@@ -1119,7 +1177,7 @@ let%test_module "Parser tests" =
       in
       input |> interpret;
       [%expect.output] |> censor_digits |> Stdio.print_endline;
-      [%expect {| [XXXX-XX-XXTXX:XX:XXZ,  "timestamp" ] |}]
+      [%expect {| [XXXX-XX-XXTXX:XX:XXZ, timestamp] |}]
     ;;
 
     let%expect_test "test multiple times" =
@@ -1175,8 +1233,8 @@ let%test_module "Parser tests" =
         {|
         XXXX.
         XXXX-XX-XXTXX:XX:XXZ
-         "HALLO"
-        [ "WER" ,  "WAGT" ,  "GEWINNT" ]
+        HALLO
+        [WER, WAGT, GEWINNT]
         XXX.
         XXX.
         [XXX., -XX.]
@@ -1186,7 +1244,7 @@ let%test_module "Parser tests" =
     let%expect_test "test if statement with true condition" =
       let input = {|IF true THEN WRITE "yes"; ENDIF;|} in
       input |> interpret;
-      [%expect {| "yes" |}]
+      [%expect {| yes |}]
     ;;
 
     let%expect_test "test if statement with false condition" =
@@ -1198,7 +1256,7 @@ let%test_module "Parser tests" =
     let%expect_test "test if statement with else branch" =
       let input = {|IF false THEN WRITE "yes"; ELSE WRITE "no"; ENDIF;|} in
       input |> interpret;
-      [%expect {| "no" |}]
+      [%expect {| no |}]
     ;;
 
     let%expect_test "test if statement with variable condition" =
@@ -1207,7 +1265,7 @@ let%test_module "Parser tests" =
           IF true THEN WRITE "x is truthy"; ENDIF;|}
       in
       input |> interpret;
-      [%expect {| "x is truthy" |}]
+      [%expect {| x is truthy |}]
     ;;
 
     let%expect_test "test for loop with list" =
@@ -1234,9 +1292,9 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        "Alice"
-        "Bob"
-        "Charlie"
+        Alice
+        Bob
+        Charlie
         |}]
     ;;
 
@@ -1259,7 +1317,7 @@ let%test_module "Parser tests" =
           ENDIF;|}
       in
       input |> interpret;
-      [%expect {| "nested" |}]
+      [%expect {| nested |}]
     ;;
 
     let%expect_test "test for loop with if statement inside" =
@@ -1282,7 +1340,7 @@ let%test_module "Parser tests" =
     let%expect_test "test trace" =
       let input = {|TRACE "foo";|} in
       input |> interpret;
-      [%expect {| Line 1:  "foo"  |}]
+      [%expect {| Line 1: foo |}]
     ;;
 
     let%expect_test "list binary operator like plus" =
@@ -1308,7 +1366,7 @@ let%test_module "Parser tests" =
       [%expect.output] |> censor_digits |> Stdio.print_endline;
       [%expect
         {|
-        Line X: [ "Hallo Welt" , null, XXXX., XXXX-XX-XXTXX:XX:XXZ, false, XXXX-XX-XXTXX:XX:XXZ]
+        Line X: [Hallo Welt, null, XXXX., XXXX-XX-XXTXX:XX:XXZ, false, XXXX-XX-XXTXX:XX:XXZ]
         Line X: [false, false, true, false, false, false]
         Line X: true
         |}]
@@ -1338,7 +1396,7 @@ let%test_module "Parser tests" =
       [%expect
         {|
         Line 2: [200., 150., [...]]
-        Line 3: [ "HALLO" ,  "WELT" , 4711.]
+        Line 3: [HALLO, WELT, 4711.]
         Line 4: [10., 14.142135623730951, 12.24744871391589]
         |}]
     ;;
@@ -1440,7 +1498,7 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 1:  "Hallo"
+        Line 1: Hallo
         Line 2: [100., 70.]
         |}]
     ;;
@@ -1481,14 +1539,25 @@ let%test_module "Parser tests" =
       [%expect {| Line 1: false |}]
     ;;
 
-    let%expect_test "test before operator" =
+    let%expect_test "test duration calculations" =
       let input =
         {|
         trace 2 days before 1990-03-13T00:00:00Z;
+        trace (2025-11-05T03:19:00Z - 2025-11-04T15:21:00Z) / 7180;
       |}
       in
       input |> interpret;
-      [%expect {| Line 2: 1990-03-11T00:00:00Z |}]
+      [%expect
+        {|
+        Line 2: 1990-03-11T00:00:00Z
+        Line 3: 6 Seconds
+        |}]
+    ;;
+
+    let%expect_test "test average with durations" =
+      let input = {| trace average [1990-03-11T00:00:00Z, 1990-03-11T12:00:00Z]; |} in
+      input |> interpret;
+      [%expect {| Line 1: 1990-03-11T06:00:00Z |}]
     ;;
   end)
 ;;

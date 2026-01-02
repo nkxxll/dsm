@@ -627,11 +627,11 @@ let%test_module "Tokenizer Tests" =
 that goes over two lines" IF|};
       [%expect
         {|
-        Token { type = STRTOKEN; literal = " "very cool string" "; length = 20; row = 1; col = 2 }
-        Token { type = STRTOKEN; literal = " "another string" "; length = 18; row = 1; col = 23 }
-        Token { type = STRTOKEN; literal = " "another very cool string
-        that goes over two lines" "; length = 53; row = 1; col = 42 }
-        Token { type = IF; literal = "IF"; length = 2; row = 2; col = 96 }
+        Token { type = STRTOKEN; literal = "very cool string"; length = 16; row = 1; col = 2 }
+        Token { type = STRTOKEN; literal = "another string"; length = 14; row = 1; col = 19 }
+        Token { type = STRTOKEN; literal = "another very cool string
+        that goes over two lines"; length = 49; row = 1; col = 34 }
+        Token { type = IF; literal = "IF"; length = 2; row = 2; col = 84 }
         |}]
     ;;
 
@@ -790,7 +790,7 @@ that goes over two lines" IF|};
           [ "1", "IDENTIFIER", "x" ],
           [ "1", "ASSIGN", ":=" ],
           [ "1", "LSPAR", "[" ],
-          [ "1", "STRTOKEN", " \"Hallo Welt\" " ],
+          [ "1", "STRTOKEN", "Hallo Welt" ],
           [ "1", "COMMA", "," ],
           [ "1", "NULL", "null" ],
           [ "1", "COMMA", "," ],
@@ -842,7 +842,7 @@ that goes over two lines" IF|};
           [ "1", "IDENTIFIER", "x" ],
           [ "1", "ASSIGN", ":=" ],
           [ "1", "LSPAR", "[" ],
-          [ "1", "STRTOKEN", " \"Hallo Welt\" " ],
+          [ "1", "STRTOKEN", "Hallo Welt" ],
           [ "1", "COMMA", "," ],
           [ "1", "NULL", "null" ],
           [ "1", "COMMA", "," ],
@@ -912,9 +912,9 @@ that goes over two lines" IF|};
           [ "8", "TRACE", "trace" ],
           [ "8", "UPPERCASE", "uppercase" ],
           [ "8", "LSPAR", "[" ],
-          [ "8", "STRTOKEN", " \"Hallo\" " ],
+          [ "8", "STRTOKEN", "Hallo" ],
           [ "8", "COMMA", "," ],
-          [ "8", "STRTOKEN", " \"Welt\" " ],
+          [ "8", "STRTOKEN", "Welt" ],
           [ "8", "COMMA", "," ],
           [ "8", "NUMTOKEN", "4711" ],
           [ "8", "RSPAR", "]" ],
@@ -951,7 +951,7 @@ that goes over two lines" IF|};
           [ "13", "NUMTOKEN", "5" ],
           [ "13", "SEMICOLON", ";" ],
           [ "14", "TRACE", "trace" ],
-          [ "14", "STRTOKEN", " \"Hallo\" " ],
+          [ "14", "STRTOKEN", "Hallo" ],
           [ "14", "WHERE", "where" ],
           [ "14", "IDENTIFIER", "it" ],
           [ "14", "IS", "is" ],

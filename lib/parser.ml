@@ -73,10 +73,7 @@ let%test_module "Parser tests" =
         {
           "type": "STATEMENTBLOCK",
           "statements": [
-            {
-              "type": "WRITE",
-              "arg": { "type": "STRTOKEN", "value": " \"hello\" " }
-            },
+            { "type": "WRITE", "arg": { "type": "STRTOKEN", "value": "hello" } },
             {
               "type": "WRITE",
               "arg": {
@@ -188,8 +185,8 @@ let%test_module "Parser tests" =
               "arg": {
                 "type": "LIST",
                 "items": [
-                  { "type": "STRTOKEN", "value": " \"a\" " },
-                  { "type": "STRTOKEN", "value": " \"b\" " }
+                  { "type": "STRTOKEN", "value": "a" },
+                  { "type": "STRTOKEN", "value": "b" }
                 ]
               }
             },
@@ -216,7 +213,7 @@ let%test_module "Parser tests" =
             {
               "type": "TRACE",
               "line": "1",
-              "arg": { "type": "STRTOKEN", "value": " \"foo\" " }
+              "arg": { "type": "STRTOKEN", "value": "foo" }
             }
           ]
         }
@@ -245,7 +242,7 @@ let%test_module "Parser tests" =
               "arg": {
                 "type": "WHERE",
                 "arg": [
-                  { "type": "STRTOKEN", "value": " \"Hallo\" " },
+                  { "type": "STRTOKEN", "value": "Hallo" },
                   {
                     "type": "ISNOTNUMBER",
                     "arg": { "type": "VARIABLE", "name": "it", "line": "1" }
