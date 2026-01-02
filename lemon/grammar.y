@@ -260,15 +260,15 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 
 %right     READ .
-%right     TIME .
+%left      AMPERSAND .
+%left 	   PLUS MINUS BEFORE TIME .
 %left      WHERE .
 %right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM OF INTERVAL .
 %right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
 %left      ISWITHIN ISNOTWITHIN .
 %nonassoc  ISBEFORE ISNOTBEFORE .
 %left      LT .
-%left      AMPERSAND .
-%left 	   PLUS MINUS BEFORE .
+// %left 	   PLUS MINUS BEFORE .
 %left 	   TIMES DIVIDE .
 %right     SQRT .
 %right     UNMINUS .

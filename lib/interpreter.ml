@@ -1661,7 +1661,10 @@ let%test_module "Parser tests" =
       in
       input |> interpret;
       [%expect
-        {| Line 13: [3 Hours 3 Minutes, 2 Hours 46 Minutes, 3 Hours 5 Minutes, 3 Hours 4 Minutes] |}]
+        {|
+        Line 13: 2025-11-04T15:43:48Z
+        Line 14: 2025-11-04T15:43:48Z
+        |}]
     ;;
   end)
 ;;
