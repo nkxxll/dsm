@@ -268,7 +268,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %nonassoc  ISBEFORE ISNOTBEFORE .
 %left      LT .
 %left      AMPERSAND .
-%left 	   PLUS MINUS .
+%left 	   PLUS MINUS BEFORE .
 %left 	   TIMES DIVIDE .
 %right     SQRT .
 %right     UNMINUS .
@@ -574,6 +574,9 @@ ex(r) ::= ex(a) PLUS ex(b) .
 
 ex(r) ::= ex(a) MINUS ex(b) .
 {r = binary ("MINUS", a, b); }
+
+ex(r) ::= ex(a) BEFORE ex(b) .
+{r = binary ("BEFORE", a, b); }
 
 ex(r) ::= ex(a) TIMES ex(b) .
 {r = binary ("TIMES", a, b); }

@@ -1,5 +1,7 @@
 # AGENTS.md
 
+This project uses the `jj` git frontend as version control.
+
 Structure:
 
 - tokenizer is in @lib/tokenizer.ml

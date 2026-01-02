@@ -6,7 +6,7 @@
 //    102;2025-11-05T00:15:00
 //    112;2025-11-05T03:19:00
 
-glucose := read "time_series.xml";
+glucose := read "glucose.csv";
 trace the count of glucose;
 trace any (glucose is greater than 100);
 trace [time of first glucose, average time of glucose, minimum time of glucose];

@@ -329,142 +329,158 @@ let increase_handler item : value =
        in
        value_type_only (List diffs))
   | _ -> unit
-  ;;
+;;
 
-  (* INTERVAL handler - returns list of time differences between successive items *)
-  let interval_handler item : value =
+(* INTERVAL handler - returns list of time differences between successive items *)
+let interval_handler item : value =
   match item.type_ with
   | List items ->
-   let times =
-     List.filter_map items ~f:(fun v ->
-       match v.time with
-       | Some t -> Some t
-       | None -> None)
-   in
-   (match times with
-    | [] | [ _ ] -> value_type_only (List [])
-    | lst ->
-      let intervals =
-        List.init
-          (List.length lst - 1)
-          ~f:(fun i ->
-            let curr = List.nth_exn lst (i + 1) in
-            let prev = List.nth_exn lst i in
-            (* Convert milliseconds to days for readability *)
-            let diff_ms = curr -. prev in
-            let diff_days = diff_ms /. (1000.0 *. 60.0 *. 60.0 *. 24.0) in
-            value_type_only (NumberLiteral diff_days))
-      in
-      value_type_only (List intervals))
+    let times =
+      List.filter_map items ~f:(fun v ->
+        match v.time with
+        | Some t -> Some t
+        | None -> None)
+    in
+    (match times with
+     | [] | [ _ ] -> value_type_only (List [])
+     | lst ->
+       let intervals =
+         List.init
+           (List.length lst - 1)
+           ~f:(fun i ->
+             let curr = List.nth_exn lst (i + 1) in
+             let prev = List.nth_exn lst i in
+             (* Convert milliseconds to days for readability *)
+             let diff_ms = curr -. prev in
+             let diff_days = diff_ms /. (1000.0 *. 60.0 *. 60.0 *. 24.0) in
+             value_type_only (NumberLiteral diff_days))
+       in
+       value_type_only (List intervals))
   | _ -> unit
-  ;;
+;;
 
-  (* Duration operators - convert numbers to durations *)
-  (* YEAR: converts number to months duration (1 year = 12 months) *)
-  let duration_year_handler item : value =
+(* Duration operators - convert numbers to durations *)
+(* YEAR: converts number to months duration (1 year = 12 months) *)
+let duration_year_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 12.0))
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* MONTH: keeps as months duration *)
-  let duration_month_handler item : value =
+(* MONTH: keeps as months duration *)
+let duration_month_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral n)
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral n)
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral n)
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* WEEK: converts to seconds duration (1 week = 604800 seconds) *)
-  let duration_week_handler item : value =
+(* WEEK: converts to seconds duration (1 week = 604800 seconds) *)
+let duration_week_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 604800.0))
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* DAY: converts to seconds duration (1 day = 86400 seconds) *)
-  let duration_day_handler item : value =
+(* DAY: converts to seconds duration (1 day = 86400 seconds) *)
+let duration_day_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 86400.0))
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* HOURS: converts to seconds duration (1 hour = 3600 seconds) *)
-  let duration_hours_handler item : value =
+(* HOURS: converts to seconds duration (1 hour = 3600 seconds) *)
+let duration_hours_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 3600.0))
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* MINUTES: converts to seconds duration (1 minute = 60 seconds) *)
-  let duration_minutes_handler item : value =
+(* MINUTES: converts to seconds duration (1 minute = 60 seconds) *)
+let duration_minutes_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral (n *. 60.0))
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  (* SECONDS: returns as seconds duration *)
-  let duration_seconds_handler item : value =
+(* SECONDS: returns as seconds duration *)
+let duration_seconds_handler item : value =
   match item.type_ with
   | NumberLiteral n -> value_type_only (NumberLiteral n)
   | List items ->
-    let converted = List.map items ~f:(fun v ->
-      match v.type_ with
-      | NumberLiteral n -> value_type_only (NumberLiteral n)
-      | _ -> v)
+    let converted =
+      List.map items ~f:(fun v ->
+        match v.type_ with
+        | NumberLiteral n -> value_type_only (NumberLiteral n)
+        | _ -> v)
     in
     value_type_only (List converted)
   | _ -> unit
-  ;;
+;;
 
-  let range start end_range =
+let range start end_range =
   if start > end_range
   then failwith "start has to be smaller than end_range"
   else List.init (end_range - start + 1) ~f:(fun i -> start + i)
-  ;;
+;;
 
-  let range_operator first second =
+let before_op left right =
+  match left.type_, right.type_ with
+  (* duration (in seconds) before time *)
+  | NumberLiteral n, TimeLiteral t ->
+    let new_time = t -. n in
+    value_type_only (TimeLiteral new_time)
+  | _ -> unit
+;;
+
+let range_operator first second =
   match first, second with
   | { type_ = NumberLiteral first_number; _ }, { type_ = NumberLiteral second_number; _ }
     ->
@@ -818,6 +834,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | Some v -> v
      | None -> unit)
   | "UNMINUS" -> unary_operation ~execution_type:NotElementWise ~f:minus_operation
+  | "BEFORE" -> binary_operation ~execution_type:ElementWise ~f:before_op
   | "PLUS" ->
     binary_operation ~execution_type:ElementWise ~f:(arithmetic_operation ( +. ))
   | "MINUS" ->
@@ -1462,6 +1479,16 @@ let%test_module "Parser tests" =
       let input = {|trace 1990-03-07T00:00:00 is not before 1990-03-08T00:00:00;|} in
       input |> interpret;
       [%expect {| Line 1: false |}]
+    ;;
+
+    let%expect_test "test before operator" =
+      let input =
+        {|
+        trace 2 days before 1990-03-13T00:00:00Z;
+      |}
+      in
+      input |> interpret;
+      [%expect {| Line 2: 1990-03-11T00:00:00Z |}]
     ;;
   end)
 ;;
