@@ -1,0 +1,266 @@
+========================================================================
+             ARDEN SYNTAX OPERATOR PRECEDENCE & ASSOCIATIVITY
+               (Ordered from Lowest to Highest Precedence)
+========================================================================
+
+--------------------------- LOWEST PRECEDENCE --------------------------
+
+... [...]                                            (non-associative)
+, ...                                                (non-associative)
+... , ...                                            (left associative)
+... merge ...                                        (left associative)
+... merge ... using ...                              (left-associative)
+sort ...                                             (non-associative)
+sort ... using ...                                   (non-associative)
+add ... to ...                                       (non-associative)
+add ... to ... at ...                                (non-associative)
+remove ... from ...                                  (non-associative)
+... where ...                                        (non-associative)
+
+------------------------------------------------------------------------
+
+... or ...                                           (left associative)
+... and ...                                          (left associative)
+not ...                                              (non-associative)
+
+------------------------------------------------------------------------
+
+... = ... | ... eq ... | ... is equal ...            (non-associative)
+... <> ... | ... ne ... | ... is not equal ...       (non-associative)
+... < ... | ... lt ... | ... is less than ... | ... is not greater than or equal ...  (non-associative)
+... <= ... | ... le ... | ... is less than or equal ... | ... is not greater than ... (non-associative)
+... > ... | ... gt ... | ... is greater than ... | ... is not less than or equal ...  (non-associative)
+... >= ... | ... ge ... | ... is greater than or equal ... | ... is not less than ... (non-associative)
+
+------------------------------------------------------------------------
+
+... is within ... to ...                             (non-associative)
+... is not within ... to ...                         (non-associative)
+... is within ... preceding ...                      (non-associative)
+... is not within ... preceding ...                  (non-associative)
+... is within ... following ...                      (non-associative)
+... is not within ... following ...                  (non-associative)
+... is within ... surrounding ...                    (non-associative)
+... is not within ... surrounding ...                (non-associative)
+... is within past ...                               (non-associative)
+... is not within past ...                           (non-associative)
+... is within same day as ...                        (non-associative)
+... is not within same day as ...                    (non-associative)
+... is before ...                                    (non-associative)
+... is not before ...                                (non-associative)
+... is after ...                                     (non-associative)
+... is not after ...                                 (non-associative)
+
+------------------------------------------------------------------------
+
+... occur equal ... | ... occur at ...               (non-associative)
+... occur within ... to ...                          (non-associative)
+... occur not within ... to ...                      (non-associative)
+... occur within ... preceding ...                   (non-associative)
+... occur not within ... preceding ...               (non-associative)
+... occur within ... following ...                   (non-associative)
+... occur not within ... following ...               (non-associative)
+... occur within ... surrounding ...                 (non-associative)
+... occur not within ... surrounding ...             (non-associative)
+... occur within past ...                            (non-associative)
+... occur not within past ...                        (non-associative)
+... occur within same day as ...                     (non-associative)
+... occur not within same day as ...                 (non-associative)
+... occur before ...                                 (non-associative)
+... occur not before ...                             (non-associative)
+... occur after ...                                  (non-associative)
+... occur not after ...                              (non-associative)
+
+------------------------------------------------------------------------
+
+... is in ... | ... in ...                           (non-associative)
+... is not in ... | ... not in ...                   (non-associative)
+... is present | ... is not null                     (non-associative)
+... is not present | ... is null                     (non-associative)
+... is Boolean                                       (non-associative)
+... is not Boolean                                   (non-associative)
+... is number                                        (non-associative)
+... is not number                                    (non-associative)
+... is time                                          (non-associative)
+... is not time                                      (non-associative)
+... is time of day                                   (non-associative)
+... is not time of day                               (non-associative)
+... is duration                                      (non-associative)
+... is not duration                                  (non-associative)
+... is string                                        (non-associative)
+... is not string                                    (non-associative)
+... is list                                          (non-associative)
+... is not list                                      (non-associative)
+... is object                                        (non-associative)
+... is not object                                    (non-associative)
+... is [type]                                        (non-associative)
+... is not [type]                                    (non-associative)
+
+------------------------------------------------------------------------
+
+... || ...                                           (left-associative)
+... formatted with ...                               (non-associative)
+
+------------------------------------------------------------------------
+
+uppercase ...                                        (right associative)
+lowercase ...                                        (right associative)
+trim ...                                             (right associative)
+trim left ...                                        (right associative)
+trim right ...                                       (right associative)
+substring ... characters from ...                    (right associative)
+substring ... characters from ... starting at ...    (right associative)
+localized ... by ...                                 (right associative)
+localized ...                                        (non-associative)
+
+------------------------------------------------------------------------
+
++ ...                                                (non-associative)
+- ...                                                (non-associative)
+... + ...                                            (left-associative)
+... - ...                                            (left-associative)
+... * ...                                            (left associative)
+... / ...                                            (left associative)
+... ** ...                                           (non-associative)
+
+------------------------------------------------------------------------
+
+... before ...                                       (non-associative)
+... after ... | ... from ...                         (non-associative)
+... ago                                              (non-associative)
+... year | ... years                                 (non-associative)
+... month | ... months                               (non-associative)
+... week | ... weeks                                 (non-associative)
+... day | ... days                                   (non-associative)
+... hour | ... hours                                 (non-associative)
+... minute | ... minutes                             (non-associative)
+... second | ... seconds                             (non-associative)
+
+------------------------------------------------------------------------
+
+... matches pattern ...                              (non-associative)
+find ... [in] ...                                    (right-associative)
+find ... [in] ... starting at ...                    (right-associative)
+
+------------------------------------------------------------------------
+
+count [of] ...                                       (right associative)
+exist [of] ...                                       (right associative)
+avg [of] ... | average [of] ...                      (right associative)
+median [of] ...                                      (right associative)
+sum [of] ...                                         (right associative)
+stddev [of] ...                                      (right associative)
+variance [of] ...                                    (right associative)
+any [of] ...                                         (right associative)
+all [of] ...                                         (right associative)
+no [of] ...                                          (right associative)
+slope [of] ...                                       (right associative)
+
+------------------------------------------------------------------------
+
+min ... from | minimum ... from ...                  (right associative)
+min [of] ... | minimum [of] ...                      (right associative)
+min ... from ... using | minimum ... from ... using ... (right-associative)
+min [of] ... using | minimum [of] ... using ...      (right-associative)
+max ... from ... | maximum ... from ...              (right associative)
+max [of] ... | maximum [of] ...                      (right associative)
+max ... from ... using ... | maximum ... from ... using ... (right-associative)
+max [of] ... using ... | maximum [of] ... using      (right-associative)
+
+index min ... from | index minimum ... from ...      (right associative)
+index min [of] ... | index minimum [of] ...          (right associative)
+index max ... from ... | index maximum ... from ...  (right associative)
+index max [of] ... | index maximum [of] ...          (right associative)
+
+------------------------------------------------------------------------
+
+last ... from ...                                    (right associative)
+last [of] ...                                        (right associative)
+first ... from ...                                   (right associative)
+first [of] ...                                       (right associative)
+latest ... from ...                                  (right associative)
+latest ... from ... using                            (right-associative)
+sublist ... elements from ...                        (right-associative)
+sublist ... elements starting at ... from ...        (right-associative)
+latest [of] ...                                      (right associative)
+latest [of] ... using ...                            (right-associative)
+earliest ... from ...                                (right associative)
+earliest [of] ...                                    (right associative)
+earliest ... from ... using ...                      (right-associative)
+earliest [of] ... using ...                          (right-associative)
+nearest ... from ...                                 (right associative)
+index nearest ... from ...                           (right associative)
+index of ... within ...                              (right-associative)
+at least ... from ...                                (right-associative)
+at most ... from ...                                 (right-associative)
+
+------------------------------------------------------------------------
+
+increase [of] ...                                    (right associative)
+decrease [of] ...                                    (right associative)
+percent increase [of] ... | % increase [of] ...      (right associative)
+percent decrease [of] ... | % decrease [of] ...      (right associative)
+
+------------------------------------------------------------------------
+
+interval [of] ...                                    (right associative)
+time [of] ...                                        (right associative)
+time of day [of] ...                                 (right associative)
+day of week [of] ...                                 (right associative)
+
+------------------------------------------------------------------------
+
+arccos [of] ...                                      (right associative)
+arcsin [of] ...                                      (right associative)
+arctan [of] ...                                      (right associative)
+cos [of] ... | cosine [of] ...                       (right associative)
+sin [of] ... | sine [of] ...                         (right associative)
+tan [of] ... | tangent [of] ...                      (right associative)
+exp [of] ...                                         (right associative)
+floor [of] ...                                       (right associative)
+ceiling [of] ...                                     (right associative)
+truncate [of] ...                                    (right associative)
+round [of] ...                                       (right associative)
+log [of] ...                                         (right associative)
+log10 [of] ...                                       (right associative)
+int [of] ...                                         (right associative)
+abs [of] ...                                         (right associative)
+sqrt [of] ...                                        (right associative)
+
+------------------------------------------------------------------------
+
+extract year [of] ...                                (right associative)
+extract month [of] ...                               (right associative)
+extract day [of] ...                                 (right associative)
+extract hour [of] ...                                (right associative)
+extract minute [of] ...                              (right associative)
+extract second [of] ...                              (right associative)
+replace year [of] ... with ...                       (right-associative)
+replace month [of] ... with ...                      (right-associative)
+replace day [of] ... with ...                        (right-associative)
+replace hour [of] ... with ...                       (right-associative)
+replace minute [of] ... with ...                     (right-associative)
+replace second [of] ... with ...                     (right-associative)
+
+------------------------------------------------------------------------
+
+reverse [of] ...                                     (right associative)
+extract characters [of] ...                          (right associative)
+string [of] ...                                      (right associative)
+length [of] ...                                      (right associative)
+
+------------------------------------------------------------------------
+
+... . ...                                            (right associative)
+attribute ... from ...                               (right associative)
+extract attribute names ...                          (right associative)
+clone ...                                            (right associative)
+
+------------------------------------------------------------------------
+
+... seqto ...                                        (non-associative)
+... as number                                        (non-associative)
+... as time                                          (non-associative)
+... as string                                        (non-associative)
+
+-------------------------- HIGHEST PRECEDENCE --------------------------
