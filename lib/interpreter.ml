@@ -955,11 +955,9 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     let iter_val = eval interp_data expression in
     (match iter_val.type_ with
      | List items ->
-       let _ =
-         List.map items ~f:(fun item ->
-           Hashtbl.set interp_data.env ~key:varname ~data:item;
-           eval interp_data statements_block)
-       in
+       List.iter items ~f:(fun item ->
+         Hashtbl.set interp_data.env ~key:varname ~data:item;
+         ignore (eval interp_data statements_block));
        unit
      | _ -> unit)
   | _ -> unit
@@ -1613,7 +1611,8 @@ let%test_module "Parser tests" =
         trace [time of first glucose, average time of glucose, minimum time of glucose]; |}
       in
       input |> interpret;
-      [%expect {|
+      [%expect
+        {|
         Line 13: [2025-11-04T15:21:00Z, 2025-11-04T18:24:00Z, 2025-11-04T21:10:00Z, 2025-11-05T00:15:00Z, 2025-11-05T03:19:00Z]
         Line 14: [2025-11-04T15:21:00Z, 2025-11-04T21:17:48Z, 2025-11-04T15:21:00Z]
         |}]
@@ -1664,6 +1663,39 @@ let%test_module "Parser tests" =
         {|
         Line 13: 2025-11-04T15:43:48Z
         Line 14: 2025-11-04T15:43:48Z
+        |}]
+    ;;
+
+    let%expect_test "for loop" =
+      let input =
+        {| glucose1 := 81;
+        time glucose1 := 2025-11-04T15:21:00;
+        glucose2 := 92;
+        time glucose2 := 2025-11-04T18:24:00;
+        glucose3 := 137;
+        time glucose3 := 2025-11-04T21:10:00;
+        glucose4 := 102;
+        time glucose4 := 2025-11-05T00:15:00;
+        glucose5 := 112;
+        time glucose5 := 2025-11-05T03:19:00;
+
+
+        glucose := [glucose1, glucose2, glucose3, glucose4, glucose5];
+        midtime := average [time of earliest glucose, time of latest glucose];
+        for g in glucose do
+          trace the (time of g) is before midtime;
+          trace the time of g is before midtime;
+        enddo;
+        |}
+      in
+      input |> interpret;
+      [%expect
+        {|
+          LINE 33: Wert 81 war relativ früh
+          LINE 33: Wert 92 war relativ früh
+          LINE 33: Wert 137 war relativ früh
+          LINE 33: Wert 102 war relativ spät
+          LINE 33: Wert 112 war relativ spät
         |}]
     ;;
   end)
