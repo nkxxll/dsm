@@ -435,6 +435,15 @@ let extract_numbers items : float list =
     | _ -> None)
 ;;
 
+let make_diffs lst =
+  List.init
+    (List.length lst - 1)
+    ~f:(fun i ->
+      let curr = List.nth_exn lst (i + 1) in
+      let prev = List.nth_exn lst i in
+      curr -. prev)
+;;
+
 (* INCREASE handler - returns list of differences *)
 (* todo: make the increase operator also operate on times and durations *)
 let increase_handler item : value =
@@ -445,12 +454,7 @@ let increase_handler item : value =
      | [] | [ _ ] -> value_type_only (List [])
      | lst ->
        let diffs =
-         List.init
-           (List.length lst - 1)
-           ~f:(fun i ->
-             let curr = List.nth_exn lst (i + 1) in
-             let prev = List.nth_exn lst i in
-             value_type_only (NumberLiteral (curr -. prev)))
+         make_diffs lst |> List.map ~f:(fun item -> value_type_only (NumberLiteral item))
        in
        value_type_only (List diffs))
   | _ -> unit
@@ -460,27 +464,22 @@ let increase_handler item : value =
 let interval_handler item : value =
   match item.type_ with
   | List items ->
-    let times =
-      List.filter_map items ~f:(fun v ->
-        match v.time with
-        | Some t -> Some t
-        | None -> None)
+    let all_has_primary_time =
+      List.fold items ~init:true ~f:(fun acc item ->
+        if not acc then false else Option.is_some item.time)
     in
-    (match times with
-     | [] | [ _ ] -> value_type_only (List [])
-     | lst ->
-       let intervals =
-         List.init
-           (List.length lst - 1)
-           ~f:(fun i ->
-             let curr = List.nth_exn lst (i + 1) in
-             let prev = List.nth_exn lst i in
-             (* Convert milliseconds to days for readability *)
-             let diff_ms = curr -. prev in
-             let diff_days = diff_ms /. (1000.0 *. 60.0 *. 60.0 *. 24.0) in
-             value_type_only (NumberLiteral diff_days))
-       in
-       value_type_only (List intervals))
+    if not all_has_primary_time
+    then unit
+    else (
+      let times = List.map items ~f:(fun v -> Option.value_exn v.time) in
+      match times with
+      | [] | [ _ ] -> value_type_only (List [])
+      | lst ->
+        let diffs = make_diffs lst in
+        let intervals =
+          List.map diffs ~f:(fun duration -> value_type_only (DurationLiteral duration))
+        in
+        value_type_only (List intervals))
   | _ -> unit
 ;;
 
@@ -687,6 +686,12 @@ let read_csv first =
     in
     value_type_only (List (List.rev list))
   | _ -> unit
+;;
+
+let time_of value =
+  match value.time with
+  | Some t -> value_full (TimeLiteral t) (Some t)
+  | None -> unit
 ;;
 
 let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
@@ -910,12 +915,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     let evaluated_items = List.map items ~f:(eval interp_data) in
     value_type_only (List evaluated_items)
   | "NOW" -> value_type_only (TimeLiteral interp_data.now)
-  | "TIME" ->
-    let arg = get_arg yojson_ast in
-    let val_ = eval interp_data arg in
-    (match val_.time with
-     | Some t -> value_full (TimeLiteral t) (Some t)
-     | None -> unit)
+  | "TIME" -> unary_operation ~execution_type:ElementWise ~f:time_of
   | "CURRENTTIME" -> value_type_only (TimeLiteral (Caml_unix.gettimeofday ()))
   | "UPPERCASE" ->
     unary_operation ~execution_type:ElementWise ~f:string_uppercase_transform
@@ -965,6 +965,42 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | _ -> unit
 
 and write_value (expr : value) =
+  let formatted_duration f =
+    let total_seconds = Float.round_nearest (f /. 1000.0) |> Float.to_int in
+    let seconds_per_minute = 60 in
+    let seconds_per_hour = 60 * seconds_per_minute in
+    let seconds_per_day = 24 * seconds_per_hour in
+    let seconds_per_week = 7 * seconds_per_day in
+    let seconds_per_month = 30 * seconds_per_day in
+    let seconds_per_year = 365 * seconds_per_day in
+    let years, rem1 =
+      total_seconds / seconds_per_year, total_seconds mod seconds_per_year
+    in
+    let months, rem2 = rem1 / seconds_per_month, rem1 mod seconds_per_month in
+    let weeks, rem3 = rem2 / seconds_per_week, rem2 mod seconds_per_week in
+    let days, rem4 = rem3 / seconds_per_day, rem3 mod seconds_per_day in
+    let hours, rem5 = rem4 / seconds_per_hour, rem4 mod seconds_per_hour in
+    let minutes, seconds = rem5 / seconds_per_minute, rem5 mod seconds_per_minute in
+    let part value singular =
+      if value = 0
+      then None
+      else
+        Some (Int.to_string value ^ " " ^ if value = 1 then singular else singular ^ "s")
+    in
+    let parts =
+      List.filter_map
+        ~f:Fun.id
+        [ part years "Year"
+        ; part months "Month"
+        ; part weeks "Week"
+        ; part days "Day"
+        ; part hours "Hour"
+        ; part minutes "Minute"
+        ; part seconds "Second"
+        ]
+    in
+    String.concat ~sep:" " parts
+  in
   match expr.type_ with
   | NumberLiteral number ->
     Stdio.print_endline (Float.to_string number);
@@ -979,8 +1015,8 @@ and write_value (expr : value) =
     Stdio.print_endline "null";
     ()
   | DurationLiteral f ->
-    let seconds = Float.round_nearest (f /. 1000.0) in
-    Stdio.print_endline (Int.to_string (Float.to_int seconds) ^ " Seconds");
+    let formatted = formatted_duration f in
+    Stdio.print_endline formatted;
     ()
   | List items ->
     let formatted =
@@ -992,8 +1028,7 @@ and write_value (expr : value) =
         | { type_ = Unit; _ } -> "null"
         | { type_ = List _; _ } -> "[...]"
         | { type_ = TimeLiteral t; _ } -> Helper.timestamp_to_iso_string t
-        | { type_ = DurationLiteral f; _ } ->
-          Int.to_string (Float.to_int (Float.round_nearest (f /. 1000.0))) ^ " Seconds")
+        | { type_ = DurationLiteral f; _ } -> formatted_duration f)
       |> String.concat ~sep:", "
     in
     Stdio.print_endline ("[" ^ formatted ^ "]");
@@ -1558,6 +1593,75 @@ let%test_module "Parser tests" =
       let input = {| trace average [1990-03-11T00:00:00Z, 1990-03-11T12:00:00Z]; |} in
       input |> interpret;
       [%expect {| Line 1: 1990-03-11T06:00:00Z |}]
+    ;;
+
+    let%expect_test "average time of glucose" =
+      let input =
+        {| glucose1 := 81;
+        time glucose1 := 2025-11-04T15:21:00;
+        glucose2 := 92;
+        time glucose2 := 2025-11-04T18:24:00;
+        glucose3 := 137;
+        time glucose3 := 2025-11-04T21:10:00;
+        glucose4 := 102;
+        time glucose4 := 2025-11-05T00:15:00;
+        glucose5 := 112;
+        time glucose5 := 2025-11-05T03:19:00;
+
+        glucose := [glucose1, glucose2, glucose3, glucose4, glucose5];
+        trace time of glucose;
+        trace [time of first glucose, average time of glucose, minimum time of glucose]; |}
+      in
+      input |> interpret;
+      [%expect {|
+        Line 13: [2025-11-04T15:21:00Z, 2025-11-04T18:24:00Z, 2025-11-04T21:10:00Z, 2025-11-05T00:15:00Z, 2025-11-05T03:19:00Z]
+        Line 14: [2025-11-04T15:21:00Z, 2025-11-04T21:17:48Z, 2025-11-04T15:21:00Z]
+        |}]
+    ;;
+
+    let%expect_test "average time of glucose" =
+      let input =
+        {| glucose1 := 81;
+        time glucose1 := 2025-11-04T15:21:00;
+        glucose2 := 92;
+        time glucose2 := 2025-11-04T18:24:00;
+        glucose3 := 137;
+        time glucose3 := 2025-11-04T21:10:00;
+        glucose4 := 102;
+        time glucose4 := 2025-11-05T00:15:00;
+        glucose5 := 112;
+        time glucose5 := 2025-11-05T03:19:00;
+
+        glucose := [glucose1, glucose2, glucose3, glucose4, glucose5];
+        trace the interval of glucose;
+        |}
+      in
+      input |> interpret;
+      [%expect
+        {| Line 13: [3 Hours 3 Minutes, 2 Hours 46 Minutes, 3 Hours 5 Minutes, 3 Hours 4 Minutes] |}]
+    ;;
+
+    let%expect_test "earliest plus something" =
+      let input =
+        {| glucose1 := 81;
+        time glucose1 := 2025-11-04T15:21:00;
+        glucose2 := 92;
+        time glucose2 := 2025-11-04T18:24:00;
+        glucose3 := 137;
+        time glucose3 := 2025-11-04T21:10:00;
+        glucose4 := 102;
+        time glucose4 := 2025-11-05T00:15:00;
+        glucose5 := 112;
+        time glucose5 := 2025-11-05T03:19:00;
+
+        glucose := [glucose1, glucose2, glucose3, glucose4, glucose5];
+        trace (time of earliest of glucose) + 23 minutes - 12 seconds;
+        trace time of earliest of glucose + 23 minutes - 12 seconds;
+        |}
+      in
+      input |> interpret;
+      [%expect
+        {| Line 13: [3 Hours 3 Minutes, 2 Hours 46 Minutes, 3 Hours 5 Minutes, 3 Hours 4 Minutes] |}]
     ;;
   end)
 ;;
