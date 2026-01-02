@@ -259,22 +259,29 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 ///////////////////////
 ///////////////////////
 
-%right     READ .
-%left      AMPERSAND .
-%left 	   PLUS MINUS BEFORE TIME .
-%left      WHERE .
-%right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM OF INTERVAL .
-%right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
-%left      ISWITHIN ISNOTWITHIN .
-%nonassoc  ISBEFORE ISNOTBEFORE .
-%left      LT .
-// %left 	   PLUS MINUS BEFORE .
-%left 	   TIMES DIVIDE .
-%right     SQRT .
-%right     UNMINUS .
-%right     POWER .
-%left      RANGE .
-%left      YEAR MONTH DAY WEEK HOURS MINUTES SECONDS .
+%left COMMA .
+%nonassoc WHERE .
+%left AMPERSAND .
+%nonassoc LT GREATER .
+%nonassoc ISWITHIN ISNOTWITHIN .
+%nonassoc ISBEFORE ISNOTBEFORE .
+%nonassoc OCCUR .
+%nonassoc IN .
+%nonassoc ISNUMBER ISNOTNUMBER ISLIST ISNULL IS .
+%left RANGE .
+%left PLUS MINUS .
+%left TIMES DIVIDE .
+%right POWER .
+%nonassoc NOT .
+%right UNMINUS .
+%nonassoc BEFORE .
+%nonassoc YEAR MONTH WEEK DAY HOURS MINUTES SECONDS .
+%right UPPERCASE COUNT AVERAGE MAXIMUM MINIMUM FIRST LATEST EARLIEST INCREASE INTERVAL .
+%right TIMEOF .
+%right SQRT .
+%right READ .
+%right ANY .
+%right OF .
 
 ///////////////////////
 // CODE
@@ -380,17 +387,7 @@ statement(r) ::= FOR IDENTIFIER(i) IN ex(e) DO statementblock(sb) ENDDO SEMICOLO
 }
 
 // TIME ASSIGNMENT
-statement(r) ::= TIME IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
-{
-	cJSON *res = cJSON_CreateObject();
-	cJSON_AddStringToObject(res, "type", "TIMEASSIGN");
-	cJSON_AddStringToObject(res, "ident", getValue(i));
-	cJSON_AddItemToObject(res, "arg", e);
-	r = res;
-}
-
-// TIME ASSIGNMENT
-statement(r) ::= TIME OF IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
+statement(r) ::= TIME optional_of IDENTIFIER(i) ASSIGN ex(e) SEMICOLON .
 {
 	cJSON *res = cJSON_CreateObject();
 	cJSON_AddStringToObject(res, "type", "TIMEASSIGN");
@@ -457,7 +454,7 @@ ex(r) ::= IDENTIFIER(a) .
 optional_of ::= OF . [OF]
 optional_of ::= . [OF]
 
-ex(r) ::= TIME optional_of ex(a) .
+ex(r) ::= TIME optional_of ex(a) . [TIMEOF]
 { r = unary("TIME", a); }
 
 ex(r) ::= READ ex(a) .
