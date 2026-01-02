@@ -516,6 +516,23 @@ let greater_than first second =
   | _, _ -> unit
 ;;
 
+(* IS BEFORE operator - checks if left time is strictly before right time *)
+let is_before first second =
+  let ( < ) = Float.( < ) in
+  match first.type_, second.type_ with
+  | TimeLiteral first_time, TimeLiteral second_time ->
+    value_type_only (BoolLiteral (first_time < second_time))
+  | _, _ -> unit
+;;
+
+let is_not_before first second =
+  let ( < ) = Float.( < ) in
+  match first.type_, second.type_ with
+  | TimeLiteral first_time, TimeLiteral second_time ->
+    value_type_only (BoolLiteral (not (first_time < second_time)))
+  | _, _ -> unit
+;;
+
 (* OCCUR operators - compare primary time of left argument with right argument *)
 let occur_equal first second =
   (* Use primary time of left argument *)
@@ -770,6 +787,8 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
     unary_operation ~execution_type:NotElementWise ~f:(is_not_type ListType)
   | "ISWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:is_within
   | "ISNOTWITHIN" -> ternary_operation ~execution_type:ElementWise ~f:is_not_within
+  | "ISBEFORE" -> binary_operation ~execution_type:ElementWise ~f:is_before
+  | "ISNOTBEFORE" -> binary_operation ~execution_type:ElementWise ~f:is_not_before
   | "ASSIGN" ->
     let ident = get_ident yojson_ast in
     let arg = get_arg yojson_ast in
@@ -1407,6 +1426,42 @@ let%test_module "Parser tests" =
         Line 1:  "Hallo"
         Line 2: [100., 70.]
         |}]
+    ;;
+
+    let%expect_test "test is before operator - strictly before" =
+      let input = {|trace 1990-03-07T00:00:00 is before 1990-03-08T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: true |}]
+    ;;
+
+    let%expect_test "test is before operator - not before (later date)" =
+      let input = {|trace 1990-03-08T00:00:00 is before 1990-03-07T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: false |}]
+    ;;
+
+    let%expect_test "test is before operator - not before (same date)" =
+      let input = {|trace 1990-03-08T00:00:00 is before 1990-03-08T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: false |}]
+    ;;
+
+    let%expect_test "test is not before operator" =
+      let input = {|trace 1990-03-08T00:00:00 is not before 1990-03-07T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: true |}]
+    ;;
+
+    let%expect_test "test is not before operator - same date" =
+      let input = {|trace 1990-03-08T00:00:00 is not before 1990-03-08T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: true |}]
+    ;;
+
+    let%expect_test "test is not before operator - earlier date" =
+      let input = {|trace 1990-03-07T00:00:00 is not before 1990-03-08T00:00:00;|} in
+      input |> interpret;
+      [%expect {| Line 1: false |}]
     ;;
   end)
 ;;

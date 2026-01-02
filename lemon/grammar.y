@@ -170,6 +170,7 @@ int get_token_id (char *token) {
 	if (strcmp(token, "WRITE") == 0) return WRITE;
  	if (strcmp(token, "AVERAGE") == 0) return AVERAGE;
  	if (strcmp(token, "ANY") == 0) return ANY;
+ 	if (strcmp(token, "BEFORE") == 0) return BEFORE;
  	if (strcmp(token, "FIRST") == 0) return FIRST;
  	if (strcmp(token, "COUNT") == 0) return COUNT;
  	if (strcmp(token, "CURRENTTIME") == 0) return CURRENTTIME;
@@ -264,6 +265,7 @@ cJSON* ternary (char *fname, cJSON *a, cJSON *b, cJSON *c)
 %right     EARLIEST UPPERCASE AVERAGE ANY FIRST LATEST COUNT INCREASE MAXIMUM MINIMUM OF INTERVAL .
 %right     IS ISNULL ISLIST ISNUMBER GREATER OCCUR .
 %left      ISWITHIN ISNOTWITHIN .
+%nonassoc  ISBEFORE ISNOTBEFORE .
 %left      LT .
 %left      AMPERSAND .
 %left 	   PLUS MINUS .
@@ -587,6 +589,12 @@ ex(r) ::= ex(a) IS NOT WITHIN ex(b) TO ex(c) . [ISNOTWITHIN]
 
 ex(r) ::= ex(a) IS WITHIN ex(b) TO ex(c) . [ISWITHIN]
 {r = ternary ("ISWITHIN", a, b, c); }
+
+ex(r) ::= ex(a) IS BEFORE ex(b) . [ISBEFORE]
+{r = binary ("ISBEFORE", a, b); }
+
+ex(r) ::= ex(a) IS NOT BEFORE ex(b) . [ISNOTBEFORE]
+{r = binary ("ISNOTBEFORE", a, b); }
 
 ex(r) ::= NULLTOK .
 {

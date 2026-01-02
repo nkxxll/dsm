@@ -18,6 +18,7 @@ module TokenType = struct
     | ANY
     | ASSIGN
     | AVERAGE
+    | BEFORE
     | COMMA
     | COUNT
     | CURRENTTIME
@@ -103,6 +104,7 @@ module TokenType = struct
     | "LIST" -> LISTTYPE
     | "ANY" -> ANY
     | "AVERAGE" -> AVERAGE
+    | "BEFORE" -> BEFORE
     | "COUNT" -> COUNT
     | "CURRENTTIME" -> CURRENTTIME
     | "RANGE" -> RANGE
@@ -175,6 +177,7 @@ module TokenType = struct
     | ANY -> "ANY"
     | ASSIGN -> "ASSIGN"
     | AVERAGE -> "AVERAGE"
+    | BEFORE -> "BEFORE"
     | COMMA -> "COMMA"
     | COUNT -> "COUNT"
     | CURRENTTIME -> "CURRENTTIME"
