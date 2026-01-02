@@ -291,7 +291,7 @@ let parse_language_string tokenizer =
     | _ -> true)
   <* char '"'
   >>| fun str ->
-  let literal = Printf.sprintf {| "%s" |} str in
+  let literal = str in
   let len = String.length literal in
   let token =
     { Token.type_ = STRTOKEN str
