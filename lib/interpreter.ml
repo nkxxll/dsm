@@ -248,8 +248,7 @@ let formatted_duration (duration_ms : float) : string =
   let part value singular =
     if value = 0
     then None
-    else
-      Some (Int.to_string value ^ " " ^ if value = 1 then singular else singular ^ "s")
+    else Some (Int.to_string value ^ " " ^ if value = 1 then singular else singular ^ "s")
   in
   let parts =
     List.filter_map
@@ -275,16 +274,8 @@ let rec value_to_string (v : value) : string =
   | Unit -> "null"
   | TimeLiteral t -> Helper.timestamp_to_iso_string t
   | DurationLiteral d -> formatted_duration d
-  | List items ->
-    "["
-    ^ String.concat ~sep:", " (List.map items ~f:value_to_string_compact)
-    ^ "]"
-
-(* Compact version for list items - abbreviates nested lists *)
-and value_to_string_compact (v : value) : string =
-  match v.type_ with
-  | List _ -> "[...]"
-  | _ -> value_to_string v
+  | List items -> "[" ^ String.concat ~sep:", " (List.map items ~f:value_to_string) ^ "]"
+;;
 
 (* String concatenation operation with mixed type support *)
 let concatenation_operation left right : value =
@@ -359,8 +350,7 @@ let aggregate_numbers op items =
 
 (* Aggregation operation helper *)
 let aggregation_operation (op : float list -> float) (item : value) : value =
-  match item.type_ with
-  | List items ->
+  let handle_list items =
     if List.is_empty items
     then unit
     else (
@@ -370,6 +360,18 @@ let aggregation_operation (op : float list -> float) (item : value) : value =
       | TimeLiteral _ -> aggregate_times op items
       | DurationLiteral _ -> aggregate_times op items
       | _ -> unit)
+  in
+  match item.type_ with
+  | List items -> handle_list items
+  | NumberLiteral _ ->
+    let items = [ item ] in
+    handle_list items
+  | TimeLiteral _ ->
+    let items = [ item ] in
+    handle_list items
+  | DurationLiteral _ ->
+    let items = [ item ] in
+    handle_list items
   | _ -> unit
 ;;
 
@@ -954,7 +956,8 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "TIMES" -> binary_operation ~execution_type:ElementWise ~f:times_op
   | "DIVIDE" -> binary_operation ~execution_type:ElementWise ~f:divide_op
   | "POWER" -> binary_operation ~execution_type:ElementWise ~f:power_op
-  | "AMPERSAND" -> binary_operation ~execution_type:NotElementWise ~f:concatenation_operation
+  | "AMPERSAND" ->
+    binary_operation ~execution_type:NotElementWise ~f:concatenation_operation
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
@@ -972,7 +975,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "UPPERCASE" ->
     unary_operation ~execution_type:ElementWise ~f:string_uppercase_transform
   | "MAXIMUM" ->
-    unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation maximum_op)
+    unary_operation ~execution_type:ElementWise ~f:(aggregation_operation maximum_op)
   | "MINIMUM" ->
     unary_operation ~execution_type:NotElementWise ~f:(aggregation_operation minimum_op)
   | "AVERAGE" ->
@@ -1014,9 +1017,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
      | _ -> unit)
   | _ -> unit
 
-and write_value (expr : value) =
-  expr |> value_to_string |> Stdio.print_endline
-;;
+and write_value (expr : value) = expr |> value_to_string |> Stdio.print_endline
 
 let interpret_parsed yojson_ast : value =
   let interp_data = InterpreterData.create () in
@@ -1410,8 +1411,8 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-        Line 2: [200., 150., [...]]
-        Line 3: [HALLO, WELT, 4711.]
+        Line 2: [200., 150., [100., -50.]]
+        Line 3: [HALLO, WELT, null]
         Line 4: [10., 14.142135623730951, 12.24744871391589]
         |}]
     ;;
