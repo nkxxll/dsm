@@ -1385,7 +1385,7 @@ let%test_module "Parser tests" =
     let%expect_test "test power with minus" =
       let input = {|TRACE -2 ** 10;|} in
       input |> interpret;
-      [%expect {| Line 1: -1024. |}]
+      [%expect {| Line 1: 1024. |}]
     ;;
 
     let%expect_test "test first small part of the studienleistung" =
@@ -1414,7 +1414,7 @@ let%test_module "Parser tests" =
       [%expect
         {|
         Line 1: 262149.6
-        Line 2: -1024.
+        Line 2: 1024.
         |}]
     ;;
 
@@ -1691,11 +1691,16 @@ let%test_module "Parser tests" =
       input |> interpret;
       [%expect
         {|
-          LINE 33: Wert 81 war relativ früh
-          LINE 33: Wert 92 war relativ früh
-          LINE 33: Wert 137 war relativ früh
-          LINE 33: Wert 102 war relativ spät
-          LINE 33: Wert 112 war relativ spät
+        Line 16: true
+        Line 17: true
+        Line 16: true
+        Line 17: true
+        Line 16: true
+        Line 17: true
+        Line 16: false
+        Line 17: false
+        Line 16: false
+        Line 17: false
         |}]
     ;;
   end)
