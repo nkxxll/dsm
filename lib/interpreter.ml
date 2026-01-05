@@ -228,15 +228,67 @@ let is_not_type value_type value =
   else value_type_only (BoolLiteral true)
 ;;
 
+(* Format a duration in milliseconds to human-readable string *)
+let formatted_duration (duration_ms : float) : string =
+  let total_seconds = Float.round_nearest (duration_ms /. 1000.0) |> Float.to_int in
+  let seconds_per_minute = 60 in
+  let seconds_per_hour = 60 * seconds_per_minute in
+  let seconds_per_day = 24 * seconds_per_hour in
+  let seconds_per_week = 7 * seconds_per_day in
+  let seconds_per_month = 30 * seconds_per_day in
+  let seconds_per_year = 365 * seconds_per_day in
+  let years, rem1 =
+    total_seconds / seconds_per_year, total_seconds mod seconds_per_year
+  in
+  let months, rem2 = rem1 / seconds_per_month, rem1 mod seconds_per_month in
+  let weeks, rem3 = rem2 / seconds_per_week, rem2 mod seconds_per_week in
+  let days, rem4 = rem3 / seconds_per_day, rem3 mod seconds_per_day in
+  let hours, rem5 = rem4 / seconds_per_hour, rem4 mod seconds_per_hour in
+  let minutes, seconds = rem5 / seconds_per_minute, rem5 mod seconds_per_minute in
+  let part value singular =
+    if value = 0
+    then None
+    else
+      Some (Int.to_string value ^ " " ^ if value = 1 then singular else singular ^ "s")
+  in
+  let parts =
+    List.filter_map
+      ~f:Fun.id
+      [ part years "Year"
+      ; part months "Month"
+      ; part weeks "Week"
+      ; part days "Day"
+      ; part hours "Hour"
+      ; part minutes "Minute"
+      ; part seconds "Second"
+      ]
+  in
+  String.concat ~sep:" " parts
+;;
+
+(* Convert any value to its string representation *)
+let rec value_to_string (v : value) : string =
+  match v.type_ with
+  | NumberLiteral n -> Float.to_string n
+  | StringLiteral s -> s
+  | BoolLiteral b -> Bool.to_string b
+  | Unit -> "null"
+  | TimeLiteral t -> Helper.timestamp_to_iso_string t
+  | DurationLiteral d -> formatted_duration d
+  | List items ->
+    "["
+    ^ String.concat ~sep:", " (List.map items ~f:value_to_string_compact)
+    ^ "]"
+
+(* Compact version for list items - abbreviates nested lists *)
+and value_to_string_compact (v : value) : string =
+  match v.type_ with
+  | List _ -> "[...]"
+  | _ -> value_to_string v
+
 (* String concatenation operation with mixed type support *)
 let concatenation_operation left right : value =
-  match left.type_, right.type_ with
-  | StringLiteral l, StringLiteral r -> value_type_only (StringLiteral (l ^ r))
-  | StringLiteral l, NumberLiteral r ->
-    value_type_only (StringLiteral (l ^ Float.to_string r))
-  | NumberLiteral l, StringLiteral r ->
-    value_type_only (StringLiteral (Float.to_string l ^ r))
-  | _, _ -> unit
+  value_type_only (StringLiteral (value_to_string left ^ value_to_string right))
 ;;
 
 (* String uppercase transformation *)
@@ -244,7 +296,7 @@ let string_uppercase_transform value : value =
   match value with
   | { type_ = StringLiteral s; time = value_time } ->
     value_full (StringLiteral (String.uppercase s)) value_time
-  | _ -> value
+  | _ -> unit
 ;;
 
 (* Extract numeric values from a list *)
@@ -963,77 +1015,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | _ -> unit
 
 and write_value (expr : value) =
-  let formatted_duration f =
-    let total_seconds = Float.round_nearest (f /. 1000.0) |> Float.to_int in
-    let seconds_per_minute = 60 in
-    let seconds_per_hour = 60 * seconds_per_minute in
-    let seconds_per_day = 24 * seconds_per_hour in
-    let seconds_per_week = 7 * seconds_per_day in
-    let seconds_per_month = 30 * seconds_per_day in
-    let seconds_per_year = 365 * seconds_per_day in
-    let years, rem1 =
-      total_seconds / seconds_per_year, total_seconds mod seconds_per_year
-    in
-    let months, rem2 = rem1 / seconds_per_month, rem1 mod seconds_per_month in
-    let weeks, rem3 = rem2 / seconds_per_week, rem2 mod seconds_per_week in
-    let days, rem4 = rem3 / seconds_per_day, rem3 mod seconds_per_day in
-    let hours, rem5 = rem4 / seconds_per_hour, rem4 mod seconds_per_hour in
-    let minutes, seconds = rem5 / seconds_per_minute, rem5 mod seconds_per_minute in
-    let part value singular =
-      if value = 0
-      then None
-      else
-        Some (Int.to_string value ^ " " ^ if value = 1 then singular else singular ^ "s")
-    in
-    let parts =
-      List.filter_map
-        ~f:Fun.id
-        [ part years "Year"
-        ; part months "Month"
-        ; part weeks "Week"
-        ; part days "Day"
-        ; part hours "Hour"
-        ; part minutes "Minute"
-        ; part seconds "Second"
-        ]
-    in
-    String.concat ~sep:" " parts
-  in
-  match expr.type_ with
-  | NumberLiteral number ->
-    Stdio.print_endline (Float.to_string number);
-    ()
-  | StringLiteral str ->
-    Stdio.print_endline str;
-    ()
-  | BoolLiteral b ->
-    Stdio.print_endline (Bool.to_string b);
-    ()
-  | Unit ->
-    Stdio.print_endline "null";
-    ()
-  | DurationLiteral f ->
-    let formatted = formatted_duration f in
-    Stdio.print_endline formatted;
-    ()
-  | List items ->
-    let formatted =
-      items
-      |> List.map ~f:(function
-        | { type_ = NumberLiteral n; _ } -> Float.to_string n
-        | { type_ = StringLiteral s; _ } -> s
-        | { type_ = BoolLiteral b; _ } -> Bool.to_string b
-        | { type_ = Unit; _ } -> "null"
-        | { type_ = List _; _ } -> "[...]"
-        | { type_ = TimeLiteral t; _ } -> Helper.timestamp_to_iso_string t
-        | { type_ = DurationLiteral f; _ } -> formatted_duration f)
-      |> String.concat ~sep:", "
-    in
-    Stdio.print_endline ("[" ^ formatted ^ "]");
-    ()
-  | TimeLiteral t ->
-    Stdio.print_endline Helper.(timestamp_to_iso_string t);
-    ()
+  expr |> value_to_string |> Stdio.print_endline
 ;;
 
 let interpret_parsed yojson_ast : value =
