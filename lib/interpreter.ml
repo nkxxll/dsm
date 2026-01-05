@@ -954,7 +954,7 @@ let rec eval (interp_data : InterpreterData.t) yojson_ast : value =
   | "TIMES" -> binary_operation ~execution_type:ElementWise ~f:times_op
   | "DIVIDE" -> binary_operation ~execution_type:ElementWise ~f:divide_op
   | "POWER" -> binary_operation ~execution_type:ElementWise ~f:power_op
-  | "AMPERSAND" -> binary_operation ~execution_type:ElementWise ~f:concatenation_operation
+  | "AMPERSAND" -> binary_operation ~execution_type:NotElementWise ~f:concatenation_operation
   | "STRTOKEN" ->
     let v = get_value yojson_ast in
     value_type_only (StringLiteral v)
