@@ -129,11 +129,17 @@ is_numeric :: (v: $T/Value) -> bool {
 }
 
 get_numeric :: (v: $T/Value) -> float64 {
-    if is_numeric(v) {
-        // all of those types have an internal representation like the number type
-        return cast(Value_Number)v.value;
-    }
-    return 0;
+     if is_numeric(v) {
+         // all of those types have an internal representation like the number type
+         if v.kind == .NUMBER {
+             return (cast(*Value_Number)*v).value;
+         } else if v.kind == .TIME {
+             return (cast(*Value_Time)*v).value;
+         } else { // DURATION
+             return (cast(*Value_Duration)*v).value;
+         }
+     }
+     return 0;
 }
 
 // Free a value recursively
@@ -264,7 +270,7 @@ op_ampersand :: (left: Value, right: Value) -> Value {
     // String concatenation with type coercion
     left_str: string;
     if is_string(left) {
-        left_str = (cast(*Value_String)left.data).value;
+        left_str = (cast(*Value_String)*left).value;
     } else if is_number(left) {
         left_str = sprint("%", get_numeric(left));
     } else {
@@ -273,7 +279,7 @@ op_ampersand :: (left: Value, right: Value) -> Value {
 
     right_str: string;
     if is_string(right) {
-        right_str = (cast(*Value_String)right.data).value;
+        right_str = (cast(*Value_String)*right).value;
     } else if is_numeric(right) {
         right_str = sprint("%", get_numeric(right));
     } else {
@@ -291,17 +297,17 @@ op_ampersand :: (left: Value, right: Value) -> Value {
 op_maximum :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
 
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
 
-    max_val := get_numeric(vl.items[0].*);
-    for i: 1..vl.items.count-1 {
-        curr := get_numeric(vl.items[i].*);
+    max_val := get_numeric(vl.value[0]);
+    for i: 1..vl.value.count-1 {
+        curr := get_numeric(vl.value[i]);
         if curr > max_val max_val = curr;
     }
 
     // Return same type as first element
-    first_kind := vl.items[0].kind;
+    first_kind := vl.value[0].kind;
     if first_kind == .NUMBER return Value_Number.{ value = max_val };
     if first_kind == .TIME return Value_Time.{ value = max_val };
     if first_kind == .DURATION return Value_Duration.{ value = max_val };
@@ -311,16 +317,16 @@ op_maximum :: (v: Value) -> Value {
 op_minimum :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
 
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
 
-    min_val := get_numeric(vl.items[0].*);
-    for i: 1..vl.items.count-1 {
-        curr := get_numeric(vl.items[i].*);
+    min_val := get_numeric(vl.value[0]);
+    for i: 1..vl.value.count-1 {
+        curr := get_numeric(vl.value[i]);
         if curr < min_val min_val = curr;
     }
 
-    first_kind := vl.items[0].kind;
+    first_kind := vl.value[0].kind;
     if first_kind == .NUMBER return Value_Number.{ value = min_val };
     if first_kind == .TIME return Value_Time.{ value = min_val };
     if first_kind == .DURATION return Value_Duration.{ value = min_val };
@@ -330,16 +336,16 @@ op_minimum :: (v: Value) -> Value {
 op_average :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
 
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
 
     sum := 0.0;
-    for item: vl.items {
-        sum += get_numeric(item.*);
+    for item: vl.value {
+        sum += get_numeric(item);
     }
-    avg := sum / cast(float64)vl.items.count;
+    avg := sum / cast(float64)vl.value.count;
 
-    first_kind := vl.items[0].kind;
+    first_kind := vl.value[0].kind;
     if first_kind == .NUMBER return Value_Number.{ value = avg };
     if first_kind == .TIME return Value_Time.{ value = avg };
     if first_kind == .DURATION return Value_Duration.{ value = avg };
@@ -348,106 +354,100 @@ op_average :: (v: Value) -> Value {
 
 op_count :: (v: Value) -> Value {
     if is_list(v) {
-        vl := cast(*Value_List)v.data;
-        return Value_Number.{ value = cast(float64)vl.items.count };
+        vl := cast(*Value_List)*v;
+        return Value_Number.{ value = cast(float64)vl.value.count };
     }
     return Value_Number.{ value = 0 };
 }
 
 op_first :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
-    return clone_value(vl.items[0].*);
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
+    return clone_value(vl.value[0]);
 }
 
 op_latest :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
 
     latest_idx := 0;
-    latest_time := vl.items[0].time;
-    for i: 1..vl.items.count-1 {
-        if vl.items[i].time > latest_time {
-            latest_time = vl.items[i].time;
+    latest_time := vl.value[0].time;
+    for i: 1..vl.value.count-1 {
+        if vl.value[i].time > latest_time {
+            latest_time = vl.value[i].time;
             latest_idx = i;
         }
     }
-    return clone_value(vl.items[latest_idx].*);
+    return clone_value(vl.value[latest_idx]);
 }
 
 op_earliest :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
-    vl := cast(*Value_List)v.data;
-    if vl.items.count == 0 return Value.{ kind = .NULL };
+    vl := cast(*Value_List)*v;
+    if vl.value.count == 0 return Value.{ kind = .NULL };
 
     earliest_idx := 0;
-    earliest_time := vl.items[0].time;
-    for i: 1..vl.items.count-1 {
-        if vl.items[i].time > 0 && (earliest_time == 0 || vl.items[i].time < earliest_time) {
-            earliest_time = vl.items[i].time;
+    earliest_time := vl.value[0].time;
+    for i: 1..vl.value.count-1 {
+        if vl.value[i].time > 0 && (earliest_time == 0 || vl.value[i].time < earliest_time) {
+            earliest_time = vl.value[i].time;
             earliest_idx = i;
         }
     }
-    return clone_value(vl.items[earliest_idx].*);
+    return clone_value(vl.value[earliest_idx]);
 }
 
 op_increase :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
-    vl := cast(*Value_List)v.data;
-    if vl.items.count < 2 return Value_List.{ value = .[] }; // Empty list
+    vl := cast(*Value_List)*v;
+    if vl.value.count < 2 return Value_List.{ value = .[] }; // Empty list
 
-    diffs: []*Value;
-    for i: 1..vl.items.count-1 {
-        curr := get_numeric(vl.items[i].*);
-        prev := get_numeric(vl.items[i-1].*);
+    diffs: []Value;
+    for i: 1..vl.value.count-1 {
+        curr := get_numeric(vl.value[i]);
+        prev := get_numeric(vl.value[i-1]);
         diff := curr - prev;
-        item := new(Value);
-        item.* = Value_Number.{ value = diff };
-        array_add(*diffs, item);
+        array_add(*diffs, Value_Number.{ value = diff });
     }
     return Value_List.{ value = diffs };
 }
 
 op_interval :: (v: Value) -> Value {
     if !is_list(v) return Value.{ kind = .NULL };
-    vl := cast(*Value_List)v.data;
-    if vl.items.count < 2 return Value_List.{ value = .[] }; // Empty list
+    vl := cast(*Value_List)*v;
+    if vl.value.count < 2 return Value_List.{ value = .[] }; // Empty list
 
     // Check all items have time set
-    for item: vl.items {
+    for item: vl.value {
         if item.time == 0 return Value.{ kind = .NULL };
     }
 
-    intervals: []*Value;
-    for i: 1..vl.items.count-1 {
-        curr_time := vl.items[i].time;
-        prev_time := vl.items[i-1].time;
+    intervals: []Value;
+    for i: 1..vl.value.count-1 {
+        curr_time := vl.value[i].time;
+        prev_time := vl.value[i-1].time;
         interval := curr_time - prev_time;
-        item := new(Value);
-        item.* = Value_Duration.{ value = interval };
-        array_add(*intervals, item);
+        array_add(*intervals, Value_Duration.{ value = interval });
     }
     return Value_List.{ value = intervals };
 }
 
 op_uppercase :: (v: Value) -> Value {
     if is_string(v) {
-        vs := cast(*Value_String)v.data;
+        vs := cast(*Value_String)*v;
         upper := to_upper(vs.value);
         return Value_String.{ value = upper };
     }
     if is_list(v) {
-        vl := cast(*Value_List)v.data;
-        results: []*Value;
-        for item: vl.items {
-            if is_string(item.*) {
-                vs := cast(*Value_String)item.data;
+        vl := cast(*Value_List)*v;
+        results: []Value;
+        for item: vl.value {
+            if is_string(item) {
+                vs := cast(*Value_String)*item;
                 upper := to_upper(vs.value);
-                res := new(Value);
-                res.* = Value_String.{ value = upper };
-                array_add(*results, res);
+                array_add(*results, Value_String.{ value = upper });
             } else {
                 array_add(*results, item);
             }
@@ -488,7 +488,7 @@ op_is_within :: (v: Value, start: Value, end: Value) -> Value {
 op_is_not_within :: (v: Value, start: Value, end: Value) -> Value {
     result := op_is_within(v, start, end);
     if is_bool(result) {
-        vb := cast(*Value_Bool)result.data;
+        vb := cast(*Value_Bool)*result;
         vb.value = !vb.value;
         return result;
     }
@@ -557,13 +557,11 @@ duration_handler :: (ms_per_unit: float64, v: Value) -> Value {
         return Value_Duration.{ value = get_numeric(v) * ms_per_unit };
     }
     if is_list(v) {
-        vl := cast(*Value_List)v.data;
-        results: []*Value;
-        for item: vl.items {
-            if is_number(item.*) {
-                res := new(Value);
-                res.* = Value_Duration.{ value = get_numeric(item.*) * ms_per_unit };
-                array_add(*results, res);
+        vl := cast(*Value_List)*v;
+        results: []Value;
+        for item: vl.value {
+            if is_number(item) {
+                array_add(*results, Value_Duration.{ value = get_numeric(item) * ms_per_unit });
             } else {
                 array_add(*results, item);
             }
@@ -656,26 +654,26 @@ write_value :: (v: Value) {
     if is_null(v) {
         print("null\n");
     } else if is_bool(v) {
-        vb := cast(*Value_Bool)v.data;
+        vb := cast(*Value_Bool)*v;
         print("%\n", vb.value);
     } else if is_number(v) {
-        vn := cast(*Value_Number)v.data;
+        vn := cast(*Value_Number)*v;
         print("%\n", vn.value);
     } else if is_string(v) {
-        vs := cast(*Value_String)v.data;
+        vs := cast(*Value_String)*v;
         print("%\n", vs.value);
     } else if is_time(v) {
-        vt := cast(*Value_Time)v.data;
+        vt := cast(*Value_Time)*v;
         print("%\n", format_timestamp(vt.value));
     } else if is_duration(v) {
-        vd := cast(*Value_Duration)v.data;
+        vd := cast(*Value_Duration)*v;
         print("%\n", format_duration(vd.value));
     } else if is_list(v) {
-        vl := cast(*Value_List)v.data;
+        vl := cast(*Value_List)*v;
         print("[");
-        for i: 0..vl.items.count-1 {
+        for i: 0..vl.value.count-1 {
             if i > 0 print(", ");
-            write_value(vl.items[i].*);
+            write_value(vl.value[i]);
         }
         print("]\n");
     }
@@ -718,9 +716,9 @@ unary_op :: (
 
     // ElementWise: apply to each item in list
     if is_list(v) {
-        vl := cast(*Value_List)v.data;
+        vl := cast(*Value_List)*v;
         results: []*Value;
-        for item: vl.items {
+        for item: vl.value {
             res := new(Value);
             res.* = f(item.*);
             array_add(*results, res);
@@ -846,7 +844,7 @@ eval_assign :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
 
 eval_variable :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
     name := get_json_string(node, "name");
-    result, found := table_find(*ctx.env, name);
+    found, result := table_find(*ctx.env, name);
     if found {
         return result;
     }
@@ -870,39 +868,39 @@ eval_trace :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
 }
 
 eval_if :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
-    condition_node := get_json_object(node, "condition");
-    condition := eval(ctx, condition_node);
+     condition_node := get_json_object(node, "condition");
+     condition := eval(ctx, condition_node);
 
-    if is_bool(condition) {
-        cond_bool := cast(*Value_Bool)condition.data;
-        if cond_bool.value {
-            then_node := get_json_object(node, "thenbranch");
-            return eval(ctx, then_node);
-        } else {
-            else_node := get_json_object(node, "elsebranch");
-            return eval(ctx, else_node);
-        }
-    }
+     if is_bool(condition) {
+         cond_bool := cast(*Value_Bool)*condition;
+         if cond_bool.value {
+             then_node := get_json_object(node, "thenbranch");
+             return eval(ctx, then_node);
+         } else {
+             else_node := get_json_object(node, "elsebranch");
+             return eval(ctx, else_node);
+         }
+     }
 
-    return Value.{ kind = .NULL };
+     return Value.{ kind = .NULL };
 }
 
 eval_for :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
-    varname := get_json_string(node, "varname");
-    expr_node := get_json_object(node, "expression");
-    stmt_node := get_json_object(node, "statements");
+     varname := get_json_string(node, "varname");
+     expr_node := get_json_object(node, "expression");
+     stmt_node := get_json_object(node, "statements");
 
-    iter_val := eval(ctx, expr_node);
+     iter_val := eval(ctx, expr_node);
 
-    if is_list(iter_val) {
-        vl := cast(*Value_List)iter_val.data;
-        for item: vl.items {
-            table_set(*ctx.env, varname, clone_value(item.*));
-            eval(ctx, stmt_node);
-        }
-    }
+     if is_list(iter_val) {
+         vl := cast(*Value_List)*iter_val;
+         for item: vl.value {
+             table_set(*ctx.env, varname, item);
+             eval(ctx, stmt_node);
+         }
+     }
 
-    return Value.{ kind = .NULL };
+     return Value.{ kind = .NULL };
 }
 
 eval_list :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
