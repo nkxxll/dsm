@@ -9,12 +9,6 @@
 // PHASE 1: JSON UTILITIES
 // =============================================================================
 
-cjson_to_jai_string :: (c_str: *u8) -> string {
-    if !c_str return "";
-    len := c_string_length(c_str);
-    return string.{ data = c_str, count = len };
-}
-
 get_json_string :: (obj: *cJSON, key: string) -> string {
     if !obj return "";
     c_key := to_c_string(key);
@@ -22,7 +16,7 @@ get_json_string :: (obj: *cJSON, key: string) -> string {
     if !item return "";
     str := cJSON_GetStringValue(item);
     if !str return "";
-    return cjson_to_jai_string(str);
+    return to_string(str);
 }
 
 get_json_number :: (obj: *cJSON, key: string) -> float64 {
@@ -531,12 +525,9 @@ op_range :: (start: Value, end: Value) -> Value {
 
     if s > e return Value.{ kind = .NULL };
 
-    items: []*Value;
-    for i: s..e {
-        item := new(Value);
-        item.* = Value_Number.{ value = cast(float64)i };
-        array_add(*items, item);
-    }
+    items: [..]Value;
+    for s..e array_add(*items, Value_Number.{ value = cast(float64)it });
+
     return Value_List.{ value = items };
 }
 
@@ -631,7 +622,7 @@ format_duration :: (ms: float64) -> string {
     minutes := rem5 / seconds_per_minute;
     seconds := rem5 % seconds_per_minute;
 
-    parts: [dynamic]string;
+    parts: [..]string;
 
     if years > 0 array_add(*parts, sprint("%s%s", years, ifx years == 1 then " Year" else " Years"));
     if months > 0 array_add(*parts, sprint("%s%s", months, ifx months == 1 then " Month" else " Months"));
@@ -641,7 +632,7 @@ format_duration :: (ms: float64) -> string {
     if minutes > 0 array_add(*parts, sprint("%s%s", minutes, ifx minutes == 1 then " Minute" else " Minutes"));
     if seconds > 0 array_add(*parts, sprint("%s%s", seconds, ifx seconds == 1 then " Second" else " Seconds"));
 
-    return join(parts, " ");
+    return join(..parts, " ");
 }
 
 format_timestamp :: (ms: float64) -> string {
@@ -650,30 +641,30 @@ format_timestamp :: (ms: float64) -> string {
     return sprint("%.0f", ms);
 }
 
-write_value :: (v: Value) {
+write_value :: (v: *Value) {
     if is_null(v) {
         print("null\n");
     } else if is_bool(v) {
-        vb := cast(*Value_Bool)*v;
+        vb := cast(*Value_Bool)v;
         print("%\n", vb.value);
     } else if is_number(v) {
-        vn := cast(*Value_Number)*v;
+        vn := cast(*Value_Number)v;
         print("%\n", vn.value);
     } else if is_string(v) {
-        vs := cast(*Value_String)*v;
+        vs := cast(*Value_String)v;
         print("%\n", vs.value);
     } else if is_time(v) {
-        vt := cast(*Value_Time)*v;
+        vt := cast(*Value_Time)v;
         print("%\n", format_timestamp(vt.value));
     } else if is_duration(v) {
-        vd := cast(*Value_Duration)*v;
+        vd := cast(*Value_Duration)v;
         print("%\n", format_duration(vd.value));
     } else if is_list(v) {
-        vl := cast(*Value_List)*v;
+        vl := cast(*Value_List)v;
         print("[");
         for i: 0..vl.value.count-1 {
             if i > 0 print(", ");
-            write_value(vl.value[i]);
+            write_value(*vl.value[i]);
         }
         print("]\n");
     }
@@ -758,69 +749,73 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
 
     type_str := get_json_type(node);
 
-    if type_str == "STATEMENTBLOCK" {
-        return eval_statementblock(ctx, node);
-    } else if type_str == "NUMTOKEN" {
-        val := get_json_number(node, "value");
-        return Value_Number.{ value = val };
-    } else if type_str == "STRTOKEN" {
-        val := get_json_string(node, "value");
-        return Value_String.{ value = val };
-    } else if type_str == "TRUE" {
-        return Value_Bool.{ value = true };
-    } else if type_str == "FALSE" {
-        return Value_Bool.{ value = false };
-    } else if type_str == "NULL" {
-        return Value.{ kind = .NULL };
-    } else if type_str == "VARIABLE" {
-        return eval_variable(ctx, node);
-    } else if type_str == "ASSIGN" {
-        return eval_assign(ctx, node);
-    } else if type_str == "WRITE" {
-        return eval_write(ctx, node);
-    } else if type_str == "TRACE" {
-        return eval_trace(ctx, node);
-    } else if type_str == "IF" {
-        return eval_if(ctx, node);
-    } else if type_str == "FOR" {
-        return eval_for(ctx, node);
-    } else if type_str == "LIST" {
-        return eval_list(ctx, node);
-    } else if type_str == "PLUS" {
-        args := get_json_array(node, "arg");
-        if args.count == 2 {
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
-            return op_plus(left, right);
-        }
-    } else if type_str == "MINUS" {
-        args := get_json_array(node, "arg");
-        if args.count == 2 {
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
-            return op_minus(left, right);
-        }
-    } else if type_str == "TIMES" {
-        args := get_json_array(node, "arg");
-        if args.count == 2 {
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
-            return op_times(left, right);
-        }
-    } else if type_str == "DIVIDE" {
-        args := get_json_array(node, "arg");
-        if args.count == 2 {
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
-            return op_divide(left, right);
-        }
-    } else if type_str == "POWER" {
-        args := get_json_array(node, "arg");
-        if args.count == 2 {
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
-            return op_power(left, right);
-        }
+    if type_str == {
+        case "STATEMENTBLOCK";
+            return eval_statementblock(ctx, node);
+        case "NUMTOKEN";
+            val := get_json_number(node, "value");
+            return Value_Number.{ value = val };
+        case "STRTOKEN";
+            val := get_json_string(node, "value");
+            return Value_String.{ value = val };
+        case "TRUE";
+            return Value_Bool.{ value = true };
+        case "FALSE";
+            return Value_Bool.{ value = false };
+        case "NULL";
+            return Value.{ kind = .NULL };
+        case "VARIABLE";
+            return eval_variable(ctx, node);
+        case "ASSIGN";
+            return eval_assign(ctx, node);
+        case "WRITE";
+            return eval_write(ctx, node);
+        case "TRACE";
+            return eval_trace(ctx, node);
+        case "IF";
+            return eval_if(ctx, node);
+        case "FOR";
+            return eval_for(ctx, node);
+        case "LIST";
+            return eval_list(ctx, node);
+        case "PLUS";
+            args := get_json_array(node, "arg");
+            if args.count == 2 {
+                left := eval(ctx, args[0]);
+                right := eval(ctx, args[1]);
+                return op_plus(left, right);
+            }
+        case "MINUS";
+            args := get_json_array(node, "arg");
+            if args.count == 2 {
+                left := eval(ctx, args[0]);
+                right := eval(ctx, args[1]);
+                return op_minus(left, right);
+            }
+        case "TIMES";
+            args := get_json_array(node, "arg");
+            if args.count == 2 {
+                left := eval(ctx, args[0]);
+                right := eval(ctx, args[1]);
+                return op_times(left, right);
+            }
+        case "DIVIDE";
+            args := get_json_array(node, "arg");
+            if args.count == 2 {
+                left := eval(ctx, args[0]);
+                right := eval(ctx, args[1]);
+                return op_divide(left, right);
+            }
+        case "POWER";
+            args := get_json_array(node, "arg");
+            if args.count == 2 {
+                left := eval(ctx, args[0]);
+                right := eval(ctx, args[1]);
+                return op_power(left, right);
+            }
+        case;
+            log_error("should never happend that we dont know the type");
+            exit(1);
     }
 
     return Value.{ kind = .NULL };
@@ -854,7 +849,8 @@ eval_variable :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
 eval_write :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
     arg := get_json_object(node, "arg");
     val := eval(ctx, arg);
-    write_value(val);
+    print("value in write: %\n", val);
+    write_value(*val);
     return Value.{ kind = .NULL };
 }
 
@@ -863,7 +859,7 @@ eval_trace :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
     arg := get_json_object(node, "arg");
     val := eval(ctx, arg);
     print("Line %: ", line);
-    write_value(val);
+    write_value(*val);
     return Value.{ kind = .NULL };
 }
 
@@ -905,11 +901,10 @@ eval_for :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
 
 eval_list :: (ctx: *Interpreter_Data, node: *cJSON) -> Value {
     items_json := get_json_array(node, "items");
-    items: []*Value;
+    items: [..]Value;
 
     for item_node: items_json {
-        val := new(Value);
-        val.* = eval(ctx, item_node);
+        val := eval(ctx, item_node);
         array_add(*items, val);
     }
 
@@ -932,3 +927,5 @@ interpret :: (cjson: *cJSON) {
 }
 
 #import,file "cjson/linux.jai";
+#import "Math";
+#import "String";
