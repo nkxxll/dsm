@@ -5,8 +5,6 @@
 #import "Basic";
 #import "Hash_Table";
 
-crt :: #library,system "libc";
-c_free :: (memory: *void) #foreign crt "free";
 // =============================================================================
 // PHASE 1: JSON UTILITIES
 // =============================================================================
@@ -17,25 +15,17 @@ get_json_string :: (obj: *cJSON, key: string) -> string {
         return "";
     }
     c_key := to_c_string(key);
-    print("%\n", to_string(c_key));
-    if cJSON_HasObjectItem(obj, c_key) {
-        print("has item");
-    } else {
-        print("has item not");
-    }
     item := cJSON_GetObjectItemCaseSensitive(obj, c_key);
-    print("%\n", item);
     if !item {
         log_error("item is null\n");
         return "";
     }
     str := cJSON_GetStringValue(item);
-    defer c_free(str);
     if !str {
         log_error("string is null\n");
         return "";
     }
-    return copy_string(to_string(str));
+    return to_string(str);
 }
 
 get_json_number :: (obj: *cJSON, key: string) -> float64 {
@@ -46,7 +36,6 @@ get_json_number :: (obj: *cJSON, key: string) -> float64 {
     if !item return 0;
 
     value := cJSON_GetStringValue(item);
-    defer c_free(value);
     jai_string_value := to_string(value);
     float_value, success := string_to_float(jai_string_value);
     if !success {
@@ -709,7 +698,7 @@ write_value :: (v: *Value) {
         print("%\n", vb.value);
     } else if is_number(v.*) {
         vn := cast(*Value_Number)v;
-        print("num: %\n", vn.value);
+        print("%\n", vn.value);
     } else if is_string(v.*) {
         vs := cast(*Value_String)v;
         print("%\n", vs.value);
@@ -998,10 +987,9 @@ eval_list :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
 #scope_export
 
 interpret :: (cjson: *cJSON) {
-    flat : Flat_Pool;
+    pool : Flat_Pool;
     arena_context := context;
-    arena_context.allocator.proc = flat_pool_allocator_proc;
-    arena_context.allocator.data = *flat;
+    arena_context.allocator = .{flat_pool_allocator_proc, *pool};
     push_context arena_context {
         ctx := Interpreter_Data.{
             now = cast(float64)to_milliseconds(current_time_consensus()),  // Current time in seconds
@@ -1012,7 +1000,7 @@ interpret :: (cjson: *cJSON) {
     }
     // @note yes this is just slow most of the time but are we sure about that
     // lets be safe
-    fini(*flat);
+    fini(*pool);
 }
 
 #import,file "cjson/linux.jai";

@@ -8,10 +8,12 @@ crt :: #library,system "libc";
 c_free :: (memory: *void) #foreign crt "free";
 
 INPUT :: #string DONE
-write "hello";
 write 5;
-write 10;
-write 15;
+write "hello";
+write [1, 2, 3];
+write true;
+write null;
+write 2026-11-01T10:10:10;
 DONE
 
 
@@ -29,8 +31,7 @@ main :: () {
     defer c_free(ast);
 
     cjson := cJSON_Parse(ast);
-    cJSON_Delete(cjson);
-
+    defer cJSON_Delete(cjson);
 
     interpret(cjson);
 }
