@@ -5,6 +5,20 @@
 #import "Basic";
 #import "Hash_Table";
 
+MS_PER_SECOND :: 1000.0;
+MS_PER_MINUTE :: 60.0 * MS_PER_SECOND;
+MS_PER_HOUR :: 60.0 * MS_PER_MINUTE;
+MS_PER_DAY :: 24.0 * MS_PER_HOUR;
+MS_PER_WEEK :: 7.0 * MS_PER_DAY;
+MS_PER_MONTH :: 30.0 * MS_PER_DAY;
+MS_PER_YEAR :: 365.0 * MS_PER_DAY;
+SECONDS_PER_MINUTE :: 60;
+SECONDS_PER_HOUR :: 60 * SECONDS_PER_MINUTE;
+SECONDS_PER_DAY :: 24 * SECONDS_PER_HOUR;
+SECONDS_PER_WEEK :: 7 * SECONDS_PER_DAY;
+SECONDS_PER_MONTH :: 30 * SECONDS_PER_DAY;
+SECONDS_PER_YEAR :: 365 * SECONDS_PER_DAY;
+
 // =============================================================================
 // PHASE 1: JSON UTILITIES
 // =============================================================================
@@ -242,15 +256,18 @@ is_numeric :: (v: $T/Value) -> bool {
     return v.kind == .NUMBER || v.kind == .TIME || v.kind == .DURATION;
 }
 
-get_numeric :: (v: $T/Value) -> float64 {
+get_numeric :: (v: *Value) -> float64 {
      if is_numeric(v) {
          // all of those types have an internal representation like the number type
          if v.kind == .NUMBER {
-             return (cast(*Value_Number)*v).value;
+             return (cast(*Value_Number)v).value;
          } else if v.kind == .TIME {
-             return (cast(*Value_Time)*v).value;
-         } else { // DURATION
-             return (cast(*Value_Duration)*v).value;
+             return (cast(*Value_Time)v).value;
+         } else if v.kind == .DURATION { // DURATION
+             return (cast(*Value_Duration)v).value;
+         } else {
+             log_error("trying to get the number of a non number type\n");
+             assert(false);
          }
      }
      return 0;
@@ -307,91 +324,53 @@ value_list :: (items: []*Value) -> *Value {
 // PHASE 4: ARITHMETIC & LOGIC OPERATIONS
 // =============================================================================
 
-op_plus :: (left: *Value, right: *Value) -> *Value {
-    // Number + Number
-    if is_number(left.*) && is_number(right.*) {
-        return value_number(get_numeric(left.*) + get_numeric(right.*));
-    }
-    // Duration + Duration
-    if is_duration(left.*) && is_duration(right.*) {
-        return value_duration(get_numeric(left.*) + get_numeric(right.*));
-    }
-    // Time + Duration
-    if is_time(left.*) && is_duration(right.*) {
-        return value_time(get_numeric(left.*) + get_numeric(right.*));
-    }
-    // Duration + Time
-    if is_duration(left.*) && is_time(right.*) {
-        return value_time(get_numeric(left.*) + get_numeric(right.*));
-    }
-    return value_null();
+Arithmetic_Operation :: enum {
+    PLUS;
+    MINUS;
+    TIMES;
+    DIVIDE;
+    POWER;
 }
 
-op_minus :: (left: *Value, right: *Value) -> *Value {
+arithmetic_operation :: (left: *Value, right: *Value, operation: Arithmetic_Operation) -> *Value {
+    apply :: (left: *Value, right: *Value, operation: Arithmetic_Operation) -> float64 {
+        left_number := get_numeric(left);
+        right_number := get_numeric(right);
+        if #complete operation == {
+            case .PLUS;
+                return left_number + right_number;
+            case .MINUS;
+                return left_number - right_number;
+            case .TIMES;
+                return left_number * right_number;
+            case .DIVIDE;
+                return left_number / right_number;
+            case .POWER;
+                return pow(left_number, right_number);
+        }
+    }
     // Number - Number
     if is_number(left.*) && is_number(right.*) {
-        return value_number(get_numeric(left.*) - get_numeric(right.*));
+        return value_number(apply(left, right, operation));
     }
     // Duration - Duration
     if is_duration(left.*) && is_duration(right.*) {
-        return value_duration(get_numeric(left.*) - get_numeric(right.*));
+        return value_duration(apply(left, right, operation));
     }
     // Time - Duration
     if is_time(left.*) && is_duration(right.*) {
-        return value_time(get_numeric(left.*) - get_numeric(right.*));
+        return value_time(apply(left, right, operation));
     }
     // Time - Time (returns Duration)
     if is_time(left.*) && is_time(right.*) {
-        return value_duration(get_numeric(left.*) - get_numeric(right.*));
-    }
-    return value_null();
-}
-
-op_times :: (left: *Value, right: *Value) -> *Value {
-    // Number * Number
-    if is_number(left.*) && is_number(right.*) {
-        return value_number(get_numeric(left.*) * get_numeric(right.*));
-    }
-    // Duration * Number
-    if is_duration(left.*) && is_number(right.*) {
-        return value_duration(get_numeric(left.*) * get_numeric(right.*));
-    }
-    // Number * Duration
-    if is_number(left.*) && is_duration(right.*) {
-        return value_duration(get_numeric(left.*) * get_numeric(right.*));
-    }
-    return value_null();
-}
-
-op_divide :: (left: *Value, right: *Value) -> *Value {
-    // Number / Number
-    if is_number(left.*) && is_number(right.*) {
-        r := get_numeric(right.*);
-        if r != 0 return value_number(get_numeric(left.*) / r);
-    }
-    // Duration / Number
-    if is_duration(left.*) && is_number(right.*) {
-        r := get_numeric(right.*);
-        if r != 0 return value_duration(get_numeric(left.*) / r);
-    }
-    // Duration / Duration (returns Number)
-    if is_duration(left.*) && is_duration(right.*) {
-        r := get_numeric(right.*);
-        if r != 0 return value_number(get_numeric(left.*) / r);
-    }
-    return value_null();
-}
-
-op_power :: (left: *Value, right: *Value) -> *Value {
-    if is_number(left.*) && is_number(right.*) {
-        return value_number(pow(get_numeric(left.*), get_numeric(right.*)));
+        return value_duration(apply(left, right, operation));
     }
     return value_null();
 }
 
 op_unminus :: (v: *Value) -> *Value {
     if is_number(v.*) {
-        return value_number(-get_numeric(v.*));
+        return value_number(-get_numeric(v));
     }
     return value_null();
 }
@@ -418,7 +397,7 @@ op_ampersand :: (left: *Value, right: *Value) -> *Value {
     if is_string(left.*) {
         left_str = (cast(*Value_String)left).value;
     } else if is_number(left.*) {
-        left_str = sprint("%", get_numeric(left.*));
+        left_str = sprint("%", get_numeric(left));
     } else {
         return value_null();
     }
@@ -427,7 +406,7 @@ op_ampersand :: (left: *Value, right: *Value) -> *Value {
     if is_string(right.*) {
         right_str = (cast(*Value_String)right).value;
     } else if is_numeric(right.*) {
-        right_str = sprint("%", get_numeric(right.*));
+        right_str = sprint("%", get_numeric(right));
     } else {
         return value_null();
     }
@@ -487,7 +466,7 @@ op_average :: (v: *Value) -> *Value {
 
     sum := 0.0;
     for item: vl.value {
-        sum += get_numeric(item.*);
+        sum += get_numeric(item);
     }
     avg := sum / cast(float64)vl.value.count;
 
@@ -609,23 +588,23 @@ op_uppercase :: (v: *Value) -> *Value {
 
 op_less_than :: (left: *Value, right: *Value) -> *Value {
     if is_numeric(left.*) && is_numeric(right.*) {
-        return value_bool(get_numeric(left.*) < get_numeric(right.*));
+        return value_bool(get_numeric(left) < get_numeric(right));
     }
     return value_null();
 }
 
 op_greater_than :: (left: *Value, right: *Value) -> *Value {
     if is_numeric(left.*) && is_numeric(right.*) {
-        return value_bool(get_numeric(left.*) > get_numeric(right.*));
+        return value_bool(get_numeric(left) > get_numeric(right));
     }
     return value_null();
 }
 
 op_is_within :: (v: *Value, start: *Value, end: *Value) -> *Value {
     if is_numeric(v.*) && is_numeric(start.*) && is_numeric(end.*) {
-        val := get_numeric(v.*);
-        s := get_numeric(start.*);
-        e := get_numeric(end.*);
+        val := get_numeric(v);
+        s := get_numeric(start);
+        e := get_numeric(end);
         return value_bool(val >= s && val <= e);
     }
     return value_null();
@@ -643,21 +622,21 @@ op_is_not_within :: (v: *Value, start: *Value, end: *Value) -> *Value {
 
 op_is_before :: (left: *Value, right: *Value) -> *Value {
     if is_time(left.*) && is_time(right.*) {
-        return value_bool(get_numeric(left.*) < get_numeric(right.*));
+        return value_bool(get_numeric(left) < get_numeric(right));
     }
     return value_null();
 }
 
 op_is_not_before :: (left: *Value, right: *Value) -> *Value {
     if is_time(left.*) && is_time(right.*) {
-        return value_bool(get_numeric(left.*) >= get_numeric(right.*));
+        return value_bool(get_numeric(left) >= get_numeric(right));
     }
     return value_null();
 }
 
 op_before :: (duration: *Value, time: *Value) -> *Value {
     if (is_duration(duration.*) || is_number(duration.*)) && is_time(time.*) {
-        return value_time(get_numeric(time.*) - get_numeric(duration.*));
+        return value_time(get_numeric(time) - get_numeric(duration));
     }
     return value_null();
 }
@@ -672,8 +651,8 @@ op_time_of :: (v: *Value) -> *Value {
 op_range :: (start: *Value, end: *Value) -> *Value {
     if !is_number(start.*) || !is_number(end.*) return value_null();
 
-    s := cast(int)get_numeric(start.*);
-    e := cast(int)get_numeric(end.*);
+    s := cast(int)get_numeric(start);
+    e := cast(int)get_numeric(end);
 
     if s > e return value_null();
 
@@ -687,24 +666,17 @@ op_range :: (start: *Value, end: *Value) -> *Value {
 // PHASE 6: DURATION HANDLERS
 // =============================================================================
 
-MS_PER_SECOND :: 1000.0;
-MS_PER_MINUTE :: 60.0 * MS_PER_SECOND;
-MS_PER_HOUR :: 60.0 * MS_PER_MINUTE;
-MS_PER_DAY :: 24.0 * MS_PER_HOUR;
-MS_PER_WEEK :: 7.0 * MS_PER_DAY;
-MS_PER_MONTH :: 30.0 * MS_PER_DAY;
-MS_PER_YEAR :: 365.0 * MS_PER_DAY;
 
 duration_handler :: (ms_per_unit: float64, v: *Value) -> *Value {
     if is_number(v.*) {
-        return value_duration(get_numeric(v.*) * ms_per_unit);
+        return value_duration(get_numeric(v) * ms_per_unit);
     }
     if is_list(v.*) {
         vl := cast(*Value_List)v;
         results: [..]*Value;
         for item: vl.value {
             if is_number(item.*) {
-                array_add(*results, value_duration(get_numeric(item.*) * ms_per_unit));
+                array_add(*results, value_duration(get_numeric(item) * ms_per_unit));
             } else {
                 array_add(*results, item);
             }
@@ -749,32 +721,27 @@ op_duration_seconds :: (v: *Value) -> *Value {
 format_duration :: (ms: float64) -> string {
     total_seconds := cast(int)(ms / 1000.0);
 
-    seconds_per_minute := 60;
-    seconds_per_hour := 60 * seconds_per_minute;
-    seconds_per_day := 24 * seconds_per_hour;
-    seconds_per_week := 7 * seconds_per_day;
-    seconds_per_month := 30 * seconds_per_day;
-    seconds_per_year := 365 * seconds_per_day;
 
-    years := total_seconds / seconds_per_year;
-    rem1 := total_seconds % seconds_per_year;
+    years := total_seconds / SECONDS_PER_YEAR;
+    rem1 := total_seconds % SECONDS_PER_YEAR;
 
-    months := rem1 / seconds_per_month;
-    rem2 := rem1 % seconds_per_month;
+    months := rem1 / SECONDS_PER_MONTH;
+    rem2 := rem1 % SECONDS_PER_MONTH;
 
-    weeks := rem2 / seconds_per_week;
-    rem3 := rem2 % seconds_per_week;
+    weeks := rem2 / SECONDS_PER_WEEK;
+    rem3 := rem2 % SECONDS_PER_WEEK;
 
-    days := rem3 / seconds_per_day;
-    rem4 := rem3 % seconds_per_day;
+    days := rem3 / SECONDS_PER_DAY;
+    rem4 := rem3 % SECONDS_PER_DAY;
 
-    hours := rem4 / seconds_per_hour;
-    rem5 := rem4 % seconds_per_hour;
+    hours := rem4 / SECONDS_PER_HOUR;
+    rem5 := rem4 % SECONDS_PER_HOUR;
 
-    minutes := rem5 / seconds_per_minute;
-    seconds := rem5 % seconds_per_minute;
+    minutes := rem5 / SECONDS_PER_MINUTE;
+    seconds := rem5 % SECONDS_PER_MINUTE;
 
     parts: [..]string;
+    parts.allocator = temp;
 
     if years > 0 array_add(*parts, sprint("%s%s", years, ifx years == 1 then " Year" else " Years"));
     if months > 0 array_add(*parts, sprint("%s%s", months, ifx months == 1 then " Month" else " Months"));
@@ -784,6 +751,7 @@ format_duration :: (ms: float64) -> string {
     if minutes > 0 array_add(*parts, sprint("%s%s", minutes, ifx minutes == 1 then " Minute" else " Minutes"));
     if seconds > 0 array_add(*parts, sprint("%s%s", seconds, ifx seconds == 1 then " Second" else " Seconds"));
 
+    // @todo this should be temp storage not in the arena allocator
     return join(..parts, " ");
 }
 
@@ -816,7 +784,7 @@ write_value :: (v: *Value, newline := true) {
         print("[");
         for i: 0..vl.value.count-1 {
             if i > 0 print(", ");
-            write_value(vl.value[i]);
+            write_value(vl.value[i], false);
         }
         print("]");
     } else {
@@ -825,82 +793,52 @@ write_value :: (v: *Value, newline := true) {
     if newline print("\n");
 }
 
-// =============================================================================
-// PHASE 8: ELEMENT-WISE DISPATCH
-// =============================================================================
-
 Interpreter_Data :: struct {
     // apollo time lol
     now: float64;
     env: Table(string, *Value);
 }
 
-
-// Binary operation with element-wise handling
-binary_op :: (
-    ctx: *Interpreter_Data,
-    exec_type: Execution_Type,
-    left: *Value,
-    right: *Value,
-    f: (*Value, *Value) -> *Value
-) -> *Value {
-    // TODO: Implement element-wise vs scalar semantics
-    return f(left, right);
-}
-
-// Unary operation with element-wise handling
-unary_op :: (
-    ctx: *Interpreter_Data,
-    exec_type: Execution_Type,
-    v: *Value,
-    f: (*Value) -> *Value
-) -> *Value {
-    if exec_type == .NotElementWise {
-        return f(v);
-    }
-
-    // ElementWise: apply to each item in list
-    if is_list(v.*) {
-        vl := cast(*Value_List)v;
-        results: [..]*Value;
-        for item: vl.value {
-            res := f(item);
-            array_add(*results, res);
-        }
-        return value_list(results);
-    }
-
-    return f(v);
-}
-
-// Ternary operation with element-wise handling
-ternary_op :: (
-    ctx: *Interpreter_Data,
-    exec_type: Execution_Type,
-    a: *Value,
-    b: *Value,
-    c: *Value,
-    f: (*Value, *Value, *Value) -> *Value
-) -> *Value {
-    // TODO: Implement element-wise expansion
-    return f(a, b, c);
-}
-
 Execution_Type :: enum {
-    ElementWise;
-    NotElementWise;
+    ELEMENT_WISE;
+    LIST_WISE;
 }
-
-#scope_file
-
-// =============================================================================
-// PHASE 9: STATEMENT EVALUATION
-// =============================================================================
 
 eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
+    // @warning this could cause some bugs but it should not really should not
+    reset_temporary_storage();
     if !node return value_null();
 
     type_str := get_json_type(node);
+
+    unary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value) -> *Value) -> *Value {
+        arg := get_json_object(node, "arg");
+        first := eval(ctx, arg);
+        if #complete execution_type == {
+            case .LIST_WISE;
+                return f(first);
+            case .ELEMENT_WISE;
+                if is_list(first.*) {
+                    new_list: [..]*Value;
+                    for value: (cast(*Value_List)first).value {
+                        array_add(*new_list, f(value));
+                    }
+                    return value_list(new_list);
+                }
+                return f(first);
+        }
+    }
+    binary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value, *Value) -> *Value) {
+            args := get_json_array(node, "arg");
+            if args.count != 2 {
+                log_error("unexpected json structure expected at least two args found %\n", args.count);
+                exit(1);
+            }
+            left := eval(ctx, args[0]);
+            right := eval(ctx, args[1]);
+    }
+    terniary_operation :: (execution_type: Execution_Type, f: (*Value, *Value, *Value) -> *Value) {
+    }
 
     if type_str == {
         case "STATEMENTBLOCK";
@@ -936,35 +874,35 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
             if args.count == 2 {
                 left := eval(ctx, args[0]);
                 right := eval(ctx, args[1]);
-                return op_plus(left, right);
+                return arithmetic_operation(left, right, .PLUS);
             }
         case "MINUS";
             args := get_json_array(node, "arg");
             if args.count == 2 {
                 left := eval(ctx, args[0]);
                 right := eval(ctx, args[1]);
-                return op_minus(left, right);
+                return arithmetic_operation(left, right, .MINUS);
             }
         case "TIMES";
             args := get_json_array(node, "arg");
             if args.count == 2 {
                 left := eval(ctx, args[0]);
                 right := eval(ctx, args[1]);
-                return op_times(left, right);
+                return arithmetic_operation(left, right, .TIMES);
             }
         case "DIVIDE";
             args := get_json_array(node, "arg");
             if args.count == 2 {
                 left := eval(ctx, args[0]);
                 right := eval(ctx, args[1]);
-                return op_divide(left, right);
+                return arithmetic_operation(left, right, .DIVIDE);
             }
         case "POWER";
             args := get_json_array(node, "arg");
             if args.count == 2 {
                 left := eval(ctx, args[0]);
                 right := eval(ctx, args[1]);
-                return op_power(left, right);
+                return arithmetic_operation(left, right, .POWER);
             }
         case "AMPERSAND";
             args := get_json_array(node, "arg");
@@ -991,6 +929,13 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
              val_str := get_json_string(node, "value");
              time_ms := iso_string_to_float64(val_str);
              return value_time(time_ms);
+         case "YEAR"; #through;
+         case "MONTH"; #through;
+         case "WEEK"; #through;
+         case "DAY"; #through;
+         case "MINUTES"; #through;
+         case "SECONDS";
+            // @todo unary op
          case;
              log_error("should never happend that we dont know the type: %", type_str);
              exit(1);
@@ -1071,6 +1016,7 @@ eval_for :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
              table_set(*ctx.env, varname, item);
              eval(ctx, stmt_node);
          }
+         table_remove(*ctx.env, varname);
      }
 
      return value_null();

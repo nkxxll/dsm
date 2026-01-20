@@ -8,12 +8,15 @@ crt :: #library,system "libc";
 c_free :: (memory: *void) #foreign crt "free";
 
 INPUT :: #string DONE
-write 5;
-write "hello";
-write [1, 2, 3];
-write true;
-write null;
-write 2026-11-01T10:10:10;
+trace 5;
+trace "hello";
+trace [1, 2, 3];
+trace true;
+trace null;
+trace 2026-11-01T10:10:10;
+trace ["1 + 2 =", 1 + 2];
+trace 1 + 2;
+trace 1 Day;
 DONE
 
 
