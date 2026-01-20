@@ -198,21 +198,25 @@ number :: (using lexer: *Lexer) {
         }
     }
 
-    // Check for ISO time format (contains '-' or ':')
+    // Check for ISO time format (contains '-', ':', 'T', or '.')
     has_time_chars := false;
     temp_current := current;
-    while temp_current < src.count && (src[temp_current] == #char "-" || src[temp_current] == #char ":" || is_digit(src[temp_current]) || src[temp_current] == #char "T") {
-        if src[temp_current] == #char "-" || src[temp_current] == #char ":" {
+    while temp_current < src.count && (src[temp_current] == #char "-" || src[temp_current] == #char ":" || is_digit(src[temp_current]) || src[temp_current] == #char "T" || src[temp_current] == #char ".") {
+        if src[temp_current] == #char "-" || src[temp_current] == #char ":" || src[temp_current] == #char "T" {
             has_time_chars = true;
         }
         temp_current += 1;
     }
-
-    literal := slice(src, start, temp_current);
+    
+    // Also check for 'Z' suffix for UTC times
+    if temp_current < src.count && src[temp_current] == #char "Z" && has_time_chars {
+        temp_current += 1;
+    }
 
     // If we detected time characters, parse as TIMETOKEN, otherwise as number
     token_type: Token_Type;
     if has_time_chars {
+        literal := slice(src, start, temp_current - start);
         // Try to parse ISO time format
         if is_valid_iso_time(literal) {
             token_type = .TIMETOKEN;
@@ -225,29 +229,99 @@ number :: (using lexer: *Lexer) {
         token_type = .NUMTOKEN;
     }
 
-    literal = slice(src, start, current - start);
+    literal := slice(src, start, current - start);
     token := Token.{ token_type, literal, line, start };
     array_add(*tokens, token);
 }
 
 is_valid_iso_time :: (literal: string) -> bool {
-    // Basic validation for ISO time formats:
-    // YYYY-MM-DD, YYYY-MM-DDTHH:MM, YYYY-MM-DDTHH:MM:SS, etc.
-    parts := split(literal, "-");
-    if parts.count < 3 return false;
-
-    // First part should be 4 digits (year)
-    if parts[0].count != 4 return false;
-    for char: parts[0] {
-        if !is_digit(char) return false;
-    }
-
-    // Month should be 2 digits
-    if parts[1].count < 2 return false;
-    if !is_digit(parts[1][0]) || !is_digit(parts[1][1]) return false;
-
-    return true;
-}
+     // Validate ISO 8601 time formats:
+     // yyyy-mm-dd
+     // yyyy-mm-ddThh:mm
+     // yyyy-mm-ddThh:mm:ss
+     // yyyy-mm-ddThh:mm:ss.mmm
+     // yyyy-mm-ddThh:mm:ssZ
+     // yyyy-mm-ddThh:mm:ss.mmmZ
+     
+     if literal.count < 10 return false;  // Minimum: yyyy-mm-dd
+     
+     // First 10 chars should be yyyy-mm-dd format
+     // Check year (positions 0-3)
+     for i: 0..3 {
+         if !is_digit(literal[i]) return false;
+     }
+     if literal[4] != #char "-" return false;
+     
+     // Check month (positions 5-6)
+     for i: 5..6 {
+         if !is_digit(literal[i]) return false;
+     }
+     if literal[7] != #char "-" return false;
+     
+     // Check day (positions 8-9)
+     for i: 8..9 {
+         if !is_digit(literal[i]) return false;
+     }
+     
+     // If only date part, valid
+     if literal.count == 10 return true;
+     
+     // Check for time part (T separator)
+     if literal[10] == #char "T" {
+         if literal.count < 16 return false;  // Minimum: yyyy-mm-ddThh:mm
+         
+         // Validate hh:mm
+         for i: 11..12 {
+             if !is_digit(literal[i]) return false;
+         }
+         if literal[13] != #char ":" return false;
+         
+         for i: 14..15 {
+             if !is_digit(literal[i]) return false;
+         }
+         
+         // Check remaining optional parts
+         if literal.count > 16 {
+             // Could be :ss, .mmm, Z, or combinations
+             idx := 16;
+             
+             // Check for seconds (:ss)
+             if idx < literal.count && literal[idx] == #char ":" {
+                 idx += 1;
+                 if idx + 1 >= literal.count return false;
+                 
+                 for i: idx..idx+1 {
+                     if i >= literal.count || !is_digit(literal[i]) return false;
+                 }
+                 idx += 2;
+             }
+             
+             // Check for milliseconds (.mmm or .mmmmmm)
+             if idx < literal.count && literal[idx] == #char "." {
+                 idx += 1;
+                 // At least one digit required for milliseconds
+                 if idx >= literal.count || !is_digit(literal[idx]) return false;
+                 
+                 // Consume all millisecond digits
+                 while idx < literal.count && is_digit(literal[idx]) {
+                     idx += 1;
+                 }
+             }
+             
+             // Check for Z (UTC indicator)
+             if idx < literal.count && literal[idx] == #char "Z" {
+                 idx += 1;
+             }
+             
+             // Should have consumed entire string
+             if idx != literal.count return false;
+         }
+         
+         return true;
+     }
+     
+     return false;
+ }
 
 ident :: (str: string) -> Token_Type {
     lower := to_lower_copy(str);

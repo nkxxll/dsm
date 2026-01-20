@@ -74,6 +74,109 @@ get_json_type :: (obj: *cJSON) -> string {
 }
 
 // =============================================================================
+// PHASE 1b: ISO TIME UTILITIES
+// =============================================================================
+
+iso_string_to_float64 :: (iso_str: string) -> float64 {
+    // Parse ISO 8601 format strings to milliseconds since epoch
+    // Supported formats:
+    // - yyyy-mm-dd
+    // - yyyy-mm-ddThh:mm
+    // - yyyy-mm-ddThh:mm:ss
+    // - yyyy-mm-ddThh:mm:ss.mmm
+    // - yyyy-mm-ddThh:mm:ssZ
+    // - yyyy-mm-ddThh:mm:ss.mmmZ
+
+    // Remove trailing Z if present
+    str := iso_str;
+    if str.count > 0 && str[str.count - 1] == #char "Z" {
+        str.count -= 1;
+    }
+
+    // Split by 'T' to separate date and time
+    parts := split(str, "T");
+    if parts.count == 0 return 0;
+
+    date_part := parts[0];
+    time_part := ifx parts.count > 1 then parts[1] else "";
+
+    // Parse date (yyyy-mm-dd)
+    date_parts := split(date_part, "-");
+    if date_parts.count < 3 return 0;
+
+    year, success_y := string_to_int(date_parts[0]);
+    month, success_m := string_to_int(date_parts[1]);
+    day, success_d := string_to_int(date_parts[2]);
+
+    if !success_y || !success_m || !success_d return 0;
+
+    // Parse time (hh:mm:ss.mmm)
+    hour: int = 0;
+    minute: int = 0;
+    second: int = 0;
+    millisecond: int = 0;
+
+    if time_part.count > 0 {
+        // Split by ':' for hours and minutes
+        time_components := split(time_part, ":");
+
+        if time_components.count >= 1 {
+            hour, _ = string_to_int(time_components[0]);
+        }
+        if time_components.count >= 2 {
+            minute, _ = string_to_int(time_components[1]);
+        }
+        if time_components.count >= 3 {
+            // Parse seconds and milliseconds
+            sec_ms := time_components[2];
+            sec_parts := split(sec_ms, ".");
+
+            if sec_parts.count >= 1 {
+                second, _ = string_to_int(sec_parts[0]);
+            }
+            if sec_parts.count >= 2 {
+                // Parse milliseconds (pad or truncate to 3 digits)
+                ms_str := sec_parts[1];
+                if ms_str.count > 3 {
+                    ms_str.count = 3;
+                } else if ms_str.count < 3 {
+                    // Pad with zeros: "1" -> "100", "12" -> "120"
+                    padding := 3 - ms_str.count;
+                    ms_str_padded := alloc_string(ms_str.count + padding);
+                    memcpy(ms_str_padded.data, ms_str.data, ms_str.count);
+                    for i: 0..padding-1 {
+                        ms_str_padded[ms_str.count + i] = #char "0";
+                    }
+                    ms_str = ms_str_padded;
+                }
+                millisecond, _ = string_to_int(ms_str);
+            }
+        }
+    }
+    cal : Calendar_Time;
+    //  Calendar_Time :: struct {
+    //      year:        s32;
+    //      month\      _starting_at_0: s8;  // 0-11. Use as an index to a month name array, or add 1 to get the normal human-readable number.
+    //      day_of_month_starting_at_0: s8;  // 0-30. Add 1 to get the normal human-readable number.
+    //      day_of_week\_starting_at_0: s8;  // Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday.
+    //      hour:        s8;
+    //      minute:      s8;
+    //      second:      s8;
+    //      millisecond: s16;
+    //
+    //      time_zone: Time_Zone;
+    //  }
+    cal.year = cast(s32)year;
+    cal.month_starting_at_0 = cast(s8)month - 1;
+    cal.day_of_month_starting_at_0 = cast(s8)day - 1;
+    cal.hour = cast(s8)hour;
+    cal.minute = cast(s8)minute;
+    cal.second = cast(s8)second;
+    cal.millisecond = cast(s16)millisecond;
+    return cast(float64)to_milliseconds(calendar_to_apollo(cal));
+}
+
+// =============================================================================
 // PHASE 2: VALUE TYPE & FACTORIES - Using tagged values
 // =============================================================================
 
@@ -684,30 +787,30 @@ format_duration :: (ms: float64) -> string {
     return join(..parts, " ");
 }
 
-format_timestamp :: (ms: float64) -> string {
-    // TODO: Convert ms since epoch to ISO 8601 format
-    // For now, return a placeholder
-    return sprint("%.0f", ms);
+apollo_to_iso_string :: (apollo: Apollo_Time) -> string {
+    cal := to_calendar(apollo);
+    time_string := calendar_to_iso_string(cal);
+    return time_string;
 }
 
-write_value :: (v: *Value) {
+write_value :: (v: *Value, newline := true) {
     if is_null(v.*) {
-        print("null\n");
+        print("null");
     } else if is_bool(v.*) {
         vb := cast(*Value_Bool)v;
-        print("%\n", vb.value);
+        print("%", vb.value);
     } else if is_number(v.*) {
         vn := cast(*Value_Number)v;
-        print("%\n", vn.value);
+        print("%", vn.value);
     } else if is_string(v.*) {
         vs := cast(*Value_String)v;
-        print("%\n", vs.value);
+        print("%", vs.value);
     } else if is_time(v.*) {
         vt := cast(*Value_Time)v;
-        print("%\n", format_timestamp(vt.value));
+        print("%", apollo_to_iso_string(milliseconds_to_apollo(cast(s64)vt.value)));
     } else if is_duration(v.*) {
         vd := cast(*Value_Duration)v;
-        print("%\n", format_duration(vd.value));
+        print("%", format_duration(vd.value));
     } else if is_list(v.*) {
         vl := cast(*Value_List)v;
         print("[");
@@ -715,10 +818,11 @@ write_value :: (v: *Value) {
             if i > 0 print(", ");
             write_value(vl.value[i]);
         }
-        print("]\n");
+        print("]");
     } else {
         print("UNKNOWN KIND: %\n", v.kind);
     }
+    if newline print("\n");
 }
 
 // =============================================================================
@@ -877,15 +981,19 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
                 return op_less_than(left, right);
             }
         case "GREATER";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return op_greater_than(left, right);
-            }
-        case;
-            log_error("should never happend that we dont know the type: %", type_str);
-            exit(1);
+             args := get_json_array(node, "arg");
+             if args.count == 2 {
+                 left := eval(ctx, args[0]);
+                 right := eval(ctx, args[1]);
+                 return op_greater_than(left, right);
+             }
+         case "TIMETOKEN";
+             val_str := get_json_string(node, "value");
+             time_ms := iso_string_to_float64(val_str);
+             return value_time(time_ms);
+         case;
+             log_error("should never happend that we dont know the type: %", type_str);
+             exit(1);
     }
 
     return value_null();
@@ -992,7 +1100,7 @@ interpret :: (cjson: *cJSON) {
     arena_context.allocator = .{flat_pool_allocator_proc, *pool};
     push_context arena_context {
         ctx := Interpreter_Data.{
-            now = cast(float64)to_milliseconds(current_time_consensus()),  // Current time in seconds
+            now = cast(float64)to_milliseconds(current_time_consensus()),  // Current time in mills
             env = Table(string, *Value).{},
         };
 

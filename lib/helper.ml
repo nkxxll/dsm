@@ -1,7 +1,12 @@
 open Base
 
+(* Apollo Time epoch: July 20, 1969 00:00:00 UTC *)
+(* Offset in seconds from Unix epoch (1970-01-01) to Apollo epoch (1969-07-20) *)
+let apollo_epoch_offset_seconds = -14515200.0  (* 168 days before Unix epoch *)
+
 let timestamp_to_iso_string time_float =
-  let sec = time_float /. 1000.0 in
+  (* Convert from Apollo Time (milliseconds since Apollo 11 landing) to Unix timestamp *)
+  let sec = (time_float /. 1000.0) +. apollo_epoch_offset_seconds in
   let tm = Unix.gmtime sec in
   Printf.sprintf
     "%04d-%02d-%02dT%02d:%02d:%02dZ"
@@ -46,7 +51,7 @@ let tm_of_utc tm_year tm_mon tm_mday tm_hour tm_min tm_sec =
   (* Day of month is 1-indexed, so subtract 1 *)
   let total_days = days_from_complete_years + days_from_months + (tm_mday - 1) in
   let total_seconds = total_days * 86400 + tm_hour * 3600 + tm_min * 60 + tm_sec in
-  Float.of_int total_seconds
+  Float.of_int total_seconds -. apollo_epoch_offset_seconds
 ;;
 
 let time_string_to_float time_str =
