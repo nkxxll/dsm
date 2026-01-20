@@ -9,23 +9,30 @@ c_free :: (memory: *void) #foreign crt "free";
 
 INPUT :: #string DONE
 write "hello";
+write 5;
+write 10;
+write 15;
 DONE
 
 
 main :: () {
     tokens := scan_tokens(INPUT, false);
     defer free(tokens.data);
+
+
     json := token_list_to_json(tokens);
+    print("JSON: %\n", json);
     defer free(json);
 
     ast := parse_json(json);
+    print("AST: %\n", to_string(ast));
     defer c_free(ast);
 
     cjson := cJSON_Parse(ast);
+    cJSON_Delete(cjson);
+
 
     interpret(cjson);
-
-    print("%\n", ast);
 }
 
 #import "Basic";
