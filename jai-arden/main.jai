@@ -7,7 +7,7 @@
 crt :: #library,system "libc";
 c_free :: (memory: *void) #foreign crt "free";
 
-INPUT :: #string DONE
+DEFAULT_INPUT :: #string DONE
 trace 5;
 trace "hello";
 trace [1, 2, 3];
@@ -21,9 +21,24 @@ DONE
 
 
 main :: () {
-    tokens := scan_tokens(INPUT, false);
+    args := get_command_line_arguments();
+    
+    input: string;
+    if args.count > 1 {
+        // Read file from command line argument
+        filename := args[1];
+        file_content, success := read_entire_file(filename);
+        if !success {
+            print("Error: Could not read file '%'\n", filename);
+            return;
+        }
+        input = file_content;
+    } else {
+        input = DEFAULT_INPUT;
+    }
+    
+    tokens := scan_tokens(input, false);
     defer free(tokens.data);
-
 
     json := token_list_to_json(tokens);
     print("JSON: %\n", json);
@@ -40,3 +55,4 @@ main :: () {
 }
 
 #import "Basic";
+#import "File";

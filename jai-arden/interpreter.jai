@@ -425,9 +425,9 @@ op_maximum :: (v: *Value) -> *Value {
     vl := cast(*Value_List)v;
     if vl.value.count == 0 return value_null();
 
-    max_val := get_numeric(vl.value[0].*);
+    max_val := get_numeric(vl.value[0]);
     for i: 1..vl.value.count-1 {
-        curr := get_numeric(vl.value[i].*);
+        curr := get_numeric(vl.value[i]);
         if curr > max_val max_val = curr;
     }
 
@@ -445,9 +445,9 @@ op_minimum :: (v: *Value) -> *Value {
     vl := cast(*Value_List)v;
     if vl.value.count == 0 return value_null();
 
-    min_val := get_numeric(vl.value[0].*);
+    min_val := get_numeric(vl.value[0]);
     for i: 1..vl.value.count-1 {
-        curr := get_numeric(vl.value[i].*);
+        curr := get_numeric(vl.value[i]);
         if curr < min_val min_val = curr;
     }
 
@@ -464,7 +464,7 @@ op_average :: (v: *Value) -> *Value {
     vl := cast(*Value_List)v;
     if vl.value.count == 0 return value_null();
 
-    sum := 0.0;
+    sum : float64 = 0.0;
     for item: vl.value {
         sum += get_numeric(item);
     }
@@ -531,8 +531,8 @@ op_increase :: (v: *Value) -> *Value {
 
     diffs: [..]*Value;
     for i: 1..vl.value.count-1 {
-        curr := get_numeric(vl.value[i].*);
-        prev := get_numeric(vl.value[i-1].*);
+        curr := get_numeric(vl.value[i]);
+        prev := get_numeric(vl.value[i-1]);
         diff := curr - prev;
         array_add(*diffs, value_number(diff));
     }
@@ -562,24 +562,13 @@ op_interval :: (v: *Value) -> *Value {
 op_uppercase :: (v: *Value) -> *Value {
     if is_string(v.*) {
         vs := cast(*Value_String)v;
-        upper := to_upper(vs.value);
-        return value_string(upper);
+        upper := to_upper_copy(vs.value);
+        result := value_string(upper);
+        result.time = v.time;
+        return result;
     }
-    if is_list(v.*) {
-        vl := cast(*Value_List)v;
-        results: [..]*Value;
-        for item: vl.value {
-            if is_string(item.*) {
-                vs := cast(*Value_String)item;
-                upper := to_upper(vs.value);
-                array_add(*results, value_string(upper));
-            } else {
-                array_add(*results, item);
-            }
-        }
-        return value_list(results);
-    }
-    return value_null();
+    // For non-strings, just return as-is (preserving the value)
+    return v;
 }
 
 // =============================================================================
@@ -643,7 +632,94 @@ op_before :: (duration: *Value, time: *Value) -> *Value {
 
 op_time_of :: (v: *Value) -> *Value {
     if v.time != 0 {
-        return value_time(v.time);
+        result := value_time(v.time);
+        result.time = v.time;
+        return result;
+    }
+    return value_null();
+}
+
+op_sqrt :: (v: *Value) -> *Value {
+    if is_number(v.*) {
+        return value_number(sqrt(get_numeric(v)));
+    }
+    return value_null();
+}
+
+op_any :: (v: *Value) -> *Value {
+    if is_list(v.*) {
+        vl := cast(*Value_List)v;
+        for item: vl.value {
+            if is_true(item) {
+                return value_bool(true);
+            }
+        }
+        return value_bool(false);
+    }
+    if is_bool(v.*) {
+        return v;
+    }
+    return value_null();
+}
+
+// Binary operation handlers for arithmetic
+op_plus :: (left: *Value, right: *Value) -> *Value {
+    return arithmetic_operation(left, right, .PLUS);
+}
+
+op_minus :: (left: *Value, right: *Value) -> *Value {
+    return arithmetic_operation(left, right, .MINUS);
+}
+
+op_times :: (left: *Value, right: *Value) -> *Value {
+    return arithmetic_operation(left, right, .TIMES);
+}
+
+op_divide :: (left: *Value, right: *Value) -> *Value {
+    return arithmetic_operation(left, right, .DIVIDE);
+}
+
+op_power :: (left: *Value, right: *Value) -> *Value {
+    return arithmetic_operation(left, right, .POWER);
+}
+
+// OCCUR operators - compare primary time of left argument with right argument
+op_occur_equal :: (left: *Value, right: *Value) -> *Value {
+    if left.time != 0 && (is_time(right.*) || is_number(right.*)) {
+        return value_bool(left.time == get_numeric(right));
+    }
+    return value_null();
+}
+
+op_occur_before :: (left: *Value, right: *Value) -> *Value {
+    if left.time != 0 && (is_time(right.*) || is_number(right.*)) {
+        return value_bool(left.time < get_numeric(right));
+    }
+    return value_null();
+}
+
+op_occur_after :: (left: *Value, right: *Value) -> *Value {
+    if left.time != 0 && (is_time(right.*) || is_number(right.*)) {
+        return value_bool(left.time > get_numeric(right));
+    }
+    return value_null();
+}
+
+op_occur_within :: (left: *Value, start: *Value, end: *Value) -> *Value {
+    if left.time != 0 && (is_time(start.*) || is_number(start.*)) && (is_time(end.*) || is_number(end.*)) {
+        s := get_numeric(start);
+        e := get_numeric(end);
+        return value_bool(left.time >= s && left.time <= e);
+    }
+    return value_null();
+}
+
+op_occur_same_day_as :: (left: *Value, right: *Value) -> *Value {
+    DAY_MS :: 86400000.0;
+    if left.time != 0 && right.time != 0 {
+        left_day := cast(int)(left.time / DAY_MS);
+        right_day := cast(int)(right.time / DAY_MS);
+        return value_bool(left_day == right_day);
     }
     return value_null();
 }
@@ -743,13 +819,13 @@ format_duration :: (ms: float64) -> string {
     parts: [..]string;
     parts.allocator = temp;
 
-    if years > 0 array_add(*parts, sprint("%s%s", years, ifx years == 1 then " Year" else " Years"));
-    if months > 0 array_add(*parts, sprint("%s%s", months, ifx months == 1 then " Month" else " Months"));
-    if weeks > 0 array_add(*parts, sprint("%s%s", weeks, ifx weeks == 1 then " Week" else " Weeks"));
-    if days > 0 array_add(*parts, sprint("%s%s", days, ifx days == 1 then " Day" else " Days"));
-    if hours > 0 array_add(*parts, sprint("%s%s", hours, ifx hours == 1 then " Hour" else " Hours"));
-    if minutes > 0 array_add(*parts, sprint("%s%s", minutes, ifx minutes == 1 then " Minute" else " Minutes"));
-    if seconds > 0 array_add(*parts, sprint("%s%s", seconds, ifx seconds == 1 then " Second" else " Seconds"));
+    if years > 0 array_add(*parts, sprint("%%", years, ifx years == 1 then " Year" else " Years"));
+    if months > 0 array_add(*parts, sprint("%%", months, ifx months == 1 then " Month" else " Months"));
+    if weeks > 0 array_add(*parts, sprint("%%", weeks, ifx weeks == 1 then " Week" else " Weeks"));
+    if days > 0 array_add(*parts, sprint("%%", days, ifx days == 1 then " Day" else " Days"));
+    if hours > 0 array_add(*parts, sprint("%%", hours, ifx hours == 1 then " Hour" else " Hours"));
+    if minutes > 0 array_add(*parts, sprint("%%", minutes, ifx minutes == 1 then " Minute" else " Minutes"));
+    if seconds > 0 array_add(*parts, sprint("%%", seconds, ifx seconds == 1 then " Second" else " Seconds"));
 
     // @todo this should be temp storage not in the arena allocator
     return join(..parts, " ");
@@ -804,6 +880,194 @@ Execution_Type :: enum {
     LIST_WISE;
 }
 
+// =============================================================================
+// PHASE 8: OPERATION ABSTRACTIONS
+// =============================================================================
+
+// Helper: check if value is true (for WHERE filtering)
+is_true :: (v: *Value) -> bool {
+    if is_bool(v.*) {
+        return (cast(*Value_Bool)v).value;
+    }
+    return false;
+}
+
+// Helper: get list length (0 if not a list)
+get_list_length :: (v: *Value) -> int {
+    if is_list(v.*) {
+        return cast(int)(cast(*Value_List)v).value.count;
+    }
+    return 0;
+}
+
+// Helper: expand scalar to list, or return list if correct length
+// Returns empty slice on failure (list with wrong length)
+expand_to_list :: (v: *Value, target_len: int) -> []*Value {
+    if is_list(v.*) {
+        list := (cast(*Value_List)v).value;
+        if list.count == target_len {
+            return list;
+        }
+        // List has wrong length - return empty (failure)
+        return .[];
+    }
+    // Scalar - broadcast to list
+    result: [..]*Value;
+    for i: 0..target_len-1 {
+        array_add(*result, v);
+    }
+    return result;
+}
+
+// Binary element-wise helper
+binary_element_wise :: (left: *Value, right: *Value, f: (*Value, *Value) -> *Value) -> *Value {
+    // Case 1: Both are lists of same length
+    if is_list(left.*) && is_list(right.*) {
+        left_list := cast(*Value_List)left;
+        right_list := cast(*Value_List)right;
+
+        if left_list.value.count != right_list.value.count {
+            return value_null();
+        }
+
+        result: [..]*Value;
+        for i: 0..left_list.value.count-1 {
+            res_item := f(left_list.value[i], right_list.value[i]);
+            array_add(*result, res_item);
+        }
+
+        value := value_list(result);
+        value.time = left.time;
+        return value;
+    }
+
+    // Case 2: Left is list, right is scalar
+    if is_list(left.*) && !is_list(right.*) {
+        left_list := cast(*Value_List)left;
+        result: [..]*Value;
+
+        for item: left_list.value {
+            res_item := f(item, right);
+            array_add(*result, res_item);
+        }
+
+        value := value_list(result);
+        value.time = left.time;
+        return value;
+    }
+
+    // Case 3: Left is scalar, right is list
+    if !is_list(left.*) && is_list(right.*) {
+        right_list := cast(*Value_List)right;
+        result: [..]*Value;
+
+        for item: right_list.value {
+            res_item := f(left, item);
+            array_add(*result, res_item);
+        }
+
+        value := value_list(result);
+        value.time = right.time;
+        return value;
+    }
+
+    // Case 4: Both are scalars
+    return f(left, right);
+}
+
+// Ternary element-wise helper
+ternary_element_wise :: (first: *Value, second: *Value, third: *Value, f: (*Value, *Value, *Value) -> *Value) -> *Value {
+    first_len := get_list_length(first);
+    second_len := get_list_length(second);
+    third_len := get_list_length(third);
+
+    max_len := 0;
+    if first_len > 0 max_len = first_len;
+    if second_len > max_len max_len = second_len;
+    if third_len > max_len max_len = third_len;
+
+    // If no lists, apply directly
+    if max_len == 0 {
+        return f(first, second, third);
+    }
+
+    // Expand each operand to max_len
+    first_expanded := expand_to_list(first, max_len);
+    second_expanded := expand_to_list(second, max_len);
+    third_expanded := expand_to_list(third, max_len);
+
+    // If any expansion failed (list with wrong length), return null
+    if first_expanded.count == 0 || second_expanded.count == 0 || third_expanded.count == 0 {
+        return value_null();
+    }
+
+    result: [..]*Value;
+    for i: 0..max_len-1 {
+        res_item := f(first_expanded[i], second_expanded[i], third_expanded[i]);
+        array_add(*result, res_item);
+    }
+
+    value := value_list(result);
+    // Inherit first non-null time tag
+    if first.time != 0 value.time = first.time;
+    else if second.time != 0 value.time = second.time;
+    else if third.time != 0 value.time = third.time;
+
+    return value;
+}
+
+// WHERE filter helper
+where_filter :: (left: *Value, right: *Value) -> *Value {
+    // Case 1: Both lists of same length
+    if is_list(left.*) && is_list(right.*) {
+        left_list := cast(*Value_List)left;
+        right_list := cast(*Value_List)right;
+
+        if left_list.value.count != right_list.value.count {
+            return value_null();
+        }
+
+        filtered: [..]*Value;
+        for i: 0..left_list.value.count-1 {
+            if is_true(right_list.value[i]) {
+                array_add(*filtered, left_list.value[i]);
+            }
+        }
+
+        result := value_list(filtered);
+        result.time = left.time;
+        return result;
+    }
+
+    // Case 2: Left is list, right is scalar boolean
+    if is_list(left.*) && !is_list(right.*) {
+        if is_true(right) {
+            return left;
+        }
+        return value_list(.{});
+    }
+
+    // Case 3: Left is scalar, right is list of booleans
+    if !is_list(left.*) && is_list(right.*) {
+        right_list := cast(*Value_List)right;
+        replicated: [..]*Value;
+
+        for item: right_list.value {
+            if is_true(item) {
+                array_add(*replicated, left);
+            }
+        }
+
+        return value_list(replicated);
+    }
+
+    // Case 4: Both scalars
+    if is_true(right) {
+        return left;
+    }
+    return value_list(.{});
+}
+
 eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
     // @warning this could cause some bugs but it should not really should not
     reset_temporary_storage();
@@ -811,6 +1075,7 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
 
     type_str := get_json_type(node);
 
+    // Unary operation abstraction
     unary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value) -> *Value) -> *Value {
         arg := get_json_object(node, "arg");
         first := eval(ctx, arg);
@@ -819,28 +1084,82 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
                 return f(first);
             case .ELEMENT_WISE;
                 if is_list(first.*) {
+                    first_list := cast(*Value_List)first;
                     new_list: [..]*Value;
-                    for value: (cast(*Value_List)first).value {
-                        array_add(*new_list, f(value));
+                    for item: first_list.value {
+                        array_add(*new_list, f(item));
                     }
-                    return value_list(new_list);
+                    result := value_list(new_list);
+                    result.time = first.time;
+                    return result;
                 }
                 return f(first);
         }
     }
-    binary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value, *Value) -> *Value) {
-            args := get_json_array(node, "arg");
-            if args.count != 2 {
-                log_error("unexpected json structure expected at least two args found %\n", args.count);
-                exit(1);
-            }
-            left := eval(ctx, args[0]);
-            right := eval(ctx, args[1]);
+
+    // Binary operation abstraction
+    binary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value, *Value) -> *Value) -> *Value {
+        args := get_json_array(node, "arg");
+        if args.count != 2 {
+            log_error("binary operation requires exactly 2 arguments, found %\n", args.count);
+            return value_null();
+        }
+        left := eval(ctx, args[0]);
+        right := eval(ctx, args[1]);
+
+        if #complete execution_type == {
+            case .LIST_WISE;
+                return f(left, right);
+            case .ELEMENT_WISE;
+                return binary_element_wise(left, right, f);
+        }
     }
-    terniary_operation :: (execution_type: Execution_Type, f: (*Value, *Value, *Value) -> *Value) {
+
+    // Ternary operation abstraction
+    ternary_operation :: (ctx: *Interpreter_Data, node: *cJSON, execution_type: Execution_Type, f: (*Value, *Value, *Value) -> *Value) -> *Value {
+        args := get_json_array(node, "arg");
+        if args.count != 3 {
+            log_error("ternary operation requires exactly 3 arguments, found %\n", args.count);
+            return value_null();
+        }
+        first := eval(ctx, args[0]);
+        second := eval(ctx, args[1]);
+        third := eval(ctx, args[2]);
+
+        if #complete execution_type == {
+            case .LIST_WISE;
+                return f(first, second, third);
+            case .ELEMENT_WISE;
+                return ternary_element_wise(first, second, third, f);
+        }
+    }
+
+    // WHERE operation (special case - needs to set "it" and "they" context)
+    eval_where :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
+        args := get_json_array(node, "arg");
+        if args.count != 2 {
+            log_error("WHERE requires exactly 2 arguments\n");
+            return value_null();
+        }
+
+        left := eval(ctx, args[0]);
+
+        // Set implicit variables for condition context
+        table_set(*ctx.env, "it", left);
+        table_set(*ctx.env, "they", left);
+
+        right := eval(ctx, args[1]);
+
+        result := where_filter(left, right);
+
+        table_remove(*ctx.env, "it");
+        table_remove(*ctx.env, "they");
+
+        return result;
     }
 
     if type_str == {
+        // Literals
         case "STATEMENTBLOCK";
             return eval_statementblock(ctx, node);
         case "NUMTOKEN";
@@ -855,10 +1174,24 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
             return value_bool(false);
         case "NULL";
             return value_null();
+        case "EMPTYLIST";
+            return value_list(.{});
+        case "NOW";
+            return value_time(ctx.now);
+        case "CURRENTTIME";
+            return value_time(cast(float64)to_milliseconds(current_time_consensus()));
+        case "TIMETOKEN";
+            val_str := get_json_string(node, "value");
+            time_ms := iso_string_to_float64(val_str);
+            return value_time(time_ms);
+
+        // Variables & Control flow
         case "VARIABLE";
             return eval_variable(ctx, node);
         case "ASSIGN";
             return eval_assign(ctx, node);
+        case "TIMEASSIGN";
+            return eval_time_assign(ctx, node);
         case "WRITE";
             return eval_write(ctx, node);
         case "TRACE";
@@ -869,76 +1202,115 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
             return eval_for(ctx, node);
         case "LIST";
             return eval_list(ctx, node);
+
+        // Binary operations (ElementWise)
         case "PLUS";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return arithmetic_operation(left, right, .PLUS);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_plus);
         case "MINUS";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return arithmetic_operation(left, right, .MINUS);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_minus);
         case "TIMES";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return arithmetic_operation(left, right, .TIMES);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_times);
         case "DIVIDE";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return arithmetic_operation(left, right, .DIVIDE);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_divide);
         case "POWER";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return arithmetic_operation(left, right, .POWER);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_power);
         case "AMPERSAND";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return op_ampersand(left, right);
-            }
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_ampersand);
         case "LT";
-            args := get_json_array(node, "arg");
-            if args.count == 2 {
-                left := eval(ctx, args[0]);
-                right := eval(ctx, args[1]);
-                return op_less_than(left, right);
-            }
-        case "GREATER";
-             args := get_json_array(node, "arg");
-             if args.count == 2 {
-                 left := eval(ctx, args[0]);
-                 right := eval(ctx, args[1]);
-                 return op_greater_than(left, right);
-             }
-         case "TIMETOKEN";
-             val_str := get_json_string(node, "value");
-             time_ms := iso_string_to_float64(val_str);
-             return value_time(time_ms);
-         case "YEAR"; #through;
-         case "MONTH"; #through;
-         case "WEEK"; #through;
-         case "DAY"; #through;
-         case "MINUTES"; #through;
-         case "SECONDS";
-            // @todo unary op
-         case;
-             log_error("should never happend that we dont know the type: %", type_str);
-             exit(1);
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_less_than);
+        case "ISGREATERT";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_greater_than);
+        case "BEFORE";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_before);
+        case "ISBEFORE";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_is_before);
+        case "ISNOTBEFORE";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_is_not_before);
+
+        // OCCUR operators (ElementWise)
+        case "OCCUREQUAL";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_occur_equal);
+        case "OCCURBEFORE";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_occur_before);
+        case "OCCURAFTER";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_occur_after);
+        case "OCCURSAMEDAYAS";
+            return binary_operation(ctx, node, .ELEMENT_WISE, op_occur_same_day_as);
+
+        // Binary operations (ListWise)
+        case "RANGE";
+            return binary_operation(ctx, node, .LIST_WISE, op_range);
+
+        // Ternary operations (ElementWise)
+        case "ISWITHIN";
+            return ternary_operation(ctx, node, .ELEMENT_WISE, op_is_within);
+        case "ISNOTWITHIN";
+            return ternary_operation(ctx, node, .ELEMENT_WISE, op_is_not_within);
+        case "OCCURWITHIN";
+            return ternary_operation(ctx, node, .ELEMENT_WISE, op_occur_within);
+
+        // Unary operations (ElementWise)
+        case "UNMINUS";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_unminus);
+        case "SQRT";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_sqrt);
+        case "UPPERCASE";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_uppercase);
+        case "ISNUMBER";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_is_number);
+        case "ISNOTNUMBER";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_is_not_number);
+        case "TIME";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_time_of);
+
+        // Duration handlers (ElementWise)
+        case "YEAR";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_years);
+        case "MONTH";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_months);
+        case "WEEK";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_weeks);
+        case "DAY";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_days);
+        case "HOURS";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_hours);
+        case "MINUTES";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_minutes);
+        case "SECONDS";
+            return unary_operation(ctx, node, .ELEMENT_WISE, op_duration_seconds);
+
+        // Unary operations (ListWise - aggregation)
+        case "MAXIMUM";
+            return unary_operation(ctx, node, .LIST_WISE, op_maximum);
+        case "MINIMUM";
+            return unary_operation(ctx, node, .LIST_WISE, op_minimum);
+        case "AVERAGE";
+            return unary_operation(ctx, node, .LIST_WISE, op_average);
+        case "COUNT";
+            return unary_operation(ctx, node, .LIST_WISE, op_count);
+        case "ANY";
+            return unary_operation(ctx, node, .LIST_WISE, op_any);
+        case "FIRST";
+            return unary_operation(ctx, node, .LIST_WISE, op_first);
+        case "LATEST";
+            return unary_operation(ctx, node, .LIST_WISE, op_latest);
+        case "EARLIEST";
+            return unary_operation(ctx, node, .LIST_WISE, op_earliest);
+        case "INCREASE";
+            return unary_operation(ctx, node, .LIST_WISE, op_increase);
+        case "INTERVAL";
+            return unary_operation(ctx, node, .LIST_WISE, op_interval);
+        case "ISLIST";
+            return unary_operation(ctx, node, .LIST_WISE, op_is_list);
+        case "ISNOTLIST";
+            return unary_operation(ctx, node, .LIST_WISE, op_is_not_list);
+
+        // Special operations
+        case "WHERE";
+            return eval_where(ctx, node);
+
+        case;
+            log_error("Unknown AST node type: %\n", type_str);
     }
 
     return value_null();
@@ -957,6 +1329,23 @@ eval_assign :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
     arg := get_json_object(node, "arg");
     val := eval(ctx, arg);
     table_set(*ctx.env, ident, val);
+    return value_null();
+}
+
+eval_time_assign :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
+    ident := get_json_string(node, "ident");
+    arg := get_json_object(node, "arg");
+    val := eval(ctx, arg);
+
+    // Get the time value from the expression
+    if is_time(val.*) {
+        time_val := (cast(*Value_Time)val).value;
+        // Update the time tag of the existing variable
+        found, current := table_find(*ctx.env, ident);
+        if found {
+            current.time = time_val;
+        }
+    }
     return value_null();
 }
 
