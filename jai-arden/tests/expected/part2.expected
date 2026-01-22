@@ -1,0 +1,18 @@
+Could not parse CSV line continuing...
+Line 10: 5
+Line 11: true
+Line 12: [2025-11-04T15:21:00.000Z, 2025-11-04T21:17:48.000Z, 2025-11-04T15:21:00.000Z]
+Line 13: [162, 184, 274, 204, 224]
+Line 14: [2025-11-04T15:21:00.000Z, 2025-11-04T18:24:00.000Z, 2025-11-04T21:10:00.000Z, 2025-11-05T00:15:00.000Z, 2025-11-05T03:19:00.000Z]
+Line 15: [137, 102, 112]
+Line 21: [3 Hours 3 Minutes, 2 Hours 46 Minutes, 3 Hours 5 Minutes, 3 Hours 4 Minutes]
+Line 22: 2025-11-04T15:43:48.000Z
+Line 23: 11 Hours 58 Minutes
+Line 24: 6 Seconds
+Line 25: 24
+Line 27: [2025-11-02T21:20:00.000Z, 2025-11-01T21:20:00.000Z, 2025-10-31T21:20:00.000Z]
+Line 35: Wert 81 war relativ früh
+Line 35: Wert 92 war relativ früh
+Line 35: Wert 137 war relativ früh
+Line 35: Wert 102 war relativ spät
+Line 35: Wert 112 war relativ spät
