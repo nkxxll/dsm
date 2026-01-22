@@ -1,0 +1,3 @@
+FOR i IN [1, 2, 3, 4, 5] DO
+  IF true THEN WRITE i; ENDIF;
+ENDDO;

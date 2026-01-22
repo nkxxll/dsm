@@ -1,0 +1,167 @@
+JSON: [["1", "IDENTIFIER", "glucose1"],["1", "ASSIGN", ":="],["1", "NUMTOKEN", "81"],["1", "SEMICOLON", ";"],["2", "TIME", "time"],["2", "IDENTIFIER", "glucose1"],["2", "ASSIGN", ":="],["2", "TIMETOKEN", "2025-11-04T15:21:00"],["2", "SEMICOLON", ";"],["3", "IDENTIFIER", "glucose2"],["3", "ASSIGN", ":="],["3", "NUMTOKEN", "92"],["3", "SEMICOLON", ";"],["4", "TIME", "time"],["4", "IDENTIFIER", "glucose2"],["4", "ASSIGN", ":="],["4", "TIMETOKEN", "2025-11-04T18:24:00"],["4", "SEMICOLON", ";"],["5", "IDENTIFIER", "glucose3"],["5", "ASSIGN", ":="],["5", "NUMTOKEN", "137"],["5", "SEMICOLON", ";"],["6", "TIME", "time"],["6", "IDENTIFIER", "glucose3"],["6", "ASSIGN", ":="],["6", "TIMETOKEN", "2025-11-04T21:10:00"],["6", "SEMICOLON", ";"],["7", "IDENTIFIER", "glucose4"],["7", "ASSIGN", ":="],["7", "NUMTOKEN", "102"],["7", "SEMICOLON", ";"],["8", "TIME", "time"],["8", "IDENTIFIER", "glucose4"],["8", "ASSIGN", ":="],["8", "TIMETOKEN", "2025-11-05T00:15:00"],["8", "SEMICOLON", ";"],["9", "IDENTIFIER", "glucose5"],["9", "ASSIGN", ":="],["9", "NUMTOKEN", "112"],["9", "SEMICOLON", ";"],["10", "TIME", "time"],["10", "IDENTIFIER", "glucose5"],["10", "ASSIGN", ":="],["10", "TIMETOKEN", "2025-11-05T03:19:00"],["10", "SEMICOLON", ";"],["12", "IDENTIFIER", "glucose"],["12", "ASSIGN", ":="],["12", "LSPAR", "["],["12", "IDENTIFIER", "glucose1"],["12", "COMMA", ","],["12", "IDENTIFIER", "glucose2"],["12", "COMMA", ","],["12", "IDENTIFIER", "glucose3"],["12", "COMMA", ","],["12", "IDENTIFIER", "glucose4"],["12", "COMMA", ","],["12", "IDENTIFIER", "glucose5"],["12", "RSPAR", "]"],["12", "SEMICOLON", ";"],["13", "IDENTIFIER", "midtime"],["13", "ASSIGN", ":="],["13", "AVERAGE", "average"],["13", "LSPAR", "["],["13", "TIME", "time"],["13", "OF", "of"],["13", "EARLIEST", "earliest"],["13", "IDENTIFIER", "glucose"],["13", "COMMA", ","],["13", "TIME", "time"],["13", "OF", "of"],["13", "LATEST", "latest"],["13", "IDENTIFIER", "glucose"],["13", "RSPAR", "]"],["13", "SEMICOLON", ";"],["14", "FOR", "for"],["14", "IDENTIFIER", "g"],["14", "IN", "in"],["14", "IDENTIFIER", "glucose"],["14", "DO", "do"],["15", "TRACE", "trace"],["15", "LPAR", "("],["15", "TIME", "time"],["15", "OF", "of"],["15", "IDENTIFIER", "g"],["15", "RPAR", ")"],["15", "IS", "is"],["15", "BEFORE", "before"],["15", "IDENTIFIER", "midtime"],["15", "SEMICOLON", ";"],["16", "ENDDO", "enddo"],["16", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"ASSIGN",
+			"ident":	"glucose1",
+			"arg":	{
+				"type":	"NUMTOKEN",
+				"value":	"81"
+			}
+		}, {
+			"type":	"TIMEASSIGN",
+			"ident":	"glucose1",
+			"arg":	{
+				"type":	"TIMETOKEN",
+				"value":	"2025-11-04T15:21:00"
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"glucose2",
+			"arg":	{
+				"type":	"NUMTOKEN",
+				"value":	"92"
+			}
+		}, {
+			"type":	"TIMEASSIGN",
+			"ident":	"glucose2",
+			"arg":	{
+				"type":	"TIMETOKEN",
+				"value":	"2025-11-04T18:24:00"
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"glucose3",
+			"arg":	{
+				"type":	"NUMTOKEN",
+				"value":	"137"
+			}
+		}, {
+			"type":	"TIMEASSIGN",
+			"ident":	"glucose3",
+			"arg":	{
+				"type":	"TIMETOKEN",
+				"value":	"2025-11-04T21:10:00"
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"glucose4",
+			"arg":	{
+				"type":	"NUMTOKEN",
+				"value":	"102"
+			}
+		}, {
+			"type":	"TIMEASSIGN",
+			"ident":	"glucose4",
+			"arg":	{
+				"type":	"TIMETOKEN",
+				"value":	"2025-11-05T00:15:00"
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"glucose5",
+			"arg":	{
+				"type":	"NUMTOKEN",
+				"value":	"112"
+			}
+		}, {
+			"type":	"TIMEASSIGN",
+			"ident":	"glucose5",
+			"arg":	{
+				"type":	"TIMETOKEN",
+				"value":	"2025-11-05T03:19:00"
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"glucose",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"VARIABLE",
+						"name":	"glucose1",
+						"line":	"12"
+					}, {
+						"type":	"VARIABLE",
+						"name":	"glucose2",
+						"line":	"12"
+					}, {
+						"type":	"VARIABLE",
+						"name":	"glucose3",
+						"line":	"12"
+					}, {
+						"type":	"VARIABLE",
+						"name":	"glucose4",
+						"line":	"12"
+					}, {
+						"type":	"VARIABLE",
+						"name":	"glucose5",
+						"line":	"12"
+					}]
+			}
+		}, {
+			"type":	"ASSIGN",
+			"ident":	"midtime",
+			"arg":	{
+				"type":	"AVERAGE",
+				"arg":	{
+					"type":	"LIST",
+					"items":	[{
+							"type":	"TIME",
+							"arg":	{
+								"type":	"EARLIEST",
+								"arg":	{
+									"type":	"VARIABLE",
+									"name":	"glucose",
+									"line":	"13"
+								}
+							}
+						}, {
+							"type":	"TIME",
+							"arg":	{
+								"type":	"LATEST",
+								"arg":	{
+									"type":	"VARIABLE",
+									"name":	"glucose",
+									"line":	"13"
+								}
+							}
+						}]
+				}
+			}
+		}, {
+			"type":	"FOR",
+			"varname":	"g",
+			"expression":	{
+				"type":	"VARIABLE",
+				"name":	"glucose",
+				"line":	"14"
+			},
+			"statements":	{
+				"type":	"STATEMENTBLOCK",
+				"statements":	[{
+						"type":	"TRACE",
+						"line":	"15",
+						"arg":	{
+							"type":	"ISBEFORE",
+							"arg":	[{
+									"type":	"TIME",
+									"arg":	{
+										"type":	"VARIABLE",
+										"name":	"g",
+										"line":	"15"
+									}
+								}, {
+									"type":	"VARIABLE",
+									"name":	"midtime",
+									"line":	"15"
+								}]
+						}
+					}]
+			}
+		}]
+}
+Line 15: true
+Line 15: true
+Line 15: true
+Line 15: false
+Line 15: false

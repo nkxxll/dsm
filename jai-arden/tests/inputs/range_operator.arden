@@ -1,0 +1,4 @@
+x := 1 ... 7;
+TRACE x;
+TRACE x < 5;
+TRACE x is not within (x - 1) to 5;

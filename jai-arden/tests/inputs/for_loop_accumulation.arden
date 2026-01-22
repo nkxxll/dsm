@@ -1,0 +1,5 @@
+num := 0;
+FOR i IN [10, 20, 30] DO
+  num := num + i;
+ENDDO;
+WRITE num;

@@ -1,0 +1,49 @@
+JSON: [["1", "IDENTIFIER", "x"],["1", "ASSIGN", ":="],["1", "LSPAR", "["],["1", "STRTOKEN", "Hallo Welt"],["1", "COMMA", ","],["1", "NULL", "null"],["1", "COMMA", ","],["1", "NUMTOKEN", "4711"],["1", "COMMA", ","],["1", "TIMETOKEN", "2020-01-01T12:30:00"],["1", "COMMA", ","],["1", "FALSE", "false"],["1", "RSPAR", "]"],["1", "SEMICOLON", ";"],["2", "TRACE", "TRACE"],["2", "IDENTIFIER", "x"],["2", "IS", "is"],["2", "NUMBER", "number"],["2", "SEMICOLON", ";"],["3", "TRACE", "TRACE"],["3", "IDENTIFIER", "x"],["3", "IS", "is"],["3", "LIST", "list"],["3", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"ASSIGN",
+			"ident":	"x",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"STRTOKEN",
+						"value":	"Hallo Welt"
+					}, {
+						"type":	"NULL"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"4711"
+					}, {
+						"type":	"TIMETOKEN",
+						"value":	"2020-01-01T12:30:00"
+					}, {
+						"type":	"FALSE"
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"2",
+			"arg":	{
+				"type":	"ISNUMBER",
+				"arg":	{
+					"type":	"VARIABLE",
+					"name":	"x",
+					"line":	"2"
+				}
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"3",
+			"arg":	{
+				"type":	"ISLIST",
+				"arg":	{
+					"type":	"VARIABLE",
+					"name":	"x",
+					"line":	"3"
+				}
+			}
+		}]
+}
+Line 2: [false, false, true, false, false]
+Line 3: true

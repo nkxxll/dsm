@@ -1,0 +1,45 @@
+JSON: [["1", "IDENTIFIER", "x"],["1", "ASSIGN", ":="],["1", "STRTOKEN", "hello"],["1", "SEMICOLON", ";"],["2", "WRITE", "WRITE"],["2", "LSPAR", "["],["2", "NUMTOKEN", "1"],["2", "COMMA", ","],["2", "NUMTOKEN", "2"],["2", "COMMA", ","],["2", "NUMTOKEN", "3"],["2", "COMMA", ","],["2", "IDENTIFIER", "x"],["2", "RSPAR", "]"],["2", "SEMICOLON", ";"],["3", "WRITE", "WRITE"],["3", "LSPAR", "["],["3", "STRTOKEN", "a"],["3", "COMMA", ","],["3", "STRTOKEN", "b"],["3", "RSPAR", "]"],["3", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"ASSIGN",
+			"ident":	"x",
+			"arg":	{
+				"type":	"STRTOKEN",
+				"value":	"hello"
+			}
+		}, {
+			"type":	"WRITE",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"NUMTOKEN",
+						"value":	"1"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"2"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"3"
+					}, {
+						"type":	"VARIABLE",
+						"name":	"x",
+						"line":	"2"
+					}]
+			}
+		}, {
+			"type":	"WRITE",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"STRTOKEN",
+						"value":	"a"
+					}, {
+						"type":	"STRTOKEN",
+						"value":	"b"
+					}]
+			}
+		}]
+}
+[1, 2, 3, hello]
+[a, b]

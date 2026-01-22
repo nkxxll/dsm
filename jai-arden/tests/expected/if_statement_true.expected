@@ -1,0 +1,25 @@
+JSON: [["1", "IF", "IF"],["1", "TRUE", "true"],["1", "THEN", "THEN"],["1", "WRITE", "WRITE"],["1", "STRTOKEN", "yes"],["1", "SEMICOLON", ";"],["1", "ENDIF", "ENDIF"],["1", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"IF",
+			"condition":	{
+				"type":	"TRUE"
+			},
+			"thenbranch":	{
+				"type":	"STATEMENTBLOCK",
+				"statements":	[{
+						"type":	"WRITE",
+						"arg":	{
+							"type":	"STRTOKEN",
+							"value":	"yes"
+						}
+					}]
+			},
+			"elsebranch":	{
+				"type":	"STATEMENTBLOCK",
+				"statements":	[]
+			}
+		}]
+}
+yes

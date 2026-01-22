@@ -1,0 +1,33 @@
+JSON: [["1", "IDENTIFIER", "y"],["1", "ASSIGN", ":="],["1", "LSPAR", "["],["1", "NUMTOKEN", "100"],["1", "COMMA", ","],["1", "NUMTOKEN", "200"],["1", "COMMA", ","],["1", "NUMTOKEN", "150"],["1", "RSPAR", "]"],["1", "SEMICOLON", ";"],["2", "TRACE", "TRACE"],["2", "MINIMUM", "minimum"],["2", "IDENTIFIER", "y"],["2", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"ASSIGN",
+			"ident":	"y",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"NUMTOKEN",
+						"value":	"100"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"200"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"150"
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"2",
+			"arg":	{
+				"type":	"MINIMUM",
+				"arg":	{
+					"type":	"VARIABLE",
+					"name":	"y",
+					"line":	"2"
+				}
+			}
+		}]
+}
+Line 2: 100

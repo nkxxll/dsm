@@ -1,0 +1,60 @@
+JSON: [["1", "IDENTIFIER", "x"],["1", "ASSIGN", ":="],["1", "LSPAR", "["],["1", "STRTOKEN", "Hallo Welt"],["1", "COMMA", ","],["1", "NULL", "null"],["1", "COMMA", ","],["1", "NUMTOKEN", "4711"],["1", "COMMA", ","],["1", "TIMETOKEN", "2020-01-01T12:30:00"],["1", "COMMA", ","],["1", "FALSE", "false"],["1", "COMMA", ","],["1", "NOW", "now"],["1", "RSPAR", "]"],["1", "SEMICOLON", ";"],["2", "TRACE", "trace"],["2", "IDENTIFIER", "x"],["2", "SEMICOLON", ";"],["3", "TRACE", "trace"],["3", "IDENTIFIER", "x"],["3", "IS", "is"],["3", "NUMBER", "number"],["3", "SEMICOLON", ";"],["4", "TRACE", "trace"],["4", "IDENTIFIER", "x"],["4", "IS", "is"],["4", "LIST", "list"],["4", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"ASSIGN",
+			"ident":	"x",
+			"arg":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"STRTOKEN",
+						"value":	"Hallo Welt"
+					}, {
+						"type":	"NULL"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"4711"
+					}, {
+						"type":	"TIMETOKEN",
+						"value":	"2020-01-01T12:30:00"
+					}, {
+						"type":	"FALSE"
+					}, {
+						"type":	"NOW"
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"2",
+			"arg":	{
+				"type":	"VARIABLE",
+				"name":	"x",
+				"line":	"2"
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"3",
+			"arg":	{
+				"type":	"ISNUMBER",
+				"arg":	{
+					"type":	"VARIABLE",
+					"name":	"x",
+					"line":	"3"
+				}
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"4",
+			"arg":	{
+				"type":	"ISLIST",
+				"arg":	{
+					"type":	"VARIABLE",
+					"name":	"x",
+					"line":	"4"
+				}
+			}
+		}]
+}
+Line 2: [Hallo Welt, null, 4711, 2020-01-01T12:30:00.000Z, false, 2026-01-21T23:50:30.120Z]
+Line 3: [false, false, true, false, false, false]
+Line 4: true

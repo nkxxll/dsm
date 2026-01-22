@@ -1,0 +1,56 @@
+JSON: [["1", "FOR", "FOR"],["1", "IDENTIFIER", "i"],["1", "IN", "IN"],["1", "LSPAR", "["],["1", "NUMTOKEN", "1"],["1", "COMMA", ","],["1", "NUMTOKEN", "2"],["1", "COMMA", ","],["1", "NUMTOKEN", "3"],["1", "COMMA", ","],["1", "NUMTOKEN", "4"],["1", "COMMA", ","],["1", "NUMTOKEN", "5"],["1", "RSPAR", "]"],["1", "DO", "DO"],["2", "IF", "IF"],["2", "TRUE", "true"],["2", "THEN", "THEN"],["2", "WRITE", "WRITE"],["2", "IDENTIFIER", "i"],["2", "SEMICOLON", ";"],["2", "ENDIF", "ENDIF"],["2", "SEMICOLON", ";"],["3", "ENDDO", "ENDDO"],["3", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"FOR",
+			"varname":	"i",
+			"expression":	{
+				"type":	"LIST",
+				"items":	[{
+						"type":	"NUMTOKEN",
+						"value":	"1"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"2"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"3"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"4"
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"5"
+					}]
+			},
+			"statements":	{
+				"type":	"STATEMENTBLOCK",
+				"statements":	[{
+						"type":	"IF",
+						"condition":	{
+							"type":	"TRUE"
+						},
+						"thenbranch":	{
+							"type":	"STATEMENTBLOCK",
+							"statements":	[{
+									"type":	"WRITE",
+									"arg":	{
+										"type":	"VARIABLE",
+										"name":	"i",
+										"line":	"2"
+									}
+								}]
+						},
+						"elsebranch":	{
+							"type":	"STATEMENTBLOCK",
+							"statements":	[]
+						}
+					}]
+			}
+		}]
+}
+1
+2
+3
+4
+5

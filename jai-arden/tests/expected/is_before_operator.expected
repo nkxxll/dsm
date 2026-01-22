@@ -1,0 +1,47 @@
+JSON: [["1", "TRACE", "TRACE"],["1", "TIMETOKEN", "1990-03-07T00:00:00"],["1", "IS", "is"],["1", "BEFORE", "before"],["1", "TIMETOKEN", "1990-03-08T00:00:00"],["1", "SEMICOLON", ";"],["2", "TRACE", "TRACE"],["2", "TIMETOKEN", "1990-03-08T00:00:00"],["2", "IS", "is"],["2", "BEFORE", "before"],["2", "TIMETOKEN", "1990-03-07T00:00:00"],["2", "SEMICOLON", ";"],["3", "TRACE", "TRACE"],["3", "TIMETOKEN", "1990-03-08T00:00:00"],["3", "IS", "is"],["3", "BEFORE", "before"],["3", "TIMETOKEN", "1990-03-08T00:00:00"],["3", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"TRACE",
+			"line":	"1",
+			"arg":	{
+				"type":	"ISBEFORE",
+				"arg":	[{
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-07T00:00:00"
+					}, {
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-08T00:00:00"
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"2",
+			"arg":	{
+				"type":	"ISBEFORE",
+				"arg":	[{
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-08T00:00:00"
+					}, {
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-07T00:00:00"
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"3",
+			"arg":	{
+				"type":	"ISBEFORE",
+				"arg":	[{
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-08T00:00:00"
+					}, {
+						"type":	"TIMETOKEN",
+						"value":	"1990-03-08T00:00:00"
+					}]
+			}
+		}]
+}
+Line 1: true
+Line 2: false
+Line 3: false

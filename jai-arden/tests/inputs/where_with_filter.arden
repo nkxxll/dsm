@@ -1,0 +1,2 @@
+TRACE "Hallo" where it is not number;
+TRACE [10,20,50,100,70,40,55] where it / 2 is within 30 to 60;

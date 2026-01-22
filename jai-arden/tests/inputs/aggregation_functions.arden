@@ -1,0 +1,4 @@
+y := [100,200,150];
+TRACE [maximum y, average y, increase y];
+TRACE uppercase ["Hallo", "Welt", 4711];
+TRACE sqrt y;

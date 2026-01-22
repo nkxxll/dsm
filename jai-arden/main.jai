@@ -7,22 +7,15 @@
 crt :: #library,system "libc";
 c_free :: (memory: *void) #foreign crt "free";
 
-DEFAULT_INPUT :: #string DONE
-trace 5;
-trace "hello";
-trace [1, 2, 3];
-trace true;
-trace null;
-trace 2026-11-01T10:10:10;
-trace ["1 + 2 =", 1 + 2];
-trace 1 + 2;
-trace 1 Day;
+USAGE :: #string DONE
+usage:
+<program> <input file>
 DONE
 
 
 main :: () {
     args := get_command_line_arguments();
-    
+
     input: string;
     if args.count > 1 {
         // Read file from command line argument
@@ -34,9 +27,10 @@ main :: () {
         }
         input = file_content;
     } else {
-        input = DEFAULT_INPUT;
+        log_error("%", USAGE);
+        exit(1);
     }
-    
+
     tokens := scan_tokens(input, false);
     defer free(tokens.data);
 

@@ -1,0 +1,12 @@
+JSON: [["1", "WRITE", "WRITE"],["1", "STRTOKEN", "Hello world"],["1", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"WRITE",
+			"arg":	{
+				"type":	"STRTOKEN",
+				"value":	"Hello world"
+			}
+		}]
+}
+Hello world

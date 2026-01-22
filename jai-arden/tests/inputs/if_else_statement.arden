@@ -1,0 +1,1 @@
+IF false THEN WRITE "yes"; ELSE WRITE "no"; ENDIF;

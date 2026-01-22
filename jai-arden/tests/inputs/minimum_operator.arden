@@ -1,0 +1,2 @@
+y := [100, 200, 150];
+TRACE minimum y;

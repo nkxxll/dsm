@@ -1,0 +1,74 @@
+JSON: [["1", "TRACE", "TRACE"],["1", "STRTOKEN", "Hallo"],["1", "WHERE", "where"],["1", "IDENTIFIER", "it"],["1", "IS", "is"],["1", "NOT", "not"],["1", "NUMBER", "number"],["1", "SEMICOLON", ";"],["2", "TRACE", "TRACE"],["2", "LSPAR", "["],["2", "NUMTOKEN", "10"],["2", "COMMA", ","],["2", "NUMTOKEN", "20"],["2", "COMMA", ","],["2", "NUMTOKEN", "50"],["2", "COMMA", ","],["2", "NUMTOKEN", "100"],["2", "COMMA", ","],["2", "NUMTOKEN", "70"],["2", "COMMA", ","],["2", "NUMTOKEN", "40"],["2", "COMMA", ","],["2", "NUMTOKEN", "55"],["2", "RSPAR", "]"],["2", "WHERE", "where"],["2", "IDENTIFIER", "it"],["2", "DIVIDE", "/"],["2", "NUMTOKEN", "2"],["2", "IS", "is"],["2", "WITHIN", "within"],["2", "NUMTOKEN", "30"],["2", "TO", "to"],["2", "NUMTOKEN", "60"],["2", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"TRACE",
+			"line":	"1",
+			"arg":	{
+				"type":	"WHERE",
+				"arg":	[{
+						"type":	"STRTOKEN",
+						"value":	"Hallo"
+					}, {
+						"type":	"ISNOTNUMBER",
+						"arg":	{
+							"type":	"VARIABLE",
+							"name":	"it",
+							"line":	"1"
+						}
+					}]
+			}
+		}, {
+			"type":	"TRACE",
+			"line":	"2",
+			"arg":	{
+				"type":	"WHERE",
+				"arg":	[{
+						"type":	"LIST",
+						"items":	[{
+								"type":	"NUMTOKEN",
+								"value":	"10"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"20"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"50"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"100"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"70"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"40"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"55"
+							}]
+					}, {
+						"type":	"ISWITHIN",
+						"arg":	[{
+								"type":	"DIVIDE",
+								"arg":	[{
+										"type":	"VARIABLE",
+										"name":	"it",
+										"line":	"2"
+									}, {
+										"type":	"NUMTOKEN",
+										"value":	"2"
+									}]
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"30"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"60"
+							}]
+					}]
+			}
+		}]
+}
+Line 1: Hallo
+Line 2: [100, 70]

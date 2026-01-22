@@ -91,7 +91,7 @@ get_json_type :: (obj: *cJSON) -> string {
 // PHASE 1b: ISO TIME UTILITIES
 // =============================================================================
 
-iso_string_to_float64 :: (iso_str: string) -> float64 {
+iso_string_to_float64 :: (iso_str: string) -> bool, float64 {
     // Parse ISO 8601 format strings to milliseconds since epoch
     // Supported formats:
     // - yyyy-mm-dd
@@ -109,20 +109,20 @@ iso_string_to_float64 :: (iso_str: string) -> float64 {
 
     // Split by 'T' to separate date and time
     parts := split(str, "T");
-    if parts.count == 0 return 0;
+    if parts.count == 0 return false, 0;
 
     date_part := parts[0];
     time_part := ifx parts.count > 1 then parts[1] else "";
 
     // Parse date (yyyy-mm-dd)
     date_parts := split(date_part, "-");
-    if date_parts.count < 3 return 0;
+    if date_parts.count < 3 return false, 0;
 
     year, success_y := string_to_int(date_parts[0]);
     month, success_m := string_to_int(date_parts[1]);
     day, success_d := string_to_int(date_parts[2]);
 
-    if !success_y || !success_m || !success_d return 0;
+    if !success_y || !success_m || !success_d return false, 0;
 
     // Parse time (hh:mm:ss.mmm)
     hour: int = 0;
@@ -187,7 +187,7 @@ iso_string_to_float64 :: (iso_str: string) -> float64 {
     cal.minute = cast(s8)minute;
     cal.second = cast(s8)second;
     cal.millisecond = cast(s16)millisecond;
-    return cast(float64)to_milliseconds(calendar_to_apollo(cal));
+    return true, cast(float64)to_milliseconds(calendar_to_apollo(cal));
 }
 
 // =============================================================================
@@ -314,10 +314,54 @@ value_duration :: (d: float64) -> *Value {
 }
 
 value_list :: (items: []*Value) -> *Value {
-    v := New(Value_List);
-    v.kind = .LIST;
-    v.value = items;
-    return cast(*Value)v;
+     v := New(Value_List);
+     v.kind = .LIST;
+     v.value = items;
+     return cast(*Value)v;
+}
+
+copy_value :: (src: *Value) -> *Value {
+     if !src return value_null();
+
+     if src.kind == {
+         case .NULL;
+             return value_null();
+         case .BOOL;
+             v := cast(*Value_Bool)src;
+             result := value_bool(v.value);
+             result.time = src.time;
+             return result;
+         case .NUMBER;
+             v := cast(*Value_Number)src;
+             result := value_number(v.value);
+             result.time = src.time;
+             return result;
+         case .STRING;
+             v := cast(*Value_String)src;
+             result := value_string(v.value);
+             result.time = src.time;
+             return result;
+         case .TIME;
+             v := cast(*Value_Time)src;
+             result := value_time(v.value);
+             result.time = src.time;
+             return result;
+         case .DURATION;
+             v := cast(*Value_Duration)src;
+             result := value_duration(v.value);
+             result.time = src.time;
+             return result;
+         case .LIST;
+             v := cast(*Value_List)src;
+             copied_items: [..]*Value;
+             for item: v.value {
+                 array_add(*copied_items, copy_value(item));
+             }
+             result := value_list(copied_items);
+             result.time = src.time;
+             return result;
+     }
+     return value_null();
 }
 
 // =============================================================================
@@ -366,6 +410,43 @@ arithmetic_operation :: (left: *Value, right: *Value, operation: Arithmetic_Oper
         return value_duration(apply(left, right, operation));
     }
     return value_null();
+}
+
+op_read_file :: (v: *Value) -> *Value {
+    if !is_string(v.*){
+        log_error("Argument to read is not a string this is invalid!");
+        exit(1);
+    }
+    filename := (cast(*Value_String)v).value;
+    file_content, success := read_entire_file(filename);
+    if !success {
+        log_error("Could not read file!");
+        exit(1);
+    }
+    lines := split(file_content, "\n");
+    result: [..]*Value;
+    for line: lines {
+        success: bool;
+        success=, left, right := split_from_left(line, ",");
+        if !success {
+            log_error("Could not parse CSV line continuing...");
+            continue;
+        }
+        left_number, success=, remainder := string_to_float64(left);
+        if !success {
+            log_error("Could not parse number");
+            continue;
+        }
+        success=, time := iso_string_to_float64(right);
+        if !success {
+            log_error("Could not parse number");
+            continue;
+        }
+        v := value_number(left_number);
+        v.time = time;
+        array_add(*result, v);
+    }
+    return value_list(result);
 }
 
 op_unminus :: (v: *Value) -> *Value {
@@ -568,7 +649,7 @@ op_uppercase :: (v: *Value) -> *Value {
         return result;
     }
     // For non-strings, just return as-is (preserving the value)
-    return v;
+    return value_null();
 }
 
 // =============================================================================
@@ -1182,7 +1263,11 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
             return value_time(cast(float64)to_milliseconds(current_time_consensus()));
         case "TIMETOKEN";
             val_str := get_json_string(node, "value");
-            time_ms := iso_string_to_float64(val_str);
+            success, time_ms := iso_string_to_float64(val_str);
+            if !success {
+                log_error("time could not be parsed this should not happen after the tokenizing!");
+                exit(1);
+            }
             return value_time(time_ms);
 
         // Variables & Control flow
@@ -1309,6 +1394,9 @@ eval :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
         case "WHERE";
             return eval_where(ctx, node);
 
+        case "READ";
+            return unary_operation(ctx, node, .LIST_WISE, op_read_file);
+
         case;
             log_error("Unknown AST node type: %\n", type_str);
     }
@@ -1325,11 +1413,14 @@ eval_statementblock :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
 }
 
 eval_assign :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
-    ident := get_json_string(node, "ident");
-    arg := get_json_object(node, "arg");
-    val := eval(ctx, arg);
-    table_set(*ctx.env, ident, val);
-    return value_null();
+     ident := get_json_string(node, "ident");
+     arg := get_json_object(node, "arg");
+     val := eval(ctx, arg);
+
+     // Deep copy the value to avoid aliasing issues
+     copied_val := copy_value(val);
+     table_set(*ctx.env, ident, copied_val);
+     return value_null();
 }
 
 eval_time_assign :: (ctx: *Interpreter_Data, node: *cJSON) -> *Value {
@@ -1450,3 +1541,4 @@ interpret :: (cjson: *cJSON) {
 #import "Math";
 #import "String";
 #import "Flat_Pool";
+#import "File";

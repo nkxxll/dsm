@@ -1,0 +1,14 @@
+glucose1 := 81;
+time glucose1 := 2025-11-04T15:21:00;
+glucose2 := 92;
+time glucose2 := 2025-11-04T18:24:00;
+glucose3 := 137;
+time glucose3 := 2025-11-04T21:10:00;
+glucose4 := 102;
+time glucose4 := 2025-11-05T00:15:00;
+glucose5 := 112;
+time glucose5 := 2025-11-05T03:19:00;
+
+glucose := [glucose1, glucose2, glucose3, glucose4, glucose5];
+trace time of glucose;
+trace [time of first glucose, average time of glucose, minimum time of glucose];

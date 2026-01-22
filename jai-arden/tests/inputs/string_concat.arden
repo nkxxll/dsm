@@ -1,0 +1,2 @@
+WRITE "Value: " & 42;
+WRITE 42 & " is the answer";

@@ -1,0 +1,3 @@
+x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false];
+TRACE x is number;
+TRACE x is list;

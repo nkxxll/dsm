@@ -1,0 +1,1 @@
+IF true THEN WRITE "yes"; ENDIF;

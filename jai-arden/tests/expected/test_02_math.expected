@@ -1,0 +1,24 @@
+JSON: [["1", "WRITE", "WRITE"],["1", "NUMTOKEN", "1"],["1", "PLUS", "+"],["1", "NUMTOKEN", "2"],["1", "TIMES", "*"],["1", "NUMTOKEN", "3"],["1", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"WRITE",
+			"arg":	{
+				"type":	"PLUS",
+				"arg":	[{
+						"type":	"NUMTOKEN",
+						"value":	"1"
+					}, {
+						"type":	"TIMES",
+						"arg":	[{
+								"type":	"NUMTOKEN",
+								"value":	"2"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"3"
+							}]
+					}]
+			}
+		}]
+}
+7

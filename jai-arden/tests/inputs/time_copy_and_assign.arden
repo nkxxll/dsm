@@ -1,0 +1,7 @@
+x := 4711;
+time x := 1999-09-19;
+y := x;
+time y := 2022-12-22;
+trace time of x;
+trace time y;
+trace time of time of y;

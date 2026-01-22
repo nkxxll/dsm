@@ -1,0 +1,31 @@
+JSON: [["1", "TRACE", "TRACE"],["1", "LSPAR", "["],["1", "NUMTOKEN", "1"],["1", "COMMA", ","],["1", "NUMTOKEN", "2"],["1", "COMMA", ","],["1", "NUMTOKEN", "3"],["1", "COMMA", ","],["1", "NUMTOKEN", "4"],["1", "RSPAR", "]"],["1", "PLUS", "+"],["1", "NUMTOKEN", "5"],["1", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"TRACE",
+			"line":	"1",
+			"arg":	{
+				"type":	"PLUS",
+				"arg":	[{
+						"type":	"LIST",
+						"items":	[{
+								"type":	"NUMTOKEN",
+								"value":	"1"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"2"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"3"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"4"
+							}]
+					}, {
+						"type":	"NUMTOKEN",
+						"value":	"5"
+					}]
+			}
+		}]
+}
+Line 1: [6, 7, 8, 9]

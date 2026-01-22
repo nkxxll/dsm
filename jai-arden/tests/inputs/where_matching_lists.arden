@@ -1,0 +1,1 @@
+TRACE [10,20,30,40] where [true,false,true,false];

@@ -1,0 +1,39 @@
+JSON: [["1", "TRACE", "TRACE"],["1", "LSPAR", "["],["1", "NUMTOKEN", "10"],["1", "COMMA", ","],["1", "NUMTOKEN", "20"],["1", "COMMA", ","],["1", "NUMTOKEN", "30"],["1", "COMMA", ","],["1", "NUMTOKEN", "40"],["1", "RSPAR", "]"],["1", "WHERE", "where"],["1", "LSPAR", "["],["1", "TRUE", "true"],["1", "COMMA", ","],["1", "FALSE", "false"],["1", "COMMA", ","],["1", "TRUE", "true"],["1", "COMMA", ","],["1", "FALSE", "false"],["1", "RSPAR", "]"],["1", "SEMICOLON", ";"]]
+AST: {
+	"type":	"STATEMENTBLOCK",
+	"statements":	[{
+			"type":	"TRACE",
+			"line":	"1",
+			"arg":	{
+				"type":	"WHERE",
+				"arg":	[{
+						"type":	"LIST",
+						"items":	[{
+								"type":	"NUMTOKEN",
+								"value":	"10"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"20"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"30"
+							}, {
+								"type":	"NUMTOKEN",
+								"value":	"40"
+							}]
+					}, {
+						"type":	"LIST",
+						"items":	[{
+								"type":	"TRUE"
+							}, {
+								"type":	"FALSE"
+							}, {
+								"type":	"TRUE"
+							}, {
+								"type":	"FALSE"
+							}]
+					}]
+			}
+		}]
+}
+Line 1: [10, 30]
