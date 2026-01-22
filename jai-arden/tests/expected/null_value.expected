@@ -1,11 +1,1 @@
-JSON: [["1", "WRITE", "WRITE"],["1", "NULL", "null"],["1", "SEMICOLON", ";"]]
-AST: {
-	"type":	"STATEMENTBLOCK",
-	"statements":	[{
-			"type":	"WRITE",
-			"arg":	{
-				"type":	"NULL"
-			}
-		}]
-}
 null

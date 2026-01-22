@@ -1,17 +1,2 @@
-JSON: [["1", "WRITE", "WRITE"],["1", "TRUE", "true"],["1", "SEMICOLON", ";"],["2", "WRITE", "WRITE"],["2", "FALSE", "false"],["2", "SEMICOLON", ";"]]
-AST: {
-	"type":	"STATEMENTBLOCK",
-	"statements":	[{
-			"type":	"WRITE",
-			"arg":	{
-				"type":	"TRUE"
-			}
-		}, {
-			"type":	"WRITE",
-			"arg":	{
-				"type":	"FALSE"
-			}
-		}]
-}
 true
 false

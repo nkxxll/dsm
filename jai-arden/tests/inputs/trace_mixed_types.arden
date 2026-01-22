@@ -1,4 +1,4 @@
-x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false, now];
+x := ["Hallo Welt", null, 4711, 2020-01-01T12:30:00, false, 2020-01-01T12:30:00];
 trace x;
 trace x is number;
 trace x is list;

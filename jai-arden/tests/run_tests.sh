@@ -50,7 +50,10 @@ for input_file in "${input_files[@]}"; do
     if [ "$update_mode" = true ]; then
         # Save current output
         echo -n "Updating $test_name... "
-        "$MAIN" "$input_file" > "$expected_file" 2>&1
+        temp_output=$(mktemp)
+        "$MAIN" "$input_file" > "$temp_output" 2>&1
+        sed '/^JSON:/d; /^AST:/,/^}$/d' "$temp_output" > "$expected_file"
+        rm "$temp_output"
         echo -e "${GREEN}saved${NC}"
         continue
     fi

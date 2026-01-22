@@ -1,13 +1,1 @@
-JSON: [["1", "TRACE", "TRACE"],["1", "STRTOKEN", "foo"],["1", "SEMICOLON", ";"]]
-AST: {
-	"type":	"STATEMENTBLOCK",
-	"statements":	[{
-			"type":	"TRACE",
-			"line":	"1",
-			"arg":	{
-				"type":	"STRTOKEN",
-				"value":	"foo"
-			}
-		}]
-}
 Line 1: foo

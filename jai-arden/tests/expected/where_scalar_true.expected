@@ -1,18 +1,1 @@
-JSON: [["1", "TRACE", "TRACE"],["1", "NUMTOKEN", "1"],["1", "WHERE", "where"],["1", "TRUE", "true"],["1", "SEMICOLON", ";"]]
-AST: {
-	"type":	"STATEMENTBLOCK",
-	"statements":	[{
-			"type":	"TRACE",
-			"line":	"1",
-			"arg":	{
-				"type":	"WHERE",
-				"arg":	[{
-						"type":	"NUMTOKEN",
-						"value":	"1"
-					}, {
-						"type":	"TRUE"
-					}]
-			}
-		}]
-}
 Line 1: 1
