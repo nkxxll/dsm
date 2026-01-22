@@ -10,6 +10,7 @@ glucose := read "glucose.csv";
 trace the count of glucose;
 trace any (glucose is greater than 100);
 trace [time of first glucose, average time of glucose, minimum time of glucose];
+trace glucose + glucose;
 trace time of (glucose + glucose);
 trace glucose where it occurred within the same day as latest glucose;
 
@@ -19,6 +20,7 @@ trace glucose where it occurred within the same day as latest glucose;
 // also z.B. "120 Sekunden".
 trace the interval of glucose;
 trace time of earliest of glucose + 23 minutes - 12 seconds;
+trace (time latest glucose - time earliest glucose);
 trace (time latest glucose - time earliest glucose) / 7180;
 trace 2 hours / 5 minutes;
 midtime := average [time of earliest glucose, time of latest glucose];

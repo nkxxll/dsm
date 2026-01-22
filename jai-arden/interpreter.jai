@@ -395,19 +395,42 @@ arithmetic_operation :: (left: *Value, right: *Value, operation: Arithmetic_Oper
     }
     // Number - Number
     if is_number(left.*) && is_number(right.*) {
-        return value_number(apply(left, right, operation));
+        v := value_number(apply(left, right, operation));
+        v.time = left.time;
+        return v;
     }
     // Duration - Duration
     if is_duration(left.*) && is_duration(right.*) {
-        return value_duration(apply(left, right, operation));
+        // if we divide a duration by a duration we dont get a duration back
+        // because we have lost the unit in the process so we get a number this
+        // is a special case
+        v : *Value;
+        if operation == .DIVIDE {
+            v = value_number(apply(left, right, operation));
+        } else {
+            v = value_duration(apply(left, right, operation));
+        }
+        v.time = left.time;
+        return v;
     }
+
+    if is_duration(left.*) && is_number(right.*) {
+        v := value_duration(apply(left, right, operation));
+        v.time = left.time;
+        return v;
+    }
+
     // Time - Duration
     if is_time(left.*) && is_duration(right.*) {
-        return value_time(apply(left, right, operation));
+        v := value_time(apply(left, right, operation));
+        v.time = left.time;
+        return v;
     }
     // Time - Time (returns Duration)
     if is_time(left.*) && is_time(right.*) {
-        return value_duration(apply(left, right, operation));
+        v := value_duration(apply(left, right, operation));
+        v.time = left.time;
+        return v;
     }
     return value_null();
 }
@@ -574,35 +597,76 @@ op_first :: (v: *Value) -> *Value {
 }
 
 op_latest :: (v: *Value) -> *Value {
-    if !is_list(v.*) return value_null();
-    vl := cast(*Value_List)v;
-    if vl.value.count == 0 return value_null();
+    return op_timest(v, .LATEST);
+}
 
-    latest_idx := 0;
-    latest_time := vl.value[0].time;
-    for i: 1..vl.value.count-1 {
-        if vl.value[i].time > latest_time {
-            latest_time = vl.value[i].time;
-            latest_idx = i;
+Timiest_Type :: enum {
+    EARLIEST;
+    LATEST;
+}
+
+op_timest :: (value: *Value, timiest_type: Timiest_Type) -> *Value {
+    if !is_list(value.*) return value_null();
+    vl := (cast(*Value_List)value).*;
+    if vl.value.count == 0 return value_null();
+    res := vl.value[0];
+    earliest_time := vl.value[0].*.time;
+    if vl.value.count == 1 {
+        res = vl.value[0];
+    } else {
+        for i: 1..vl.value.count-1 {
+            current := vl.value[i];
+            current_time := vl.value[i].*.time;
+            if #complete timiest_type == {
+                case .EARLIEST;
+                    if earliest_time > current_time {
+                        res = current;
+                    }
+                case .LATEST;
+                    if earliest_time < current_time {
+                        res = current;
+                    }
+            }
         }
     }
-    return vl.value[latest_idx];
+    if #complete res.*.kind == {
+        case .NULL;
+            return value_null();
+        case .BOOL;
+            res_cast := cast(*Value_Bool)res;
+            v := value_bool(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+        case .NUMBER;
+            res_cast := cast(*Value_Number)res;
+            v := value_number(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+        case .STRING;
+            res_cast := cast(*Value_String)res;
+            v := value_string(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+        case .TIME;
+            res_cast := cast(*Value_Time)res;
+            v := value_time(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+        case .DURATION;
+            res_cast := cast(*Value_Duration)res;
+            v := value_duration(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+        case .LIST;
+            res_cast := cast(*Value_List)res;
+            v := value_list(res_cast.*.value);
+            v.time = res_cast.time;
+            return v;
+    }
 }
 
 op_earliest :: (v: *Value) -> *Value {
-    if !is_list(v.*) return value_null();
-    vl := cast(*Value_List)v;
-    if vl.value.count == 0 return value_null();
-
-    earliest_idx := 0;
-    earliest_time := vl.value[0].time;
-    for i: 1..vl.value.count-1 {
-        if vl.value[i].time > 0 && (earliest_time == 0 || vl.value[i].time < earliest_time) {
-            earliest_time = vl.value[i].time;
-            earliest_idx = i;
-        }
-    }
-    return vl.value[earliest_idx];
+    return op_timest(v, .EARLIEST);
 }
 
 op_increase :: (v: *Value) -> *Value {
