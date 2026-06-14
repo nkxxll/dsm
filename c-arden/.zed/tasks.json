@@ -1,0 +1,19 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "build c-arden",
+    "command": "make bin/c-arden",
+    "shell": {
+      "program": "fish",
+    },
+  },
+  {
+    "label": "test",
+    "command": "make test",
+    "shell": {
+      "program": "fish",
+    },
+  },
+]

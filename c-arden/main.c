@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   Token token;
   while ((token = get_next_token(&tokenizer)).type != TOKEN_EOF) {
     printf("Token: ");
-    tokenizer_print_token(&tokenizer, token);
+    tokenizer_print_token(token);
   }
 
   return 0;
