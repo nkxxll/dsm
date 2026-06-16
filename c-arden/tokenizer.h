@@ -23,7 +23,6 @@ typedef struct {
 
 enum Type {
   TOKEN_EOF,
-  TOKEN_NUMBER,
   TOKEN_IDENTIFIER,
 
   TOKEN_PLUS = '+',
@@ -120,5 +119,6 @@ char tokenizer_advance(Tokenizer *tokenizer);
 Token tokenizer_single_char_token(Tokenizer *tokenizer, int type);
 Token tokenizer_parse_number(Tokenizer *tokenizer);
 Token tokenizer_parse_identifier(Tokenizer *tokenizer);
+char *token_type_to_string(int token_type);
 
 #endif

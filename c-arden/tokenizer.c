@@ -127,8 +127,7 @@ static Token tokenizer_parse_string(Tokenizer *tokenizer) {
   size_t start = tokenizer->pos;
   size_t line = tokenizer->line;
   size_t column = tokenizer->column;
-  size_t content_start = start + 1;
-  size_t content_len = 0;
+  size_t length = 1;
   size_t rows = 0;
 
   tokenizer_advance_delimiter(tokenizer);
@@ -139,18 +138,18 @@ static Token tokenizer_parse_string(Tokenizer *tokenizer) {
       rows++;
     }
     tokenizer->pos++;
-    content_len++;
+    length++;
   }
 
   if (tokenizer_peek(tokenizer) == '"') {
+    length++;
     tokenizer_advance_delimiter(tokenizer);
   }
 
   tokenizer->line += rows;
-  tokenizer->column += content_len;
+  tokenizer->column += length;
 
-  return make_token(tokenizer, content_start, content_len, line, column,
-                    TOKEN_STRTOKEN);
+  return make_token(tokenizer, start, length, line, column, TOKEN_STRTOKEN);
 }
 
 int init_tokenizer(Tokenizer *tokenizer, const char *input_file, FILE *file) {
@@ -387,4 +386,178 @@ Token tokenizer_parse_number(Tokenizer *tokenizer) {
 
   return make_token(tokenizer, start, tokenizer->pos - start, line, column,
                     is_time ? TOKEN_TIMETOKEN : TOKEN_NUMTOKEN);
+}
+
+char *token_type_to_string(int token_type) {
+  switch (token_type) {
+  case TOKEN_EOF:
+    return "TOKEN_EOF";
+  case TOKEN_IDENTIFIER:
+    return "TOKEN_IDENTIFIER";
+
+  case TOKEN_PLUS:
+    return "TOKEN_PLUS";
+  case TOKEN_MINUS:
+    return "TOKEN_MINUS";
+  case TOKEN_TIMES:
+    return "TOKEN_TIMES";
+  case TOKEN_DIVIDE:
+    return "TOKEN_DIVIDE";
+  case TOKEN_LPAR:
+    return "TOKEN_LPAR";
+  case TOKEN_RPAR:
+    return "TOKEN_RPAR";
+  case TOKEN_LSPAR:
+    return "TOKEN_LSPAR";
+  case TOKEN_RSPAR:
+    return "TOKEN_RSPAR";
+  case TOKEN_COMMA:
+    return "TOKEN_COMMA";
+  case TOKEN_AMPERSAND:
+    return "TOKEN_AMPERSAND";
+  case TOKEN_SEMICOLON:
+    return "TOKEN_SEMICOLON";
+  case TOKEN_EQ:
+    return "TOKEN_EQ";
+  case TOKEN_DOT:
+    return "TOKEN_DOT";
+  case TOKEN_LT:
+    return "TOKEN_LT";
+  case TOKEN_GT:
+    return "TOKEN_GT";
+
+  case TOKEN_UNKNOWN:
+    return "TOKEN_UNKNOWN";
+
+  case TOKEN_ASSIGN:
+    return "TOKEN_ASSIGN";
+  case TOKEN_POWER:
+    return "TOKEN_POWER";
+  case TOKEN_LTEQ:
+    return "TOKEN_LTEQ";
+  case TOKEN_NEQ:
+    return "TOKEN_NEQ";
+  case TOKEN_GTEQ:
+    return "TOKEN_GTEQ";
+  case TOKEN_RANGE:
+    return "TOKEN_RANGE";
+
+  case TOKEN_NUMTOKEN:
+    return "TOKEN_NUMTOKEN";
+  case TOKEN_STRTOKEN:
+    return "TOKEN_STRTOKEN";
+  case TOKEN_TIMETOKEN:
+    return "TOKEN_TIMETOKEN";
+
+  case TOKEN_THE:
+    return "TOKEN_THE";
+  case TOKEN_AS:
+    return "TOKEN_AS";
+  case TOKEN_THAN:
+    return "TOKEN_THAN";
+  case TOKEN_OF:
+    return "TOKEN_OF";
+  case TOKEN_TO:
+    return "TOKEN_TO";
+  case TOKEN_SQRT:
+    return "TOKEN_SQRT";
+  case TOKEN_DAY:
+    return "TOKEN_DAY";
+  case TOKEN_WHERE:
+    return "TOKEN_WHERE";
+  case TOKEN_WITHIN:
+    return "TOKEN_WITHIN";
+  case TOKEN_NOT:
+    return "TOKEN_NOT";
+  case TOKEN_IS:
+    return "TOKEN_IS";
+  case TOKEN_SAME:
+    return "TOKEN_SAME";
+  case TOKEN_LISTTYPE:
+    return "TOKEN_LISTTYPE";
+  case TOKEN_ANY:
+    return "TOKEN_ANY";
+  case TOKEN_AVERAGE:
+    return "TOKEN_AVERAGE";
+  case TOKEN_BEFORE:
+    return "TOKEN_BEFORE";
+  case TOKEN_COUNT:
+    return "TOKEN_COUNT";
+  case TOKEN_CURRENTTIME:
+    return "TOKEN_CURRENTTIME";
+  case TOKEN_DO:
+    return "TOKEN_DO";
+  case TOKEN_EARLIEST:
+    return "TOKEN_EARLIEST";
+  case TOKEN_ELSE:
+    return "TOKEN_ELSE";
+  case TOKEN_ELSEIF:
+    return "TOKEN_ELSEIF";
+  case TOKEN_ENDDO:
+    return "TOKEN_ENDDO";
+  case TOKEN_ENDIF:
+    return "TOKEN_ENDIF";
+  case TOKEN_FALSE:
+    return "TOKEN_FALSE";
+  case TOKEN_FIRST:
+    return "TOKEN_FIRST";
+  case TOKEN_FOR:
+    return "TOKEN_FOR";
+  case TOKEN_GREATER:
+    return "TOKEN_GREATER";
+  case TOKEN_HOURS:
+    return "TOKEN_HOURS";
+  case TOKEN_IF:
+    return "TOKEN_IF";
+  case TOKEN_IN:
+    return "TOKEN_IN";
+  case TOKEN_INCREASE:
+    return "TOKEN_INCREASE";
+  case TOKEN_INTERVAL:
+    return "TOKEN_INTERVAL";
+  case TOKEN_LAST:
+    return "TOKEN_LAST";
+  case TOKEN_LATEST:
+    return "TOKEN_LATEST";
+  case TOKEN_MAXIMUM:
+    return "TOKEN_MAXIMUM";
+  case TOKEN_MINIMUM:
+    return "TOKEN_MINIMUM";
+  case TOKEN_MINUTES:
+    return "TOKEN_MINUTES";
+  case TOKEN_NOW:
+    return "TOKEN_NOW";
+  case TOKEN_NULL:
+    return "TOKEN_NULL";
+  case TOKEN_OCCUR:
+    return "TOKEN_OCCUR";
+  case TOKEN_READ:
+    return "TOKEN_READ";
+  case TOKEN_SECONDS:
+    return "TOKEN_SECONDS";
+  case TOKEN_SUM:
+    return "TOKEN_SUM";
+  case TOKEN_THEN:
+    return "TOKEN_THEN";
+  case TOKEN_TIME:
+    return "TOKEN_TIME";
+  case TOKEN_TRACE:
+    return "TOKEN_TRACE";
+  case TOKEN_TRUE:
+    return "TOKEN_TRUE";
+  case TOKEN_UPPERCASE:
+    return "TOKEN_UPPERCASE";
+  case TOKEN_WRITE:
+    return "TOKEN_WRITE";
+  case TOKEN_NUMBERTYPE:
+    return "TOKEN_NUMBERTYPE";
+  case TOKEN_YEAR:
+    return "TOKEN_YEAR";
+  case TOKEN_MONTH:
+    return "TOKEN_MONTH";
+  case TOKEN_WEEK:
+    return "TOKEN_WEEK";
+  default:
+    return "UNKNOWN";
+  }
 }
