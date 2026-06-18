@@ -1,0 +1,16 @@
+[
+  {
+    "file": "little-pratt.cc",
+    "arguments": [
+      "c++",
+      "-Wall",
+      "-Wextra",
+      "--std=c++20",
+      "-o",
+      "lp",
+      "little-pratt.cc"
+    ],
+    "directory": "/Users/niklas/git/dsm/c-arden",
+    "output": "lp"
+  }
+]
