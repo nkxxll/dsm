@@ -2,11 +2,18 @@
 
 #include "tokenizer.hh"
 
+#include <memory>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
 struct Parser {
   std::string &source;
   Tokenizer &tokenizer;
+};
+
+struct ParserError : std::runtime_error {
+  ParserError(const std::string &message, const Token &token);
 };
 
 /*
@@ -20,13 +27,24 @@ enum class AstTag {
   Identifier,
 };
 
-struct NumberLiteral {
-  double value;
+struct AstNode {
+  AstNode(AstTag tag, const Token &token)
+      : tag(tag), pos(token.pos), length(token.length), column(token.column),
+        line(token.line) {}
+  AstTag tag;
+  std::size_t pos;
+  std::size_t length;
+  std::size_t column;
+  std::size_t line;
+  virtual ~AstNode() = default;
 };
 
-struct AstNode {
-  AstTag tag;
-  virtual ~AstNode() = default;
+using AstNodePtr = std::unique_ptr<AstNode>;
+
+struct NumberLiteral : AstNode {
+  NumberLiteral(const Token &token, double value)
+      : AstNode(AstTag::NumberLiteral, token), value(value) {}
+  double value;
 };
 
 /*
@@ -34,6 +52,8 @@ struct AstNode {
  * interpreter decide
  */
 struct StringLiteral : AstNode {
+  StringLiteral(const Token &token, std::string_view value)
+      : AstNode(AstTag::StringLiteral, token), value(value) {}
   std::string_view value;
 };
 
@@ -42,6 +62,8 @@ struct StringLiteral : AstNode {
  * interpreter decide
  */
 struct Identifier : AstNode {
+  Identifier(const Token &token, std::string_view value)
+      : AstNode(AstTag::Identifier, token), value(value) {}
   std::string_view value;
 };
 
@@ -50,9 +72,11 @@ struct Identifier : AstNode {
  * interpreter decide
  */
 struct BooleanLiteral : AstNode {
+  BooleanLiteral(const Token &token, bool value)
+      : AstNode(AstTag::BooleanLiteral, token), value(value) {}
   bool value;
 };
 
 Parser make_parser(std::string &source, Tokenizer &tokenizer);
-AstNode parser_expr(Parser &p);
-AstNode parser_expr_bp(Parser &p);
+AstNodePtr parser_expr(Parser &p);
+AstNodePtr parser_expr_bp(Parser &p);

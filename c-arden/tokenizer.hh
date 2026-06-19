@@ -110,11 +110,15 @@ struct Token {
   Type type;
 };
 
-void init_tokenizer(Tokenizer *tokenizer, std::string_view input_file,
+void init_tokenizer(Tokenizer &tokenizer, std::string_view input_file,
                     std::string_view input);
-void destroy_tokenizer(Tokenizer *tokenizer);
-Token tokenizer_next_token(Tokenizer *tokenizer);
-void tokenizer_print_token(const Tokenizer *tokenizer, Token token);
+void destroy_tokenizer(Tokenizer &tokenizer);
+Token tokenizer_next_token(Tokenizer &tokenizer);
+/*
+ * peeks the next token does not change the internal tokenizer state
+ */
+Token tokenizer_peek_token(Tokenizer &tokenizer);
+void tokenizer_print_token(const Tokenizer &tokenizer, Token token);
 const char *token_type_to_string(Type token_type);
 
 #endif

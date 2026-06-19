@@ -21,15 +21,15 @@ int main(int argc, char *argv[]) {
   std::string input((std::istreambuf_iterator<char>(file)),
                     std::istreambuf_iterator<char>());
   Tokenizer tokenizer{};
-  init_tokenizer(&tokenizer, input_file, input);
+  init_tokenizer(tokenizer, input_file, input);
 
   Token token{};
-  while ((token = tokenizer_next_token(&tokenizer)).type != Type::Eof) {
+  while ((token = tokenizer_next_token(tokenizer)).type != Type::Eof) {
     std::printf("Token: %s '", token_type_to_string(token.type));
-    tokenizer_print_token(&tokenizer, token);
+    tokenizer_print_token(tokenizer, token);
     std::printf("' at %zu:%zu\n", token.line, token.column);
   }
 
-  destroy_tokenizer(&tokenizer);
+  destroy_tokenizer(tokenizer);
   return 0;
 }

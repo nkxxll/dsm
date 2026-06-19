@@ -1,3 +1,4 @@
+#include "parser.hh"
 #include "tokenizer.hh"
 #include <vector>
 
@@ -13,11 +14,11 @@ struct TokenExpect {
 static std::vector<Token> tokenize_all(const char *input,
                                        size_t max_tokens = 2048) {
   Tokenizer tokenizer;
-  init_tokenizer(&tokenizer, "test", input);
+  init_tokenizer(tokenizer, "test", input);
   std::vector<Token> tokens;
   tokens.reserve(max_tokens);
   for (size_t i = 0; i < max_tokens; i++) {
-    Token t = tokenizer_next_token(&tokenizer);
+    Token t = tokenizer_next_token(tokenizer);
     if (t.type == Type::Eof)
       break;
     tokens.push_back(t);
@@ -49,17 +50,59 @@ static void check_tokens(const char *input,
   }
 }
 
+static AstNodePtr parse_test_expr(std::string &input) {
+  Tokenizer tokenizer;
+  init_tokenizer(tokenizer, "test", input);
+  Parser parser = make_parser(input, tokenizer);
+  return parser_expr(parser);
+}
+
+TEST(ParserTest, ParsesAtomExpressions) {
+  std::string number_input = "123.45";
+  auto number_node = parse_test_expr(number_input);
+  ASSERT_EQ(number_node->tag, AstTag::NumberLiteral);
+  auto *number = dynamic_cast<NumberLiteral *>(number_node.get());
+  ASSERT_NE(number, nullptr);
+  EXPECT_DOUBLE_EQ(number->value, 123.45);
+
+  std::string string_input = "\"hello\"";
+  auto string_node = parse_test_expr(string_input);
+  ASSERT_EQ(string_node->tag, AstTag::StringLiteral);
+  auto *string = dynamic_cast<StringLiteral *>(string_node.get());
+  ASSERT_NE(string, nullptr);
+  EXPECT_EQ(string->value, "hello");
+
+  std::string bool_input = "true";
+  auto bool_node = parse_test_expr(bool_input);
+  ASSERT_EQ(bool_node->tag, AstTag::BooleanLiteral);
+  auto *boolean = dynamic_cast<BooleanLiteral *>(bool_node.get());
+  ASSERT_NE(boolean, nullptr);
+  EXPECT_TRUE(boolean->value);
+
+  std::string identifier_input = "patient_age";
+  auto identifier_node = parse_test_expr(identifier_input);
+  ASSERT_EQ(identifier_node->tag, AstTag::Identifier);
+  auto *identifier = dynamic_cast<Identifier *>(identifier_node.get());
+  ASSERT_NE(identifier, nullptr);
+  EXPECT_EQ(identifier->value, "patient_age");
+}
+
+TEST(ParserTest, RejectsEmptyExpression) {
+  std::string input;
+  EXPECT_THROW(parse_test_expr(input), ParserError);
+}
+
 TEST(TokenizerTest, InitTokenizer) {
   char input[] = "some identifier +";
 
   Tokenizer tokenizer;
-  init_tokenizer(&tokenizer, "test", input);
+  init_tokenizer(tokenizer, "test", input);
 
-  Token token = tokenizer_next_token(&tokenizer);
+  Token token = tokenizer_next_token(tokenizer);
   assert_token(token, Type::Identifier, 4, 1, 1);
-  token = tokenizer_next_token(&tokenizer);
+  token = tokenizer_next_token(tokenizer);
   assert_token(token, Type::Identifier, 10, 6, 1);
-  token = tokenizer_next_token(&tokenizer);
+  token = tokenizer_next_token(tokenizer);
   assert_token(token, Type::Plus, 1, 17, 1);
 
   EXPECT_EQ(token.type, Type::Plus);
@@ -69,9 +112,9 @@ TEST(TokenizerTest, InitTokenizer) {
 TEST(TokenizerTest, TokenizeNumber) {
   char input[] = "1234";
   Tokenizer tokenizer;
-  init_tokenizer(&tokenizer, "test", input);
+  init_tokenizer(tokenizer, "test", input);
 
-  Token token = tokenizer_next_token(&tokenizer);
+  Token token = tokenizer_next_token(tokenizer);
   assert_token(token, Type::Numtoken, 4, 1, 1);
 }
 
@@ -83,7 +126,7 @@ TEST(TokenizerTest, ReadsPlusToken) {
                          .line = 1,
                          .column = 0};
 
-  Token token = tokenizer_next_token(&tokenizer);
+  Token token = tokenizer_next_token(tokenizer);
 
   EXPECT_EQ(token.type, Type::Plus);
   EXPECT_EQ(token.length, 1u);
@@ -97,7 +140,7 @@ TEST(TokenizerTest, NextTokenAdvancesPosition) {
                          .line = 1,
                          .column = 1};
 
-  Token token = tokenizer_next_token(&tokenizer);
+  Token token = tokenizer_next_token(tokenizer);
 
   EXPECT_EQ(token.type, Type::Identifier);
   EXPECT_EQ(tokenizer.pos, 2u);

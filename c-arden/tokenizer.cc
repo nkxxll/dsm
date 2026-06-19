@@ -7,11 +7,11 @@
 
 namespace {
 
-static char tokenizer_peek(Tokenizer *tokenizer);
-static char tokenizer_advance(Tokenizer *tokenizer);
-static Token tokenizer_single_char_token(Tokenizer *tokenizer, Type type);
-static Token tokenizer_parse_number(Tokenizer *tokenizer);
-static Token tokenizer_parse_identifier(Tokenizer *tokenizer);
+static char tokenizer_peek(Tokenizer &tokenizer);
+static char tokenizer_advance(Tokenizer &tokenizer);
+static Token tokenizer_single_char_token(Tokenizer &tokenizer, Type type);
+static Token tokenizer_parse_number(Tokenizer &tokenizer);
+static Token tokenizer_parse_identifier(Tokenizer &tokenizer);
 
 struct Keyword {
   std::string text;
@@ -93,7 +93,7 @@ static bool is_identifier_char(unsigned char c) {
   return std::isalnum(c) || c == '_';
 }
 
-static bool token_text_equals_ignore_case(const Tokenizer *tokenizer,
+static bool token_text_equals_ignore_case(const Tokenizer &tokenizer,
                                           const Token &token,
                                           const char *text) {
   std::size_t text_len = std::strlen(text);
@@ -102,7 +102,7 @@ static bool token_text_equals_ignore_case(const Tokenizer *tokenizer,
   }
 
   for (std::size_t i = 0; i < token.length; i++) {
-    unsigned char a = (unsigned char)tokenizer->input[token.pos + i];
+    unsigned char a = (unsigned char)tokenizer.input[token.pos + i];
     unsigned char b = (unsigned char)text[i];
     if (std::tolower(a) != std::tolower(b)) {
       return false;
@@ -121,23 +121,23 @@ static Token make_token(std::size_t start, std::size_t length, std::size_t line,
                .type = type};
 }
 
-static void tokenizer_skip_line_comment(Tokenizer *tokenizer) {
+static void tokenizer_skip_line_comment(Tokenizer &tokenizer) {
   while (tokenizer_peek(tokenizer) != '\0' &&
          tokenizer_peek(tokenizer) != '\n') {
     tokenizer_advance(tokenizer);
   }
 }
 
-static void tokenizer_advance_delimiter(Tokenizer *tokenizer) {
+static void tokenizer_advance_delimiter(Tokenizer &tokenizer) {
   if (tokenizer_peek(tokenizer) != '\0') {
-    tokenizer->pos++;
+    tokenizer.pos++;
   }
 }
 
-static Token tokenizer_parse_string(Tokenizer *tokenizer) {
-  std::size_t start = tokenizer->pos;
-  std::size_t line = tokenizer->line;
-  std::size_t column = tokenizer->column;
+static Token tokenizer_parse_string(Tokenizer &tokenizer) {
+  std::size_t start = tokenizer.pos;
+  std::size_t line = tokenizer.line;
+  std::size_t column = tokenizer.column;
   std::size_t length = 1;
   std::size_t rows = 0;
 
@@ -148,7 +148,7 @@ static Token tokenizer_parse_string(Tokenizer *tokenizer) {
         tokenizer_peek(tokenizer) == '\r') {
       rows++;
     }
-    tokenizer->pos++;
+    tokenizer.pos++;
     length++;
   }
 
@@ -157,41 +157,41 @@ static Token tokenizer_parse_string(Tokenizer *tokenizer) {
     tokenizer_advance_delimiter(tokenizer);
   }
 
-  tokenizer->line += rows;
-  tokenizer->column += length;
+  tokenizer.line += rows;
+  tokenizer.column += length;
 
   return make_token(start, length, line, column, Type::Strtoken);
 }
 
-static char tokenizer_peek(Tokenizer *tokenizer) {
-  if (tokenizer->pos >= tokenizer->input.size()) {
+static char tokenizer_peek(Tokenizer &tokenizer) {
+  if (tokenizer.pos >= tokenizer.input.size()) {
     return '\0';
   }
 
-  return tokenizer->input[tokenizer->pos];
+  return tokenizer.input[tokenizer.pos];
 }
 
-static char tokenizer_advance(Tokenizer *tokenizer) {
+static char tokenizer_advance(Tokenizer &tokenizer) {
   char current = tokenizer_peek(tokenizer);
   if (current == '\0') {
     return current;
   }
 
-  tokenizer->pos++;
+  tokenizer.pos++;
   if (current == '\n') {
-    tokenizer->line++;
-    tokenizer->column = 1;
+    tokenizer.line++;
+    tokenizer.column = 1;
   } else {
-    tokenizer->column++;
+    tokenizer.column++;
   }
 
   return tokenizer_peek(tokenizer);
 }
 
-static Token tokenizer_single_char_token(Tokenizer *tokenizer, Type type) {
-  std::size_t start = tokenizer->pos;
-  std::size_t line = tokenizer->line;
-  std::size_t column = tokenizer->column;
+static Token tokenizer_single_char_token(Tokenizer &tokenizer, Type type) {
+  std::size_t start = tokenizer.pos;
+  std::size_t line = tokenizer.line;
+  std::size_t column = tokenizer.column;
   std::size_t length = 1;
 
   if (type == Type::Assign || type == Type::Power || type == Type::Lteq ||
@@ -208,17 +208,17 @@ static Token tokenizer_single_char_token(Tokenizer *tokenizer, Type type) {
   return make_token(start, length, line, column, type);
 }
 
-static Token tokenizer_parse_identifier(Tokenizer *tokenizer) {
-  std::size_t start = tokenizer->pos;
-  std::size_t line = tokenizer->line;
-  std::size_t column = tokenizer->column;
+static Token tokenizer_parse_identifier(Tokenizer &tokenizer) {
+  std::size_t start = tokenizer.pos;
+  std::size_t line = tokenizer.line;
+  std::size_t column = tokenizer.column;
 
   while (is_identifier_char((unsigned char)tokenizer_peek(tokenizer))) {
     tokenizer_advance(tokenizer);
   }
 
   Token tok =
-      make_token(start, tokenizer->pos - start, line, column, Type::Identifier);
+      make_token(start, tokenizer.pos - start, line, column, Type::Identifier);
   for (std::size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
     if (token_text_equals_ignore_case(tokenizer, tok,
                                       keywords[i].text.c_str())) {
@@ -230,10 +230,10 @@ static Token tokenizer_parse_identifier(Tokenizer *tokenizer) {
   return tok;
 }
 
-static Token tokenizer_parse_number(Tokenizer *tokenizer) {
-  std::size_t start = tokenizer->pos;
-  std::size_t line = tokenizer->line;
-  std::size_t column = tokenizer->column;
+static Token tokenizer_parse_number(Tokenizer &tokenizer) {
+  std::size_t start = tokenizer.pos;
+  std::size_t line = tokenizer.line;
+  std::size_t column = tokenizer.column;
   int is_time = 0;
 
   while (std::isdigit((unsigned char)tokenizer_peek(tokenizer))) {
@@ -241,8 +241,8 @@ static Token tokenizer_parse_number(Tokenizer *tokenizer) {
   }
 
   if (tokenizer_peek(tokenizer) == '.' &&
-      tokenizer->pos + 1 < tokenizer->input.size() &&
-      std::isdigit((unsigned char)tokenizer->input[tokenizer->pos + 1])) {
+      tokenizer.pos + 1 < tokenizer.input.size() &&
+      std::isdigit((unsigned char)tokenizer.input[tokenizer.pos + 1])) {
     tokenizer_advance(tokenizer);
     while (std::isdigit((unsigned char)tokenizer_peek(tokenizer))) {
       tokenizer_advance(tokenizer);
@@ -258,7 +258,7 @@ static Token tokenizer_parse_number(Tokenizer *tokenizer) {
     }
   }
 
-  return make_token(start, tokenizer->pos - start, line, column,
+  return make_token(start, tokenizer.pos - start, line, column,
                     is_time ? Type::Timetoken : Type::Numtoken);
 }
 } // namespace
@@ -437,30 +437,39 @@ const char *token_type_to_string(Type token_type) {
   }
 }
 
-void init_tokenizer(Tokenizer *tokenizer, std::string_view input_file,
+void init_tokenizer(Tokenizer &tokenizer, std::string_view input_file,
                     std::string_view input) {
-  tokenizer->input_file = input_file;
-  tokenizer->input = input;
-  tokenizer->pos = 0;
-  tokenizer->line = 1;
-  tokenizer->column = 1;
+  tokenizer.input_file = input_file;
+  tokenizer.input = input;
+  tokenizer.pos = 0;
+  tokenizer.line = 1;
+  tokenizer.column = 1;
 }
 
-Token tokenizer_next_token(Tokenizer *tokenizer) {
+Token tokenizer_peek_token(Tokenizer &tokenizer) {
+  std::size_t pos = tokenizer.pos;
+  std::size_t line = tokenizer.line;
+  std::size_t column = tokenizer.column;
+  auto token = tokenizer_next_token(tokenizer);
+  tokenizer.pos = pos;
+  tokenizer.line = line;
+  tokenizer.column = column;
+  return token;
+}
+
+Token tokenizer_next_token(Tokenizer &tokenizer) {
   for (;;) {
     char current = tokenizer_peek(tokenizer);
-    if (current == ' ' || current == '\t' || current == '\r') {
+    if (std::isspace(current)) {
       tokenizer_advance(tokenizer);
       continue;
     }
 
-    if (current == '\n') {
-      tokenizer_advance(tokenizer);
-      continue;
-    }
-
-    if (current == '/' && tokenizer->pos + 1 < tokenizer->input.size() &&
-        tokenizer->input[tokenizer->pos + 1] == '/') {
+    //
+    // look whether it is a comment
+    //
+    if (current == '/' && tokenizer.pos + 1 < tokenizer.input.size() &&
+        tokenizer.input[tokenizer.pos + 1] == '/') {
       tokenizer_skip_line_comment(tokenizer);
       continue;
     }
@@ -470,7 +479,7 @@ Token tokenizer_next_token(Tokenizer *tokenizer) {
 
   char current = tokenizer_peek(tokenizer);
   if (current == '\0') {
-    return make_token(tokenizer->pos, 0, tokenizer->line, tokenizer->column,
+    return make_token(tokenizer.pos, 0, tokenizer.line, tokenizer.column,
                       Type::Eof);
   }
 
@@ -488,37 +497,37 @@ Token tokenizer_next_token(Tokenizer *tokenizer) {
 
   switch (current) {
   case '*':
-    if (tokenizer->pos + 1 < tokenizer->input.size() &&
-        tokenizer->input[tokenizer->pos + 1] == '*') {
+    if (tokenizer.pos + 1 < tokenizer.input.size() &&
+        tokenizer.input[tokenizer.pos + 1] == '*') {
       return tokenizer_single_char_token(tokenizer, Type::Power);
     }
     return tokenizer_single_char_token(tokenizer, Type::Multipy);
   case ':':
-    if (tokenizer->pos + 1 < tokenizer->input.size() &&
-        tokenizer->input[tokenizer->pos + 1] == '=') {
+    if (tokenizer.pos + 1 < tokenizer.input.size() &&
+        tokenizer.input[tokenizer.pos + 1] == '=') {
       return tokenizer_single_char_token(tokenizer, Type::Assign);
     }
     break;
   case '.':
-    if (tokenizer->pos + 2 < tokenizer->input.size() &&
-        tokenizer->input[tokenizer->pos + 1] == '.' &&
-        tokenizer->input[tokenizer->pos + 2] == '.') {
+    if (tokenizer.pos + 2 < tokenizer.input.size() &&
+        tokenizer.input[tokenizer.pos + 1] == '.' &&
+        tokenizer.input[tokenizer.pos + 2] == '.') {
       return tokenizer_single_char_token(tokenizer, Type::Range);
     }
     return tokenizer_single_char_token(tokenizer, Type::Dot);
   case '<':
-    if (tokenizer->pos + 1 < tokenizer->input.size()) {
-      if (tokenizer->input[tokenizer->pos + 1] == '=') {
+    if (tokenizer.pos + 1 < tokenizer.input.size()) {
+      if (tokenizer.input[tokenizer.pos + 1] == '=') {
         return tokenizer_single_char_token(tokenizer, Type::Lteq);
       }
-      if (tokenizer->input[tokenizer->pos + 1] == '>') {
+      if (tokenizer.input[tokenizer.pos + 1] == '>') {
         return tokenizer_single_char_token(tokenizer, Type::Neq);
       }
     }
     return tokenizer_single_char_token(tokenizer, Type::Lt);
   case '>':
-    if (tokenizer->pos + 1 < tokenizer->input.size() &&
-        tokenizer->input[tokenizer->pos + 1] == '=') {
+    if (tokenizer.pos + 1 < tokenizer.input.size() &&
+        tokenizer.input[tokenizer.pos + 1] == '=') {
       return tokenizer_single_char_token(tokenizer, Type::Gteq);
     }
     return tokenizer_single_char_token(tokenizer, Type::Gt);
@@ -539,15 +548,14 @@ Token tokenizer_next_token(Tokenizer *tokenizer) {
   return tokenizer_single_char_token(tokenizer, Type::Unknown);
 }
 
-void destroy_tokenizer(Tokenizer *tokenizer) {
-  tokenizer->input_file = {};
-  tokenizer->input = {};
-  tokenizer->pos = 0;
-  tokenizer->line = 1;
-  tokenizer->column = 1;
+void destroy_tokenizer(Tokenizer &tokenizer) {
+  tokenizer.input_file = {};
+  tokenizer.input = {};
+  tokenizer.pos = 0;
+  tokenizer.line = 1;
+  tokenizer.column = 1;
 }
 
-
-void tokenizer_print_token(const Tokenizer *tokenizer, Token token) {
-  std::printf("%.*s", (int)token.length, tokenizer->input.data() + token.pos);
+void tokenizer_print_token(const Tokenizer &tokenizer, Token token) {
+  std::printf("%.*s", (int)token.length, tokenizer.input.data() + token.pos);
 }
