@@ -1,113 +1,124 @@
-#include "tokenizer.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "tokenizer.hh"
 
-typedef struct {
-  const char *text;
-  int type;
-} Keyword;
+#include <cctype>
+#include <cstdio>
+#include <cstring>
+#include <string>
 
-static const Keyword keywords[] = {
-    {"any", TOKEN_ANY},
-    {"as", TOKEN_AS},
-    {"average", TOKEN_AVERAGE},
-    {"before", TOKEN_BEFORE},
-    {"count", TOKEN_COUNT},
-    {"currenttime", TOKEN_CURRENTTIME},
-    {"day", TOKEN_DAY},
-    {"days", TOKEN_DAY},
-    {"do", TOKEN_DO},
-    {"earliest", TOKEN_EARLIEST},
-    {"else", TOKEN_ELSE},
-    {"elseif", TOKEN_ELSEIF},
-    {"enddo", TOKEN_ENDDO},
-    {"endif", TOKEN_ENDIF},
-    {"false", TOKEN_FALSE},
-    {"first", TOKEN_FIRST},
-    {"for", TOKEN_FOR},
-    {"greater", TOKEN_GREATER},
-    {"hour", TOKEN_HOURS},
-    {"hours", TOKEN_HOURS},
-    {"if", TOKEN_IF},
-    {"in", TOKEN_IN},
-    {"increase", TOKEN_INCREASE},
-    {"interval", TOKEN_INTERVAL},
-    {"is", TOKEN_IS},
-    {"last", TOKEN_LAST},
-    {"latest", TOKEN_LATEST},
-    {"list", TOKEN_LISTTYPE},
-    {"maximum", TOKEN_MAXIMUM},
-    {"minimum", TOKEN_MINIMUM},
-    {"minute", TOKEN_MINUTES},
-    {"minutes", TOKEN_MINUTES},
-    {"month", TOKEN_MONTH},
-    {"months", TOKEN_MONTH},
-    {"not", TOKEN_NOT},
-    {"now", TOKEN_NOW},
-    {"null", TOKEN_NULL},
-    {"number", TOKEN_NUMBERTYPE},
-    {"occur", TOKEN_OCCUR},
-    {"occurred", TOKEN_OCCUR},
-    {"occurs", TOKEN_OCCUR},
-    {"of", TOKEN_OF},
-    {"range", TOKEN_RANGE},
-    {"read", TOKEN_READ},
-    {"same", TOKEN_SAME},
-    {"second", TOKEN_SECONDS},
-    {"seconds", TOKEN_SECONDS},
-    {"sqrt", TOKEN_SQRT},
-    {"sum", TOKEN_SUM},
-    {"than", TOKEN_THAN},
-    {"the", TOKEN_THE},
-    {"then", TOKEN_THEN},
-    {"time", TOKEN_TIME},
-    {"to", TOKEN_TO},
-    {"trace", TOKEN_TRACE},
-    {"true", TOKEN_TRUE},
-    {"uppercase", TOKEN_UPPERCASE},
-    {"week", TOKEN_WEEK},
-    {"weeks", TOKEN_WEEK},
-    {"where", TOKEN_WHERE},
-    {"within", TOKEN_WITHIN},
-    {"write", TOKEN_WRITE},
-    {"year", TOKEN_YEAR},
-    {"years", TOKEN_YEAR},
+namespace {
+
+static char tokenizer_peek(Tokenizer *tokenizer);
+static char tokenizer_advance(Tokenizer *tokenizer);
+static Token tokenizer_single_char_token(Tokenizer *tokenizer, Type type);
+static Token tokenizer_parse_number(Tokenizer *tokenizer);
+static Token tokenizer_parse_identifier(Tokenizer *tokenizer);
+
+struct Keyword {
+  std::string text;
+  Type type;
 };
 
-static int is_identifier_start(unsigned char c) {
-  return isalpha(c) || c == '_';
+static const Keyword keywords[] = {
+    {"any", Type::Any},
+    {"as", Type::As},
+    {"average", Type::Average},
+    {"before", Type::Before},
+    {"count", Type::Count},
+    {"currenttime", Type::Currenttime},
+    {"day", Type::Day},
+    {"days", Type::Day},
+    {"do", Type::Do},
+    {"earliest", Type::Earliest},
+    {"else", Type::Else},
+    {"elseif", Type::Elseif},
+    {"enddo", Type::Enddo},
+    {"endif", Type::Endif},
+    {"false", Type::False},
+    {"first", Type::First},
+    {"for", Type::For},
+    {"greater", Type::Greater},
+    {"hour", Type::Hours},
+    {"hours", Type::Hours},
+    {"if", Type::If},
+    {"in", Type::In},
+    {"increase", Type::Increase},
+    {"interval", Type::Interval},
+    {"is", Type::Is},
+    {"last", Type::Last},
+    {"latest", Type::Latest},
+    {"list", Type::Listtype},
+    {"maximum", Type::Maximum},
+    {"minimum", Type::Minimum},
+    {"minute", Type::Minutes},
+    {"minutes", Type::Minutes},
+    {"month", Type::Month},
+    {"months", Type::Month},
+    {"not", Type::Not},
+    {"now", Type::Now},
+    {"null", Type::Null},
+    {"number", Type::Numbertype},
+    {"occur", Type::Occur},
+    {"occurred", Type::Occur},
+    {"occurs", Type::Occur},
+    {"of", Type::Of},
+    {"range", Type::Range},
+    {"read", Type::Read},
+    {"same", Type::Same},
+    {"second", Type::Seconds},
+    {"seconds", Type::Seconds},
+    {"sqrt", Type::Sqrt},
+    {"sum", Type::Sum},
+    {"than", Type::Than},
+    {"the", Type::The},
+    {"then", Type::Then},
+    {"time", Type::Time},
+    {"to", Type::To},
+    {"trace", Type::Trace},
+    {"true", Type::True},
+    {"uppercase", Type::Uppercase},
+    {"week", Type::Week},
+    {"weeks", Type::Week},
+    {"where", Type::Where},
+    {"within", Type::Within},
+    {"write", Type::Write},
+    {"year", Type::Year},
+    {"years", Type::Year},
+};
+
+static bool is_identifier_start(unsigned char c) {
+  return std::isalpha(c) || c == '_';
 }
 
-static int is_identifier_char(unsigned char c) {
-  return isalnum(c) || c == '_';
+static bool is_identifier_char(unsigned char c) {
+  return std::isalnum(c) || c == '_';
 }
 
-static int token_text_equals_ignore_case(Token token, const char *text) {
-  size_t text_len = strlen(text);
+static bool token_text_equals_ignore_case(const Tokenizer *tokenizer,
+                                          const Token &token,
+                                          const char *text) {
+  std::size_t text_len = std::strlen(text);
   if (token.length != text_len) {
-    return 0;
+    return false;
   }
 
-  for (size_t i = 0; i < token.length; i++) {
-    unsigned char a = (unsigned char)token.text[i];
+  for (std::size_t i = 0; i < token.length; i++) {
+    unsigned char a = (unsigned char)tokenizer->input[token.pos + i];
     unsigned char b = (unsigned char)text[i];
-    if (tolower(a) != tolower(b)) {
-      return 0;
+    if (std::tolower(a) != std::tolower(b)) {
+      return false;
     }
   }
 
-  return 1;
+  return true;
 }
 
-static Token make_token(Tokenizer *tokenizer, size_t start, size_t length,
-                        size_t line, size_t column, int type) {
-  return (Token){.text = tokenizer->input + start,
-                 .length = length,
-                 .column = column,
-                 .line = line,
-                 .type = type};
+static Token make_token(std::size_t start, std::size_t length, std::size_t line,
+                        std::size_t column, Type type) {
+  return Token{.pos = start,
+               .length = length,
+               .column = column,
+               .line = line,
+               .type = type};
 }
 
 static void tokenizer_skip_line_comment(Tokenizer *tokenizer) {
@@ -124,11 +135,11 @@ static void tokenizer_advance_delimiter(Tokenizer *tokenizer) {
 }
 
 static Token tokenizer_parse_string(Tokenizer *tokenizer) {
-  size_t start = tokenizer->pos;
-  size_t line = tokenizer->line;
-  size_t column = tokenizer->column;
-  size_t length = 1;
-  size_t rows = 0;
+  std::size_t start = tokenizer->pos;
+  std::size_t line = tokenizer->line;
+  std::size_t column = tokenizer->column;
+  std::size_t length = 1;
+  std::size_t rows = 0;
 
   tokenizer_advance_delimiter(tokenizer);
   while (tokenizer_peek(tokenizer) != '\0' &&
@@ -149,156 +160,18 @@ static Token tokenizer_parse_string(Tokenizer *tokenizer) {
   tokenizer->line += rows;
   tokenizer->column += length;
 
-  return make_token(tokenizer, start, length, line, column, TOKEN_STRTOKEN);
+  return make_token(start, length, line, column, Type::Strtoken);
 }
 
-int init_tokenizer(Tokenizer *tokenizer, const char *input_file, FILE *file) {
-  if (fseek(file, 0, SEEK_END) != 0) {
-    fprintf(stderr, "Could not seek file: %s\n", input_file);
-    fclose(file);
-    return 0;
-  }
-
-  long size = ftell(file);
-  if (size < 0) {
-    fprintf(stderr, "Could not determine file size: %s\n", input_file);
-    fclose(file);
-    return 0;
-  }
-
-  rewind(file);
-
-  char *input = malloc((size_t)size + 1);
-  if (!input) {
-    fprintf(stderr, "Could not allocate memory for file content\n");
-    fclose(file);
-    return 0;
-  }
-
-  if (fread(input, 1, (size_t)size, file) != (size_t)size) {
-    fprintf(stderr, "Could not read file: %s\n", input_file);
-    free(input);
-    fclose(file);
-    return 0;
-  }
-  fclose(file);
-
-  input[size] = '\0';
-  tokenizer->input_file = input_file;
-  tokenizer->input = input;
-  tokenizer->input_len = (size_t)size;
-  tokenizer->pos = 0;
-  tokenizer->line = 1;
-  tokenizer->column = 1;
-  return 1;
-}
-
-Token get_next_token(Tokenizer *tokenizer) {
-  for (;;) {
-    char current = tokenizer_peek(tokenizer);
-    if (current == ' ' || current == '\t' || current == '\r') {
-      tokenizer_advance(tokenizer);
-      continue;
-    }
-
-    if (current == '\n') {
-      tokenizer_advance(tokenizer);
-      continue;
-    }
-
-    if (current == '/' && tokenizer->pos + 1 < tokenizer->input_len &&
-        tokenizer->input[tokenizer->pos + 1] == '/') {
-      tokenizer_skip_line_comment(tokenizer);
-      continue;
-    }
-
-    break;
-  }
-
-  char current = tokenizer_peek(tokenizer);
-  if (current == '\0') {
-    return make_token(tokenizer, tokenizer->pos, 0, tokenizer->line,
-                      tokenizer->column, TOKEN_EOF);
-  }
-
-  if (isdigit((unsigned char)current)) {
-    return tokenizer_parse_number(tokenizer);
-  }
-
-  if (is_identifier_start((unsigned char)current)) {
-    return tokenizer_parse_identifier(tokenizer);
-  }
-
-  if (current == '"') {
-    return tokenizer_parse_string(tokenizer);
-  }
-
-  switch (current) {
-  case '*':
-    if (tokenizer->pos + 1 < tokenizer->input_len &&
-        tokenizer->input[tokenizer->pos + 1] == '*') {
-      return tokenizer_single_char_token(tokenizer, TOKEN_POWER);
-    }
-    return tokenizer_single_char_token(tokenizer, TOKEN_TIMES);
-  case ':':
-    if (tokenizer->pos + 1 < tokenizer->input_len &&
-        tokenizer->input[tokenizer->pos + 1] == '=') {
-      return tokenizer_single_char_token(tokenizer, TOKEN_ASSIGN);
-    }
-    break;
-  case '.':
-    if (tokenizer->pos + 2 < tokenizer->input_len &&
-        tokenizer->input[tokenizer->pos + 1] == '.' &&
-        tokenizer->input[tokenizer->pos + 2] == '.') {
-      return tokenizer_single_char_token(tokenizer, TOKEN_RANGE);
-    }
-    return tokenizer_single_char_token(tokenizer, TOKEN_DOT);
-  case '<':
-    if (tokenizer->pos + 1 < tokenizer->input_len) {
-      if (tokenizer->input[tokenizer->pos + 1] == '=') {
-        return tokenizer_single_char_token(tokenizer, TOKEN_LTEQ);
-      }
-      if (tokenizer->input[tokenizer->pos + 1] == '>') {
-        return tokenizer_single_char_token(tokenizer, TOKEN_NEQ);
-      }
-    }
-    return tokenizer_single_char_token(tokenizer, TOKEN_LT);
-  case '>':
-    if (tokenizer->pos + 1 < tokenizer->input_len &&
-        tokenizer->input[tokenizer->pos + 1] == '=') {
-      return tokenizer_single_char_token(tokenizer, TOKEN_GTEQ);
-    }
-    return tokenizer_single_char_token(tokenizer, TOKEN_GT);
-  case '+':
-  case '-':
-  case '/':
-  case '(':
-  case ')':
-  case '[':
-  case ']':
-  case ',':
-  case '&':
-  case ';':
-  case '=':
-    return tokenizer_single_char_token(tokenizer, current);
-  }
-
-  return tokenizer_single_char_token(tokenizer, TOKEN_UNKNOWN);
-}
-
-void tokenizer_print_token(Token token) {
-  printf("%.*s", (int)token.length, token.text);
-}
-
-char tokenizer_peek(Tokenizer *tokenizer) {
-  if (tokenizer->pos >= tokenizer->input_len) {
+static char tokenizer_peek(Tokenizer *tokenizer) {
+  if (tokenizer->pos >= tokenizer->input.size()) {
     return '\0';
   }
 
   return tokenizer->input[tokenizer->pos];
 }
 
-char tokenizer_advance(Tokenizer *tokenizer) {
+static char tokenizer_advance(Tokenizer *tokenizer) {
   char current = tokenizer_peek(tokenizer);
   if (current == '\0') {
     return current;
@@ -315,39 +188,40 @@ char tokenizer_advance(Tokenizer *tokenizer) {
   return tokenizer_peek(tokenizer);
 }
 
-Token tokenizer_single_char_token(Tokenizer *tokenizer, int type) {
-  size_t start = tokenizer->pos;
-  size_t line = tokenizer->line;
-  size_t column = tokenizer->column;
-  size_t length = 1;
+static Token tokenizer_single_char_token(Tokenizer *tokenizer, Type type) {
+  std::size_t start = tokenizer->pos;
+  std::size_t line = tokenizer->line;
+  std::size_t column = tokenizer->column;
+  std::size_t length = 1;
 
-  if (type == TOKEN_ASSIGN || type == TOKEN_POWER || type == TOKEN_LTEQ ||
-      type == TOKEN_NEQ || type == TOKEN_GTEQ) {
+  if (type == Type::Assign || type == Type::Power || type == Type::Lteq ||
+      type == Type::Neq || type == Type::Gteq) {
     length = 2;
-  } else if (type == TOKEN_RANGE) {
+  } else if (type == Type::Range) {
     length = 3;
   }
 
-  for (size_t i = 0; i < length; i++) {
+  for (std::size_t i = 0; i < length; i++) {
     tokenizer_advance(tokenizer);
   }
 
-  return make_token(tokenizer, start, length, line, column, type);
+  return make_token(start, length, line, column, type);
 }
 
-Token tokenizer_parse_identifier(Tokenizer *tokenizer) {
-  size_t start = tokenizer->pos;
-  size_t line = tokenizer->line;
-  size_t column = tokenizer->column;
+static Token tokenizer_parse_identifier(Tokenizer *tokenizer) {
+  std::size_t start = tokenizer->pos;
+  std::size_t line = tokenizer->line;
+  std::size_t column = tokenizer->column;
 
   while (is_identifier_char((unsigned char)tokenizer_peek(tokenizer))) {
     tokenizer_advance(tokenizer);
   }
 
-  Token tok = make_token(tokenizer, start, tokenizer->pos - start, line, column,
-                         TOKEN_IDENTIFIER);
-  for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
-    if (token_text_equals_ignore_case(tok, keywords[i].text)) {
+  Token tok =
+      make_token(start, tokenizer->pos - start, line, column, Type::Identifier);
+  for (std::size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+    if (token_text_equals_ignore_case(tokenizer, tok,
+                                      keywords[i].text.c_str())) {
       tok.type = keywords[i].type;
       break;
     }
@@ -356,21 +230,21 @@ Token tokenizer_parse_identifier(Tokenizer *tokenizer) {
   return tok;
 }
 
-Token tokenizer_parse_number(Tokenizer *tokenizer) {
-  size_t start = tokenizer->pos;
-  size_t line = tokenizer->line;
-  size_t column = tokenizer->column;
+static Token tokenizer_parse_number(Tokenizer *tokenizer) {
+  std::size_t start = tokenizer->pos;
+  std::size_t line = tokenizer->line;
+  std::size_t column = tokenizer->column;
   int is_time = 0;
 
-  while (isdigit((unsigned char)tokenizer_peek(tokenizer))) {
+  while (std::isdigit((unsigned char)tokenizer_peek(tokenizer))) {
     tokenizer_advance(tokenizer);
   }
 
   if (tokenizer_peek(tokenizer) == '.' &&
-      tokenizer->pos + 1 < tokenizer->input_len &&
-      isdigit((unsigned char)tokenizer->input[tokenizer->pos + 1])) {
+      tokenizer->pos + 1 < tokenizer->input.size() &&
+      std::isdigit((unsigned char)tokenizer->input[tokenizer->pos + 1])) {
     tokenizer_advance(tokenizer);
-    while (isdigit((unsigned char)tokenizer_peek(tokenizer))) {
+    while (std::isdigit((unsigned char)tokenizer_peek(tokenizer))) {
       tokenizer_advance(tokenizer);
     }
   }
@@ -379,185 +253,301 @@ Token tokenizer_parse_number(Tokenizer *tokenizer) {
          tokenizer_peek(tokenizer) == 'T') {
     is_time = 1;
     tokenizer_advance(tokenizer);
-    while (isdigit((unsigned char)tokenizer_peek(tokenizer))) {
+    while (std::isdigit((unsigned char)tokenizer_peek(tokenizer))) {
       tokenizer_advance(tokenizer);
     }
   }
 
-  return make_token(tokenizer, start, tokenizer->pos - start, line, column,
-                    is_time ? TOKEN_TIMETOKEN : TOKEN_NUMTOKEN);
+  return make_token(start, tokenizer->pos - start, line, column,
+                    is_time ? Type::Timetoken : Type::Numtoken);
 }
+} // namespace
 
-char *token_type_to_string(int token_type) {
+const char *token_type_to_string(Type token_type) {
   switch (token_type) {
-  case TOKEN_EOF:
-    return "TOKEN_EOF";
-  case TOKEN_IDENTIFIER:
-    return "TOKEN_IDENTIFIER";
+  case Type::Eof:
+    return "Type::Eof";
+  case Type::Identifier:
+    return "Type::Identifier";
 
-  case TOKEN_PLUS:
-    return "TOKEN_PLUS";
-  case TOKEN_MINUS:
-    return "TOKEN_MINUS";
-  case TOKEN_TIMES:
-    return "TOKEN_TIMES";
-  case TOKEN_DIVIDE:
-    return "TOKEN_DIVIDE";
-  case TOKEN_LPAR:
-    return "TOKEN_LPAR";
-  case TOKEN_RPAR:
-    return "TOKEN_RPAR";
-  case TOKEN_LSPAR:
-    return "TOKEN_LSPAR";
-  case TOKEN_RSPAR:
-    return "TOKEN_RSPAR";
-  case TOKEN_COMMA:
-    return "TOKEN_COMMA";
-  case TOKEN_AMPERSAND:
-    return "TOKEN_AMPERSAND";
-  case TOKEN_SEMICOLON:
-    return "TOKEN_SEMICOLON";
-  case TOKEN_EQ:
-    return "TOKEN_EQ";
-  case TOKEN_DOT:
-    return "TOKEN_DOT";
-  case TOKEN_LT:
-    return "TOKEN_LT";
-  case TOKEN_GT:
-    return "TOKEN_GT";
+  case Type::Plus:
+    return "Type::Plus";
+  case Type::Minus:
+    return "Type::Minus";
+  case Type::Multipy:
+    return "Type::Multipy";
+  case Type::Divide:
+    return "Type::Divide";
+  case Type::Lpar:
+    return "Type::Lpar";
+  case Type::Rpar:
+    return "Type::Rpar";
+  case Type::Lspar:
+    return "Type::Lspar";
+  case Type::Rspar:
+    return "Type::Rspar";
+  case Type::Comma:
+    return "Type::Comma";
+  case Type::Ampersand:
+    return "Type::Ampersand";
+  case Type::Semicolon:
+    return "Type::Semicolon";
+  case Type::Eq:
+    return "Type::Eq";
+  case Type::Dot:
+    return "Type::Dot";
+  case Type::Lt:
+    return "Type::Lt";
+  case Type::Gt:
+    return "Type::Gt";
 
-  case TOKEN_UNKNOWN:
-    return "TOKEN_UNKNOWN";
+  case Type::Unknown:
+    return "Type::Unknown";
 
-  case TOKEN_ASSIGN:
-    return "TOKEN_ASSIGN";
-  case TOKEN_POWER:
-    return "TOKEN_POWER";
-  case TOKEN_LTEQ:
-    return "TOKEN_LTEQ";
-  case TOKEN_NEQ:
-    return "TOKEN_NEQ";
-  case TOKEN_GTEQ:
-    return "TOKEN_GTEQ";
-  case TOKEN_RANGE:
-    return "TOKEN_RANGE";
+  case Type::Assign:
+    return "Type::Assign";
+  case Type::Power:
+    return "Type::Power";
+  case Type::Lteq:
+    return "Type::Lteq";
+  case Type::Neq:
+    return "Type::Neq";
+  case Type::Gteq:
+    return "Type::Gteq";
+  case Type::Range:
+    return "Type::Range";
 
-  case TOKEN_NUMTOKEN:
-    return "TOKEN_NUMTOKEN";
-  case TOKEN_STRTOKEN:
-    return "TOKEN_STRTOKEN";
-  case TOKEN_TIMETOKEN:
-    return "TOKEN_TIMETOKEN";
+  case Type::Numtoken:
+    return "Type::Numtoken";
+  case Type::Strtoken:
+    return "Type::Strtoken";
+  case Type::Timetoken:
+    return "Type::Timetoken";
 
-  case TOKEN_THE:
-    return "TOKEN_THE";
-  case TOKEN_AS:
-    return "TOKEN_AS";
-  case TOKEN_THAN:
-    return "TOKEN_THAN";
-  case TOKEN_OF:
-    return "TOKEN_OF";
-  case TOKEN_TO:
-    return "TOKEN_TO";
-  case TOKEN_SQRT:
-    return "TOKEN_SQRT";
-  case TOKEN_DAY:
-    return "TOKEN_DAY";
-  case TOKEN_WHERE:
-    return "TOKEN_WHERE";
-  case TOKEN_WITHIN:
-    return "TOKEN_WITHIN";
-  case TOKEN_NOT:
-    return "TOKEN_NOT";
-  case TOKEN_IS:
-    return "TOKEN_IS";
-  case TOKEN_SAME:
-    return "TOKEN_SAME";
-  case TOKEN_LISTTYPE:
-    return "TOKEN_LISTTYPE";
-  case TOKEN_ANY:
-    return "TOKEN_ANY";
-  case TOKEN_AVERAGE:
-    return "TOKEN_AVERAGE";
-  case TOKEN_BEFORE:
-    return "TOKEN_BEFORE";
-  case TOKEN_COUNT:
-    return "TOKEN_COUNT";
-  case TOKEN_CURRENTTIME:
-    return "TOKEN_CURRENTTIME";
-  case TOKEN_DO:
-    return "TOKEN_DO";
-  case TOKEN_EARLIEST:
-    return "TOKEN_EARLIEST";
-  case TOKEN_ELSE:
-    return "TOKEN_ELSE";
-  case TOKEN_ELSEIF:
-    return "TOKEN_ELSEIF";
-  case TOKEN_ENDDO:
-    return "TOKEN_ENDDO";
-  case TOKEN_ENDIF:
-    return "TOKEN_ENDIF";
-  case TOKEN_FALSE:
-    return "TOKEN_FALSE";
-  case TOKEN_FIRST:
-    return "TOKEN_FIRST";
-  case TOKEN_FOR:
-    return "TOKEN_FOR";
-  case TOKEN_GREATER:
-    return "TOKEN_GREATER";
-  case TOKEN_HOURS:
-    return "TOKEN_HOURS";
-  case TOKEN_IF:
-    return "TOKEN_IF";
-  case TOKEN_IN:
-    return "TOKEN_IN";
-  case TOKEN_INCREASE:
-    return "TOKEN_INCREASE";
-  case TOKEN_INTERVAL:
-    return "TOKEN_INTERVAL";
-  case TOKEN_LAST:
-    return "TOKEN_LAST";
-  case TOKEN_LATEST:
-    return "TOKEN_LATEST";
-  case TOKEN_MAXIMUM:
-    return "TOKEN_MAXIMUM";
-  case TOKEN_MINIMUM:
-    return "TOKEN_MINIMUM";
-  case TOKEN_MINUTES:
-    return "TOKEN_MINUTES";
-  case TOKEN_NOW:
-    return "TOKEN_NOW";
-  case TOKEN_NULL:
-    return "TOKEN_NULL";
-  case TOKEN_OCCUR:
-    return "TOKEN_OCCUR";
-  case TOKEN_READ:
-    return "TOKEN_READ";
-  case TOKEN_SECONDS:
-    return "TOKEN_SECONDS";
-  case TOKEN_SUM:
-    return "TOKEN_SUM";
-  case TOKEN_THEN:
-    return "TOKEN_THEN";
-  case TOKEN_TIME:
-    return "TOKEN_TIME";
-  case TOKEN_TRACE:
-    return "TOKEN_TRACE";
-  case TOKEN_TRUE:
-    return "TOKEN_TRUE";
-  case TOKEN_UPPERCASE:
-    return "TOKEN_UPPERCASE";
-  case TOKEN_WRITE:
-    return "TOKEN_WRITE";
-  case TOKEN_NUMBERTYPE:
-    return "TOKEN_NUMBERTYPE";
-  case TOKEN_YEAR:
-    return "TOKEN_YEAR";
-  case TOKEN_MONTH:
-    return "TOKEN_MONTH";
-  case TOKEN_WEEK:
-    return "TOKEN_WEEK";
+  case Type::The:
+    return "Type::The";
+  case Type::As:
+    return "Type::As";
+  case Type::Than:
+    return "Type::Than";
+  case Type::Of:
+    return "Type::Of";
+  case Type::To:
+    return "Type::To";
+  case Type::Sqrt:
+    return "Type::Sqrt";
+  case Type::Day:
+    return "Type::Day";
+  case Type::Where:
+    return "Type::Where";
+  case Type::Within:
+    return "Type::Within";
+  case Type::Not:
+    return "Type::Not";
+  case Type::Is:
+    return "Type::Is";
+  case Type::Same:
+    return "Type::Same";
+  case Type::Listtype:
+    return "Type::Listtype";
+  case Type::Any:
+    return "Type::Any";
+  case Type::Average:
+    return "Type::Average";
+  case Type::Before:
+    return "Type::Before";
+  case Type::Count:
+    return "Type::Count";
+  case Type::Currenttime:
+    return "Type::Currenttime";
+  case Type::Do:
+    return "Type::Do";
+  case Type::Earliest:
+    return "Type::Earliest";
+  case Type::Else:
+    return "Type::Else";
+  case Type::Elseif:
+    return "Type::Elseif";
+  case Type::Enddo:
+    return "Type::Enddo";
+  case Type::Endif:
+    return "Type::Endif";
+  case Type::False:
+    return "Type::False";
+  case Type::First:
+    return "Type::First";
+  case Type::For:
+    return "Type::For";
+  case Type::Greater:
+    return "Type::Greater";
+  case Type::Hours:
+    return "Type::Hours";
+  case Type::If:
+    return "Type::If";
+  case Type::In:
+    return "Type::In";
+  case Type::Increase:
+    return "Type::Increase";
+  case Type::Interval:
+    return "Type::Interval";
+  case Type::Last:
+    return "Type::Last";
+  case Type::Latest:
+    return "Type::Latest";
+  case Type::Maximum:
+    return "Type::Maximum";
+  case Type::Minimum:
+    return "Type::Minimum";
+  case Type::Minutes:
+    return "Type::Minutes";
+  case Type::Now:
+    return "Type::Now";
+  case Type::Null:
+    return "Type::Null";
+  case Type::Occur:
+    return "Type::Occur";
+  case Type::Read:
+    return "Type::Read";
+  case Type::Seconds:
+    return "Type::Seconds";
+  case Type::Sum:
+    return "Type::Sum";
+  case Type::Then:
+    return "Type::Then";
+  case Type::Time:
+    return "Type::Time";
+  case Type::Trace:
+    return "Type::Trace";
+  case Type::True:
+    return "Type::True";
+  case Type::Uppercase:
+    return "Type::Uppercase";
+  case Type::Write:
+    return "Type::Write";
+  case Type::Numbertype:
+    return "Type::Numbertype";
+  case Type::Year:
+    return "Type::Year";
+  case Type::Month:
+    return "Type::Month";
+  case Type::Week:
+    return "Type::Week";
   default:
     return "UNKNOWN";
   }
+}
+
+void init_tokenizer(Tokenizer *tokenizer, std::string_view input_file,
+                    std::string_view input) {
+  tokenizer->input_file = input_file;
+  tokenizer->input = input;
+  tokenizer->pos = 0;
+  tokenizer->line = 1;
+  tokenizer->column = 1;
+}
+
+Token tokenizer_next_token(Tokenizer *tokenizer) {
+  for (;;) {
+    char current = tokenizer_peek(tokenizer);
+    if (current == ' ' || current == '\t' || current == '\r') {
+      tokenizer_advance(tokenizer);
+      continue;
+    }
+
+    if (current == '\n') {
+      tokenizer_advance(tokenizer);
+      continue;
+    }
+
+    if (current == '/' && tokenizer->pos + 1 < tokenizer->input.size() &&
+        tokenizer->input[tokenizer->pos + 1] == '/') {
+      tokenizer_skip_line_comment(tokenizer);
+      continue;
+    }
+
+    break;
+  }
+
+  char current = tokenizer_peek(tokenizer);
+  if (current == '\0') {
+    return make_token(tokenizer->pos, 0, tokenizer->line, tokenizer->column,
+                      Type::Eof);
+  }
+
+  if (std::isdigit((unsigned char)current)) {
+    return tokenizer_parse_number(tokenizer);
+  }
+
+  if (is_identifier_start((unsigned char)current)) {
+    return tokenizer_parse_identifier(tokenizer);
+  }
+
+  if (current == '"') {
+    return tokenizer_parse_string(tokenizer);
+  }
+
+  switch (current) {
+  case '*':
+    if (tokenizer->pos + 1 < tokenizer->input.size() &&
+        tokenizer->input[tokenizer->pos + 1] == '*') {
+      return tokenizer_single_char_token(tokenizer, Type::Power);
+    }
+    return tokenizer_single_char_token(tokenizer, Type::Multipy);
+  case ':':
+    if (tokenizer->pos + 1 < tokenizer->input.size() &&
+        tokenizer->input[tokenizer->pos + 1] == '=') {
+      return tokenizer_single_char_token(tokenizer, Type::Assign);
+    }
+    break;
+  case '.':
+    if (tokenizer->pos + 2 < tokenizer->input.size() &&
+        tokenizer->input[tokenizer->pos + 1] == '.' &&
+        tokenizer->input[tokenizer->pos + 2] == '.') {
+      return tokenizer_single_char_token(tokenizer, Type::Range);
+    }
+    return tokenizer_single_char_token(tokenizer, Type::Dot);
+  case '<':
+    if (tokenizer->pos + 1 < tokenizer->input.size()) {
+      if (tokenizer->input[tokenizer->pos + 1] == '=') {
+        return tokenizer_single_char_token(tokenizer, Type::Lteq);
+      }
+      if (tokenizer->input[tokenizer->pos + 1] == '>') {
+        return tokenizer_single_char_token(tokenizer, Type::Neq);
+      }
+    }
+    return tokenizer_single_char_token(tokenizer, Type::Lt);
+  case '>':
+    if (tokenizer->pos + 1 < tokenizer->input.size() &&
+        tokenizer->input[tokenizer->pos + 1] == '=') {
+      return tokenizer_single_char_token(tokenizer, Type::Gteq);
+    }
+    return tokenizer_single_char_token(tokenizer, Type::Gt);
+  case '+':
+  case '-':
+  case '/':
+  case '(':
+  case ')':
+  case '[':
+  case ']':
+  case ',':
+  case '&':
+  case ';':
+  case '=':
+    return tokenizer_single_char_token(tokenizer, static_cast<Type>(current));
+  }
+
+  return tokenizer_single_char_token(tokenizer, Type::Unknown);
+}
+
+void destroy_tokenizer(Tokenizer *tokenizer) {
+  tokenizer->input_file = {};
+  tokenizer->input = {};
+  tokenizer->pos = 0;
+  tokenizer->line = 1;
+  tokenizer->column = 1;
+}
+
+
+void tokenizer_print_token(const Tokenizer *tokenizer, Token token) {
+  std::printf("%.*s", (int)token.length, tokenizer->input.data() + token.pos);
 }

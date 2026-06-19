@@ -17,18 +17,16 @@ TARGET := $(BIN_DIR)/c-arden
 ASAN_TARGET := $(BIN_DIR)/c-arden-asan
 TEST_TARGET := $(BIN_DIR)/test
 
-SRC := $(wildcard *.c src/*.c)
-OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
+TEST_FILES := test.cc $(wildcard test/*.cc tests/*.cc)
+SRC := $(filter-out $(TEST_FILES),$(wildcard *.cc src/*.cc))
+OBJ := $(patsubst %.cc,$(BUILD_DIR)/%.o,$(SRC))
 DEP := $(OBJ:.o=.d)
-ASAN_OBJ := $(patsubst %.c,$(ASAN_BUILD_DIR)/%.o,$(SRC))
+ASAN_OBJ := $(patsubst %.cc,$(ASAN_BUILD_DIR)/%.o,$(SRC))
 ASAN_DEP := $(ASAN_OBJ:.o=.d)
-TEST_C_SRC := $(filter-out main.c,$(SRC))
-TEST_SRC := $(wildcard *.cc test/*.cc tests/*.cc)
-TEST_C_OBJ := $(patsubst %.c,$(TEST_BUILD_DIR)/%.o,$(TEST_C_SRC))
-TEST_CXX_OBJ := $(patsubst %.cc,$(TEST_BUILD_DIR)/%.o,$(TEST_SRC))
-TEST_OBJ := $(TEST_C_OBJ) $(TEST_CXX_OBJ)
+TEST_SRC := $(filter-out main.cc,$(SRC)) $(TEST_FILES)
+TEST_OBJ := $(patsubst %.cc,$(TEST_BUILD_DIR)/%.o,$(TEST_SRC))
 TEST_DEP := $(TEST_OBJ:.o=.d)
-ASAN_CFLAGS ?= $(CFLAGS) -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer
+ASAN_CXXFLAGS ?= $(CXXFLAGS) -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer
 ASAN_LDFLAGS ?= $(LDFLAGS) -fsanitize=address,undefined
 
 .PHONY: all check-sources run test valgrind asan clean
@@ -37,30 +35,26 @@ all: check-sources $(TARGET)
 
 check-sources:
 	@if [ -z "$(SRC)" ]; then \
-		printf '%s\n' "No C source files found. Add .c files in c-arden/ or c-arden/src/."; \
+		printf '%s\n' "No C++ source files found. Add .cc files in c-arden/ or c-arden/src/."; \
 		exit 1; \
 	fi
 
 $(TARGET): $(OBJ) | $(BIN_DIR)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 $(ASAN_TARGET): $(ASAN_OBJ) | $(BIN_DIR)
-	$(CC) $(ASAN_LDFLAGS) -o $@ $(ASAN_OBJ) $(LDLIBS)
+	$(CXX) $(ASAN_LDFLAGS) -o $@ $(ASAN_OBJ) $(LDLIBS)
 
 $(TEST_TARGET): $(TEST_OBJ) | $(BIN_DIR)
 	$(CXX) $(LDFLAGS) -o $@ $(TEST_OBJ) $(GTEST_LIBS) $(LDLIBS)
 
-$(BUILD_DIR)/%.o: %.c
+$(BUILD_DIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-$(ASAN_BUILD_DIR)/%.o: %.c
+$(ASAN_BUILD_DIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(ASAN_CFLAGS) -MMD -MP -c $< -o $@
-
-$(TEST_BUILD_DIR)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(ASAN_CXXFLAGS) -MMD -MP -c $< -o $@
 
 $(TEST_BUILD_DIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
