@@ -61,6 +61,10 @@ TEST(ParserTest, ParsesAtomExpressions) {
   std::string number_input = "123.45";
   auto number_node = parse_test_expr(number_input);
   ASSERT_EQ(number_node->tag, AstTag::NumberLiteral);
+  EXPECT_EQ(number_node->pos, 0u);
+  EXPECT_EQ(number_node->length, 6u);
+  EXPECT_EQ(number_node->column, 1u);
+  EXPECT_EQ(number_node->line, 1u);
   auto *number = dynamic_cast<NumberLiteral *>(number_node.get());
   ASSERT_NE(number, nullptr);
   EXPECT_DOUBLE_EQ(number->value, 123.45);
@@ -68,6 +72,10 @@ TEST(ParserTest, ParsesAtomExpressions) {
   std::string string_input = "\"hello\"";
   auto string_node = parse_test_expr(string_input);
   ASSERT_EQ(string_node->tag, AstTag::StringLiteral);
+  EXPECT_EQ(string_node->pos, 0u);
+  EXPECT_EQ(string_node->length, 7u);
+  EXPECT_EQ(string_node->column, 1u);
+  EXPECT_EQ(string_node->line, 1u);
   auto *string = dynamic_cast<StringLiteral *>(string_node.get());
   ASSERT_NE(string, nullptr);
   EXPECT_EQ(string->value, "hello");
@@ -75,6 +83,10 @@ TEST(ParserTest, ParsesAtomExpressions) {
   std::string bool_input = "true";
   auto bool_node = parse_test_expr(bool_input);
   ASSERT_EQ(bool_node->tag, AstTag::BooleanLiteral);
+  EXPECT_EQ(bool_node->pos, 0u);
+  EXPECT_EQ(bool_node->length, 4u);
+  EXPECT_EQ(bool_node->column, 1u);
+  EXPECT_EQ(bool_node->line, 1u);
   auto *boolean = dynamic_cast<BooleanLiteral *>(bool_node.get());
   ASSERT_NE(boolean, nullptr);
   EXPECT_TRUE(boolean->value);
@@ -82,6 +94,10 @@ TEST(ParserTest, ParsesAtomExpressions) {
   std::string identifier_input = "patient_age";
   auto identifier_node = parse_test_expr(identifier_input);
   ASSERT_EQ(identifier_node->tag, AstTag::Identifier);
+  EXPECT_EQ(identifier_node->pos, 0u);
+  EXPECT_EQ(identifier_node->length, 11u);
+  EXPECT_EQ(identifier_node->column, 1u);
+  EXPECT_EQ(identifier_node->line, 1u);
   auto *identifier = dynamic_cast<Identifier *>(identifier_node.get());
   ASSERT_NE(identifier, nullptr);
   EXPECT_EQ(identifier->value, "patient_age");
