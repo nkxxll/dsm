@@ -57,6 +57,46 @@ static AstNodePtr parse_test_expr(std::string &input) {
   return parser_expr(parser);
 }
 
+static NumberLiteral *expect_number(AstNode *node, double value) {
+  EXPECT_EQ(node->tag, AstTag::NumberLiteral);
+  auto *number = dynamic_cast<NumberLiteral *>(node);
+  EXPECT_NE(number, nullptr);
+  if (number != nullptr) {
+    EXPECT_DOUBLE_EQ(number->value, value);
+  }
+  return number;
+}
+
+static InfixExpression *expect_infix(AstNode *node, Operator op) {
+  EXPECT_EQ(node->tag, AstTag::InfixExpression);
+  auto *infix = dynamic_cast<InfixExpression *>(node);
+  EXPECT_NE(infix, nullptr);
+  if (infix != nullptr) {
+    EXPECT_EQ(infix->op, op);
+  }
+  return infix;
+}
+
+static PrefixExpression *expect_prefix(AstNode *node, Operator op) {
+  EXPECT_EQ(node->tag, AstTag::PrefixExpression);
+  auto *prefix = dynamic_cast<PrefixExpression *>(node);
+  EXPECT_NE(prefix, nullptr);
+  if (prefix != nullptr) {
+    EXPECT_EQ(prefix->op, op);
+  }
+  return prefix;
+}
+
+static PostfixExpression *expect_postfix(AstNode *node, Operator op) {
+  EXPECT_EQ(node->tag, AstTag::PostfixExpression);
+  auto *postfix = dynamic_cast<PostfixExpression *>(node);
+  EXPECT_NE(postfix, nullptr);
+  if (postfix != nullptr) {
+    EXPECT_EQ(postfix->op, op);
+  }
+  return postfix;
+}
+
 TEST(ParserTest, ParsesAtomExpressions) {
   std::string number_input = "123.45";
   auto number_node = parse_test_expr(number_input);
@@ -103,6 +143,136 @@ TEST(ParserTest, ParsesAtomExpressions) {
   EXPECT_EQ(identifier->value, "patient_age");
 }
 
+TEST(ParserTest, ParsesInfixOperatorExpression) {
+  std::string input = "1 + 2 * 3";
+  auto node = parse_test_expr(input);
+
+  auto *addition = expect_infix(node.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+
+  auto *multiplication =
+      expect_infix(addition->right_hand_side.get(), Operator::Multipy);
+  ASSERT_NE(multiplication, nullptr);
+  expect_number(multiplication->left_hand_side.get(), 2.0);
+  expect_number(multiplication->right_hand_side.get(), 3.0);
+}
+
+TEST(ParserTest, ParsesPostfixOperatorExpression) {
+  std::string input = "23 minutes";
+  auto node = parse_test_expr(input);
+
+  auto *duration = expect_postfix(node.get(), Operator::Minutes);
+  ASSERT_NE(duration, nullptr);
+  expect_number(duration->left_hand_side.get(), 23.0);
+}
+
+TEST(ParserTest, ParsesPrefixOperatorExpression) {
+  std::string input = "-2";
+  auto node = parse_test_expr(input);
+
+  auto *negation = expect_prefix(node.get(), Operator::Minus);
+  ASSERT_NE(negation, nullptr);
+  expect_number(negation->right_hand_side.get(), 2.0);
+}
+
+TEST(ParserTest, ParsesLeftAssociativeAdditiveOperators) {
+  std::string input = "1 + 2 - 3";
+  auto node = parse_test_expr(input);
+
+  auto *subtraction = expect_infix(node.get(), Operator::Minus);
+  ASSERT_NE(subtraction, nullptr);
+  expect_number(subtraction->right_hand_side.get(), 3.0);
+
+  auto *addition =
+      expect_infix(subtraction->left_hand_side.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+  expect_number(addition->right_hand_side.get(), 2.0);
+}
+
+TEST(ParserTest, ParsesMultiplicativeBeforeAdditiveOperators) {
+  std::string input = "1 + 2 * 4 / 5";
+  auto node = parse_test_expr(input);
+
+  auto *addition = expect_infix(node.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+
+  auto *division =
+      expect_infix(addition->right_hand_side.get(), Operator::Divide);
+  ASSERT_NE(division, nullptr);
+  expect_number(division->right_hand_side.get(), 5.0);
+
+  auto *multiplication =
+      expect_infix(division->left_hand_side.get(), Operator::Multipy);
+  ASSERT_NE(multiplication, nullptr);
+  expect_number(multiplication->left_hand_side.get(), 2.0);
+  expect_number(multiplication->right_hand_side.get(), 4.0);
+}
+
+TEST(ParserTest, ParsesPrefixBeforeAdditiveOperators) {
+  std::string input = "1 - -3";
+  auto node = parse_test_expr(input);
+
+  auto *subtraction = expect_infix(node.get(), Operator::Minus);
+  ASSERT_NE(subtraction, nullptr);
+  expect_number(subtraction->left_hand_side.get(), 1.0);
+
+  auto *negation =
+      expect_prefix(subtraction->right_hand_side.get(), Operator::Minus);
+  ASSERT_NE(negation, nullptr);
+  expect_number(negation->right_hand_side.get(), 3.0);
+}
+
+TEST(ParserTest, ParsesPowerBeforePrefixOperator) {
+  std::string input = "-2 ** 10";
+  auto node = parse_test_expr(input);
+
+  auto *negation = expect_prefix(node.get(), Operator::Minus);
+  ASSERT_NE(negation, nullptr);
+
+  auto *power = expect_infix(negation->right_hand_side.get(), Operator::Power);
+  ASSERT_NE(power, nullptr);
+  expect_number(power->left_hand_side.get(), 2.0);
+  expect_number(power->right_hand_side.get(), 10.0);
+}
+
+TEST(ParserTest, ParsesPostfixBeforeMultiplicativeOperators) {
+  std::string input = "2 hours / 5 minutes";
+  auto node = parse_test_expr(input);
+
+  auto *division = expect_infix(node.get(), Operator::Divide);
+  ASSERT_NE(division, nullptr);
+
+  auto *hours = expect_postfix(division->left_hand_side.get(), Operator::Hours);
+  ASSERT_NE(hours, nullptr);
+  expect_number(hours->left_hand_side.get(), 2.0);
+
+  auto *minutes =
+      expect_postfix(division->right_hand_side.get(), Operator::Minutes);
+  ASSERT_NE(minutes, nullptr);
+  expect_number(minutes->left_hand_side.get(), 5.0);
+}
+
+TEST(ParserTest, ParsesDurationArithmeticFromExamples) {
+  std::string input = "23 minutes - 12 seconds";
+  auto node = parse_test_expr(input);
+
+  auto *subtraction = expect_infix(node.get(), Operator::Minus);
+  ASSERT_NE(subtraction, nullptr);
+
+  auto *minutes =
+      expect_postfix(subtraction->left_hand_side.get(), Operator::Minutes);
+  ASSERT_NE(minutes, nullptr);
+  expect_number(minutes->left_hand_side.get(), 23.0);
+
+  auto *seconds =
+      expect_postfix(subtraction->right_hand_side.get(), Operator::Seconds);
+  ASSERT_NE(seconds, nullptr);
+  expect_number(seconds->left_hand_side.get(), 12.0);
+}
+
 TEST(ParserTest, RejectsEmptyExpression) {
   std::string input;
   EXPECT_THROW(parse_test_expr(input), ParserError);
@@ -136,11 +306,8 @@ TEST(TokenizerTest, TokenizeNumber) {
 
 TEST(TokenizerTest, ReadsPlusToken) {
   char input[] = "+";
-  Tokenizer tokenizer = {.input_file = "test",
-                         .input = input,
-                         .pos = 0,
-                         .line = 1,
-                         .column = 0};
+  Tokenizer tokenizer = {
+      .input_file = "test", .input = input, .pos = 0, .line = 1, .column = 0};
 
   Token token = tokenizer_next_token(tokenizer);
 
@@ -150,11 +317,8 @@ TEST(TokenizerTest, ReadsPlusToken) {
 
 TEST(TokenizerTest, NextTokenAdvancesPosition) {
   char input[] = "ab";
-  Tokenizer tokenizer = {.input_file = "test",
-                         .input = input,
-                         .pos = 0,
-                         .line = 1,
-                         .column = 1};
+  Tokenizer tokenizer = {
+      .input_file = "test", .input = input, .pos = 0, .line = 1, .column = 1};
 
   Token token = tokenizer_next_token(tokenizer);
 
@@ -371,7 +535,7 @@ TEST(TokenizerTest, FullProgram) {
           {Type::Numbertype, 6, 12, 3},  {Type::Semicolon, 1, 18, 3},
           {Type::Trace, 5, 1, 4},        {Type::Numtoken, 1, 7, 4},
           {Type::Plus, 1, 9, 4},         {Type::Numtoken, 1, 11, 4},
-          {Type::Multipy, 1, 13, 4},       {Type::Numtoken, 1, 15, 4},
+          {Type::Multipy, 1, 13, 4},     {Type::Numtoken, 1, 15, 4},
           {Type::Divide, 1, 17, 4},      {Type::Numtoken, 1, 19, 4},
           {Type::Minus, 1, 21, 4},       {Type::Minus, 1, 23, 4},
           {Type::Numtoken, 1, 24, 4},    {Type::Plus, 1, 26, 4},

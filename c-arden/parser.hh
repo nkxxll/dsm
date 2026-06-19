@@ -30,6 +30,13 @@ enum class Operator {
   Neq,
   Gteq,
   Range,
+  Year,
+  Month,
+  Week,
+  Day,
+  Hours,
+  Minutes,
+  Seconds,
 };
 
 /*

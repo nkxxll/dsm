@@ -90,6 +90,20 @@ std::optional<Operator> operator_from_token(Token token) {
     return Operator::Gteq;
   case (Type::Range):
     return Operator::Range;
+  case (Type::Year):
+    return Operator::Year;
+  case (Type::Month):
+    return Operator::Month;
+  case (Type::Week):
+    return Operator::Week;
+  case (Type::Day):
+    return Operator::Day;
+  case (Type::Hours):
+    return Operator::Hours;
+  case (Type::Minutes):
+    return Operator::Minutes;
+  case (Type::Seconds):
+    return Operator::Seconds;
   default:
     return std::nullopt;
   }
@@ -101,8 +115,18 @@ bool is_operator(Token token) {
 }
 
 bool is_postfix(Operator op) {
-  auto _ = op;
-  return false;
+  switch (op) {
+  case (Operator::Year):
+  case (Operator::Month):
+  case (Operator::Week):
+  case (Operator::Day):
+  case (Operator::Hours):
+  case (Operator::Minutes):
+  case (Operator::Seconds):
+    return true;
+  default:
+    return false;
+  }
 }
 
 bool is_infix(Operator op) {
@@ -128,14 +152,24 @@ bool is_prefix(Operator op) {
 }
 
 int postfix_binding_power(Operator op) {
-  auto _ = op;
-  return 0;
+  switch (op) {
+  case (Operator::Year):
+  case (Operator::Month):
+  case (Operator::Week):
+  case (Operator::Day):
+  case (Operator::Hours):
+  case (Operator::Minutes):
+  case (Operator::Seconds):
+    return 80;
+  default:
+    return 0;
+  }
 }
 
 int prefix_binding_power(Operator op) {
   switch (op) {
   case (Operator::Minus):
-    return 70;
+    return 45;
   default:
     return 0;
   }
@@ -161,8 +195,8 @@ std::pair<int, int> infix_binding_power(Operator op) {
 ParserError::ParserError(const std::string &message, const Token &token)
     : std::runtime_error(parser_error_message(message, token)) {}
 
-AstNodePtr parser_expr_binding_power(Parser &p, int min_binding_power) {
-  auto token = tokenizer_next_token(p.tokenizer);
+AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
+  auto token = tokenizer_next_token(parser.tokenizer);
   AstNodePtr left_hand_side;
 
   //
@@ -173,27 +207,45 @@ AstNodePtr parser_expr_binding_power(Parser &p, int min_binding_power) {
   }
 
   if (is_literal(token)) {
-    left_hand_side = parse_literal(p, token);
+    left_hand_side = parse_literal(parser, token);
+  }
+
+  if (is_operator(token)) {
+    auto op = operator_from_token(token).value();
+    if (!is_prefix(op)) {
+      throw ParserError("did not expect this token here", token);
+    }
+    auto right_hand_side_binding_power = prefix_binding_power(op);
+
+    //
+    // this is right hand side because prefix binds to the right hand side of
+    // the token so here we have to watch out that left_hand_side is not
+    // initialized yet this is kind of a c / cpp problem or a me problem how you
+    // see it but this is important else SEG_FAULT
+    //
+    auto right_hand_side =
+        parser_expr_binding_power(parser, right_hand_side_binding_power);
+    auto span = SourceSpan{.pos = token.pos,
+                           .length = right_hand_side->pos +
+                                     right_hand_side->length - token.pos,
+                           .column = token.column,
+                           .line = token.line};
+    left_hand_side = std::make_unique<PrefixExpression>(
+        span, op, std::move(right_hand_side));
   }
 
   if (token.type == Type::Identifier) {
-    left_hand_side =
-        std::make_unique<Identifier>(token_span(token), token_text(p, token));
+    left_hand_side = std::make_unique<Identifier>(token_span(token),
+                                                  token_text(parser, token));
   }
 
   for (;;) {
-    auto next = tokenizer_peek_token(p.tokenizer);
+    auto next = tokenizer_peek_token(parser.tokenizer);
     if (next.type == Type::Eof) {
       break;
     }
-    if (is_operator(token)) {
-      //
-      // we have to consume the token else we dont move forward but we cant
-      // consume it at the start if the token is not handled here like ')',
-      // '}', or ']'
-      //
-      tokenizer_next_token(p.tokenizer);
-      auto op = operator_from_token(token).value();
+    if (is_operator(next)) {
+      auto op = operator_from_token(next).value();
       if (is_postfix(op)) {
         //
         // this is the left hand side binding power because the operator is
@@ -204,8 +256,13 @@ AstNodePtr parser_expr_binding_power(Parser &p, int min_binding_power) {
           break;
         }
 
-        auto span = token_span(token);
-        span.length = next.pos + next.length;
+        tokenizer_next_token(parser.tokenizer);
+
+        auto span =
+            SourceSpan{.pos = left_hand_side->pos,
+                       .length = next.pos + next.length - left_hand_side->pos,
+                       .column = left_hand_side->column,
+                       .line = left_hand_side->line};
         left_hand_side = std::make_unique<PostfixExpression>(
             span, op, std::move(left_hand_side));
         continue;
@@ -218,11 +275,17 @@ AstNodePtr parser_expr_binding_power(Parser &p, int min_binding_power) {
           break;
         }
 
-        auto right_hand_side =
-            parser_expr_binding_power(p, right_hand_side_binding_power);
+        tokenizer_next_token(parser.tokenizer);
 
-        auto span = token_span(token);
-        span.length = right_hand_side->pos + right_hand_side->length;
+        auto right_hand_side =
+            parser_expr_binding_power(parser, right_hand_side_binding_power);
+
+        auto span =
+            SourceSpan{.pos = left_hand_side->pos,
+                       .length = right_hand_side->pos +
+                                 right_hand_side->length - left_hand_side->pos,
+                       .column = left_hand_side->column,
+                       .line = left_hand_side->line};
         left_hand_side = std::make_unique<InfixExpression>(
             span, op, std::move(left_hand_side), std::move(right_hand_side));
         continue;
@@ -243,7 +306,7 @@ Parser make_parser(std::string &source, Tokenizer &tokenizer) {
 }
 
 AstNodePtr parser_expr(Parser &p) {
-  auto ast = parser_expr_bp(p);
+  auto ast = parser_expr_binding_power(p, 0);
   auto next = tokenizer_next_token(p.tokenizer);
   if (next.type != Type::Eof) {
     throw ParserError("unexpected token after expression", next);
