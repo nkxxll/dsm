@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -11,6 +12,8 @@ enum class TokenType {
   Ident,
   Number,
   Op,
+  ParenLeft,
+  ParenRight,
   Eof,
 };
 
@@ -25,6 +28,8 @@ enum class Operator {
   Times,
   Div,
   Dot,
+  Faculty,
+  Power,
 };
 
 enum class AstNodeType {
@@ -69,7 +74,8 @@ struct Lexer {
   std::size_t pos;
 };
 
-Operator operator_from_char(char c);
+std::optional<Operator> operator_from_char(char c);
+std::string operator_to_string(Operator op);
 std::ostream &operator<<(std::ostream &os, const Operator &op);
 std::ostream &operator<<(std::ostream &os, const Expr &a);
 Token next_token(Lexer &l);

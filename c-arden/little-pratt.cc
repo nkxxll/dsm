@@ -1,16 +1,20 @@
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html#Minimal-Pratt-Parser
 
 #include "little-pratt.hh"
+#include <cassert>
 #include <cctype>
 #include <charconv>
 #include <cstddef>
+#include <cstdlib>
+#include <format>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 
-Operator operator_from_char(char c) {
+std::optional<Operator> operator_from_char(char c) {
   switch (c) {
   case ('+'):
     return Operator::Plus;
@@ -22,25 +26,38 @@ Operator operator_from_char(char c) {
     return Operator::Times;
   case ('.'):
     return Operator::Dot;
+  case ('!'):
+    return Operator::Faculty;
+  case ('^'):
+    return Operator::Power;
   }
-  throw std::invalid_argument("An operator has to be +-*/.");
+  return std::nullopt;
+}
+
+std::string operator_to_string(Operator op) {
+  switch (op) {
+  case (Operator::Plus):
+    return "+";
+  case (Operator::Power):
+    return "^";
+  case (Operator::Minus):
+    return "-";
+  case (Operator::Div):
+    return "/";
+  case (Operator::Times):
+    return "*";
+  case (Operator::Dot):
+    return ".";
+  case (Operator::Faculty):
+    return "!";
+  default:
+    throw std::runtime_error(std::format(
+        "There is one operator missing here {}", operator_to_string(op)));
+  }
 }
 
 std::ostream &operator<<(std::ostream &os, const Operator &op) {
-  switch (op) {
-  case (Operator::Plus):
-    return os << "+";
-  case (Operator::Minus):
-    return os << "-";
-  case (Operator::Div):
-    return os << "/";
-  case (Operator::Times):
-    return os << "*";
-  case (Operator::Dot):
-    return os << ".";
-  default:
-    throw std::runtime_error("There is one operator missing here");
-  }
+  return os << operator_to_string(op);
 }
 
 std::ostream &operator<<(std::ostream &os, const Expr &a) {
@@ -96,9 +113,16 @@ Token next_token(Lexer &l) {
     token.type = TokenType::Number;
   } else if (l.input[l.pos] == '+' || l.input[l.pos] == '-' ||
              l.input[l.pos] == '*' || l.input[l.pos] == '/' ||
-             l.input[l.pos] == '.') {
+             l.input[l.pos] == '.' || l.input[l.pos] == '!' ||
+             l.input[l.pos] == '^') {
     l.pos++;
     token.type = TokenType::Op;
+  } else if (l.input[l.pos] == '(') {
+    l.pos++;
+    token.type = TokenType::ParenLeft;
+  } else if (l.input[l.pos] == ')') {
+    l.pos++;
+    token.type = TokenType::ParenRight;
   } else {
     throw std::runtime_error("unexpected character: " +
                              std::string(1, l.input[l.pos]));
@@ -106,6 +130,35 @@ Token next_token(Lexer &l) {
 
   token.text = l.input.substr(start, l.pos - start);
   return token;
+}
+
+/*
+ * this returns the right hand side binding power of a prefix operator
+ */
+int prefix_binding_power(Operator op) {
+  switch (op) {
+  case (Operator::Plus):
+  case (Operator::Minus):
+    //
+    // left associative less binding than left associative times and div
+    //
+    return 7;
+  default:
+    throw std::runtime_error(
+        std::format("This is no prefix operator {}", operator_to_string(op)));
+  }
+}
+
+std::optional<int> postfix_binding_power(Operator op) {
+  switch (op) {
+  case (Operator::Faculty):
+    //
+    // left associative less binding than left associative times and div
+    //
+    return 8;
+  default:
+    return std::nullopt;
+  }
 }
 
 std::pair<int, int> infix_binding_power(Operator op) {
@@ -122,8 +175,10 @@ std::pair<int, int> infix_binding_power(Operator op) {
     // left associative more binding than plus and minus any time
     //
     return std::pair{3, 4};
+  case (Operator::Power):
+    return std::pair{5, 6};
   case (Operator::Dot):
-    return std::pair{6, 5};
+    return std::pair{8, 7};
   default:
     throw std::runtime_error("There is an operator type missing here");
   }
@@ -170,10 +225,23 @@ ExprKind make_ident_or_number(Token token) {
  */
 Expr expr_bp(Lexer &l, int min_bp) {
   auto next = next_token(l);
+  Expr lhs;
   if (next.type == TokenType::Eof) {
-    throw std::runtime_error("expected number or ident");
+    throw std::runtime_error("expected number ident or prefix");
+  } else if (next.type == TokenType::Op) {
+    auto op = operator_from_char(next.text.at(0)).value();
+    int r_bp = prefix_binding_power(op);
+    auto rhs = expr_bp(l, r_bp);
+    lhs = Expr{.token = next,
+               .kind = UnaryExpression{
+                   .op = op, .rhs = std::make_unique<Expr>(std::move(rhs))}};
+  } else if (next.type == TokenType::ParenLeft) {
+    lhs = expr_bp(l, 0);
+    auto rpar = next_token(l);
+    assert(rpar.type == TokenType::ParenRight);
+  } else {
+    lhs = Expr{.token = next, .kind = make_ident_or_number(next)};
   }
-  auto lhs = Expr{.token = next, .kind = make_ident_or_number(next)};
 
   for (;;) {
     next = peek_token(l);
@@ -181,26 +249,45 @@ Expr expr_bp(Lexer &l, int min_bp) {
       break;
     }
 
-    if (next.type != TokenType::Op) {
-      break;
+    //
+    // if the char is not an op the caller has to handle it so we just continue
+    // and thus break;
+    //
+    auto maybe_op = operator_from_char(next.text.at(0));
+    if (maybe_op.has_value()) {
+      auto op = maybe_op.value();
+      auto optional_post = postfix_binding_power(op);
+      if (optional_post.has_value()) {
+        int l_bp = optional_post.value();
+        if (l_bp < min_bp) {
+          break;
+        }
+        next_token(l);
+        lhs =
+            Expr{.token = next,
+                 .kind = UnaryExpression{
+                     .op = op, .rhs = std::make_unique<Expr>(std::move(lhs))}};
+        continue;
+      }
+
+      auto [l_bp, r_bp] = infix_binding_power(op);
+
+      if (l_bp < min_bp) {
+        break;
+      }
+      next_token(l);
+      auto rhs = expr_bp(l, r_bp);
+
+      // build the new lhs here
+      lhs = Expr{.token = next,
+                 .kind = BinaryExpression{
+                     .op = op,
+                     .lhs = std::make_unique<Expr>(std::move(lhs)),
+                     .rhs = std::make_unique<Expr>(std::move(rhs)),
+                 }};
+      continue;
     }
-
-    auto op = operator_from_char(next.text.at(0));
-    auto [l_bp, r_bp] = infix_binding_power(op);
-
-    if (l_bp < min_bp) {
-      break;
-    }
-    next_token(l);
-    auto rhs = expr_bp(l, r_bp);
-
-    // build the new lhs here
-    lhs = Expr{.token = next,
-               .kind = BinaryExpression{
-                   .op = op,
-                   .lhs = std::make_unique<Expr>(std::move(lhs)),
-                   .rhs = std::make_unique<Expr>(std::move(rhs)),
-               }};
+    break;
   };
   return lhs;
 }
