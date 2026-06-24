@@ -67,6 +67,30 @@ static NumberLiteral *expect_number(AstNode *node, double value) {
   return number;
 }
 
+static IdentifierExression *expect_identifier(AstNode *node,
+                                              std::string_view value) {
+  EXPECT_EQ(node->tag, AstTag::Identifier);
+  auto *identifier = dynamic_cast<IdentifierExression *>(node);
+  EXPECT_NE(identifier, nullptr);
+  if (identifier != nullptr) {
+    EXPECT_EQ(identifier->value, value);
+  }
+  return identifier;
+}
+
+static FunctionCallExpression *expect_function_call(AstNode *node,
+                                                    std::string_view name,
+                                                    size_t arg_count) {
+  EXPECT_EQ(node->tag, AstTag::FunctionCallExpression);
+  auto *function_call = dynamic_cast<FunctionCallExpression *>(node);
+  EXPECT_NE(function_call, nullptr);
+  if (function_call != nullptr) {
+    expect_identifier(function_call->function_name_identifier.get(), name);
+    EXPECT_EQ(function_call->args.size(), arg_count);
+  }
+  return function_call;
+}
+
 static InfixExpression *expect_infix(AstNode *node, Operator op) {
   EXPECT_EQ(node->tag, AstTag::InfixExpression);
   auto *infix = dynamic_cast<InfixExpression *>(node);
@@ -138,9 +162,58 @@ TEST(ParserTest, ParsesAtomExpressions) {
   EXPECT_EQ(identifier_node->length, 11u);
   EXPECT_EQ(identifier_node->column, 1u);
   EXPECT_EQ(identifier_node->line, 1u);
-  auto *identifier = dynamic_cast<Identifier *>(identifier_node.get());
-  ASSERT_NE(identifier, nullptr);
-  EXPECT_EQ(identifier->value, "patient_age");
+  expect_identifier(identifier_node.get(), "patient_age");
+}
+
+TEST(ParserTest, ParsesFunctionCallWithoutArguments) {
+  std::string input = "foo()";
+  auto node = parse_test_expr(input);
+
+  auto *function_call = expect_function_call(node.get(), "foo", 0);
+  ASSERT_NE(function_call, nullptr);
+  EXPECT_EQ(function_call->pos, 0u);
+  EXPECT_EQ(function_call->length, 5u);
+  EXPECT_EQ(function_call->column, 1u);
+  EXPECT_EQ(function_call->line, 1u);
+}
+
+TEST(ParserTest, ParsesFunctionCallWithOneArgument) {
+  std::string input = "foo(4)";
+  auto node = parse_test_expr(input);
+
+  auto *function_call = expect_function_call(node.get(), "foo", 1);
+  ASSERT_NE(function_call, nullptr);
+  expect_number(function_call->args[0].get(), 4.0);
+}
+
+TEST(ParserTest, ParsesFunctionCallWithMultipleArguments) {
+  std::string input = "foo(1, 2 + 3, patient_age)";
+  auto node = parse_test_expr(input);
+
+  auto *function_call = expect_function_call(node.get(), "foo", 3);
+  ASSERT_NE(function_call, nullptr);
+  expect_number(function_call->args[0].get(), 1.0);
+
+  auto *addition = expect_infix(function_call->args[1].get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 2.0);
+  expect_number(addition->right_hand_side.get(), 3.0);
+
+  expect_identifier(function_call->args[2].get(), "patient_age");
+}
+
+TEST(ParserTest, ParsesFunctionCallBeforeInfixOperators) {
+  std::string input = "foo(4) + 1";
+  auto node = parse_test_expr(input);
+
+  auto *addition = expect_infix(node.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->right_hand_side.get(), 1.0);
+
+  auto *function_call =
+      expect_function_call(addition->left_hand_side.get(), "foo", 1);
+  ASSERT_NE(function_call, nullptr);
+  expect_number(function_call->args[0].get(), 4.0);
 }
 
 TEST(ParserTest, ParsesInfixOperatorExpression) {
@@ -186,6 +259,81 @@ TEST(ParserTest, ParsesLeftAssociativeAdditiveOperators) {
 
   auto *addition =
       expect_infix(subtraction->left_hand_side.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+  expect_number(addition->right_hand_side.get(), 2.0);
+}
+
+TEST(ParserTest, ParsesParenthesesBeforeEverythingElse) {
+  std::string input = "(1 + 2) ** 3";
+  auto node = parse_test_expr(input);
+
+  auto *power = expect_infix(node.get(), Operator::Power);
+  ASSERT_NE(power, nullptr);
+  expect_number(power->right_hand_side.get(), 3.0);
+
+  auto *addition = expect_infix(power->left_hand_side.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+  expect_number(addition->right_hand_side.get(), 2.0);
+}
+
+TEST(ParserTest, ParsesParenthesesOnRightHandSideBeforeMultiplication) {
+  std::string input = "1 * (2 + 3)";
+  auto node = parse_test_expr(input);
+
+  auto *multiplication = expect_infix(node.get(), Operator::Multipy);
+  ASSERT_NE(multiplication, nullptr);
+  expect_number(multiplication->left_hand_side.get(), 1.0);
+
+  auto *addition =
+      expect_infix(multiplication->right_hand_side.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 2.0);
+  expect_number(addition->right_hand_side.get(), 3.0);
+}
+
+TEST(ParserTest, ParsesNestedParenthesesBeforeOuterOperators) {
+  std::string input = "1 + (2 * (3 + 4))";
+  auto node = parse_test_expr(input);
+
+  auto *addition = expect_infix(node.get(), Operator::Plus);
+  ASSERT_NE(addition, nullptr);
+  expect_number(addition->left_hand_side.get(), 1.0);
+
+  auto *multiplication =
+      expect_infix(addition->right_hand_side.get(), Operator::Multipy);
+  ASSERT_NE(multiplication, nullptr);
+  expect_number(multiplication->left_hand_side.get(), 2.0);
+
+  auto *nested_addition =
+      expect_infix(multiplication->right_hand_side.get(), Operator::Plus);
+  ASSERT_NE(nested_addition, nullptr);
+  expect_number(nested_addition->left_hand_side.get(), 3.0);
+  expect_number(nested_addition->right_hand_side.get(), 4.0);
+}
+
+TEST(ParserTest, ParsesParenthesizedPrefixBeforePowerOperator) {
+  std::string input = "(-2) ** 10";
+  auto node = parse_test_expr(input);
+
+  auto *power = expect_infix(node.get(), Operator::Power);
+  ASSERT_NE(power, nullptr);
+  expect_number(power->right_hand_side.get(), 10.0);
+
+  auto *negation = expect_prefix(power->left_hand_side.get(), Operator::Minus);
+  ASSERT_NE(negation, nullptr);
+  expect_number(negation->right_hand_side.get(), 2.0);
+}
+
+TEST(ParserTest, ParsesPostfixAfterParenthesizedExpression) {
+  std::string input = "(1 + 2) minutes";
+  auto node = parse_test_expr(input);
+
+  auto *minutes = expect_postfix(node.get(), Operator::Minutes);
+  ASSERT_NE(minutes, nullptr);
+
+  auto *addition = expect_infix(minutes->left_hand_side.get(), Operator::Plus);
   ASSERT_NE(addition, nullptr);
   expect_number(addition->left_hand_side.get(), 1.0);
   expect_number(addition->right_hand_side.get(), 2.0);

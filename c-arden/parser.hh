@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct Parser {
   std::string &source;
@@ -51,6 +52,7 @@ enum class AstTag {
   InfixExpression,
   PrefixExpression,
   PostfixExpression,
+  FunctionCallExpression,
 };
 
 struct SourceSpan {
@@ -121,10 +123,20 @@ struct StringLiteral : AstNode {
  * this should be a string view into the source what we do with it can the
  * interpreter decide
  */
-struct Identifier : AstNode {
-  Identifier(SourceSpan span, std::string_view value)
+struct IdentifierExression : AstNode {
+  IdentifierExression(SourceSpan span, std::string_view value)
       : AstNode(AstTag::Identifier, span), value(value) {}
   std::string_view value;
+};
+
+struct FunctionCallExpression : AstNode {
+  FunctionCallExpression(SourceSpan span, AstNodePtr function_name,
+                         std::vector<AstNodePtr> args)
+      : AstNode(AstTag::FunctionCallExpression, span),
+        function_name_identifier(std::move(function_name)),
+        args(std::move(args)) {}
+  AstNodePtr function_name_identifier;
+  std::vector<AstNodePtr> args;
 };
 
 /*
@@ -140,3 +152,4 @@ struct BooleanLiteral : AstNode {
 Parser make_parser(std::string &source, Tokenizer &tokenizer);
 AstNodePtr parser_expr(Parser &p);
 AstNodePtr parser_expr_bp(Parser &p);
+std::vector<AstNodePtr> parse_function_args(Parser &p);

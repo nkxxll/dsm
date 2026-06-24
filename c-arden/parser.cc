@@ -1,6 +1,7 @@
 #include "parser.hh"
 #include "tokenizer.hh"
 
+#include <format>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -190,6 +191,16 @@ std::pair<int, int> infix_binding_power(Operator op) {
   }
 }
 
+void assert_token_type(Token next_token, Type type) {
+  if (next_token.type != type) {
+    throw new ParserError(
+        std::format("Expected token of type {} but got token of type {}",
+                    token_type_to_string(type),
+                    token_type_to_string(next_token.type)),
+        next_token);
+  }
+}
+
 } // namespace
 
 ParserError::ParserError(const std::string &message, const Token &token)
@@ -208,6 +219,12 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
 
   if (is_literal(token)) {
     left_hand_side = parse_literal(parser, token);
+  }
+
+  if (token.type == Type::Lpar) {
+    left_hand_side = parser_expr_binding_power(parser, 0);
+    auto next_token = tokenizer_next_token(parser.tokenizer);
+    assert_token_type(next_token, Type::Rpar);
   }
 
   if (is_operator(token)) {
@@ -235,8 +252,24 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
   }
 
   if (token.type == Type::Identifier) {
-    left_hand_side = std::make_unique<Identifier>(token_span(token),
-                                                  token_text(parser, token));
+    left_hand_side = std::make_unique<IdentifierExression>(
+        token_span(token), token_text(parser, token));
+
+    auto peek = tokenizer_peek_token(parser.tokenizer);
+    if (peek.type == Type::Lpar) {
+      tokenizer_next_token(parser.tokenizer);
+      auto args = parse_function_args(parser);
+      auto next_token = tokenizer_next_token(parser.tokenizer);
+      assert_token_type(next_token, Type::Rpar);
+      auto span = SourceSpan{
+          .pos = left_hand_side->pos,
+          .length = next_token.pos + next_token.length - left_hand_side->pos,
+          .column = left_hand_side->column,
+          .line = left_hand_side->line,
+      };
+      left_hand_side = std::make_unique<FunctionCallExpression>(
+          span, std::move(left_hand_side), std::move(args));
+    }
   }
 
   for (;;) {
@@ -299,6 +332,25 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
   }
 
   return left_hand_side;
+}
+
+std::vector<AstNodePtr> parse_function_args(Parser &parser) {
+  std::vector<AstNodePtr> args;
+  if (tokenizer_peek_token(parser.tokenizer).type == Type::Rpar) {
+    return args;
+  }
+
+  for (;;) {
+    auto arg = parser_expr_binding_power(parser, 0);
+    args.push_back(std::move(arg));
+    auto maybe_comma = tokenizer_peek_token(parser.tokenizer);
+    if (maybe_comma.type == Type::Comma) {
+      tokenizer_next_token(parser.tokenizer);
+      continue;
+    }
+    break;
+  }
+  return args;
 }
 
 Parser make_parser(std::string &source, Tokenizer &tokenizer) {
