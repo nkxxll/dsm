@@ -1,3 +1,4 @@
+#include "interpreter.hh"
 #include "parser.hh"
 #include "tokenizer.hh"
 #include <vector>
@@ -55,6 +56,13 @@ static AstNodePtr parse_test_expr(std::string &input) {
   init_tokenizer(tokenizer, "test", input);
   Parser parser = make_parser(input, tokenizer);
   return parser_expr(parser);
+}
+
+static AstNodePtr parse_test_statement(std::string &input) {
+  Tokenizer tokenizer;
+  init_tokenizer(tokenizer, "test", input);
+  Parser parser = make_parser(input, tokenizer);
+  return parse_statement(parser);
 }
 
 static NumberLiteral *expect_number(AstNode *node, double value) {
@@ -424,6 +432,45 @@ TEST(ParserTest, ParsesDurationArithmeticFromExamples) {
 TEST(ParserTest, RejectsEmptyExpression) {
   std::string input;
   EXPECT_THROW(parse_test_expr(input), ParserError);
+}
+
+TEST(InterpreterTest, InterpretsWriteNumberAndStringStatements) {
+  Environment env;
+
+  std::string number_input = "WRITE 123.45";
+  testing::internal::CaptureStdout();
+  auto number_result = eval(env, parse_test_statement(number_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "123.45\n");
+  ASSERT_NE(number_result, nullptr);
+  EXPECT_EQ(number_result->tag, ValueTag::Unit);
+
+  std::string string_input = "WRITE \"hello\"";
+  testing::internal::CaptureStdout();
+  auto string_result = eval(env, parse_test_statement(string_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "hello\n");
+  ASSERT_NE(string_result, nullptr);
+  EXPECT_EQ(string_result->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, AssignmentValueCanBeWrittenMoreThanOnce) {
+  Environment env;
+
+  std::string assign_input = "a := 123.45";
+  auto assign_result = eval(env, parse_test_statement(assign_input));
+  ASSERT_NE(assign_result, nullptr);
+  EXPECT_EQ(assign_result->tag, ValueTag::Unit);
+
+  testing::internal::CaptureStdout();
+  std::string first_write = "WRITE a";
+  auto first_result = eval(env, parse_test_statement(first_write));
+  std::string second_write = "WRITE a";
+  auto second_result = eval(env, parse_test_statement(second_write));
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "123.45\n123.45\n");
+  ASSERT_NE(first_result, nullptr);
+  EXPECT_EQ(first_result->tag, ValueTag::Unit);
+  ASSERT_NE(second_result, nullptr);
+  EXPECT_EQ(second_result->tag, ValueTag::Unit);
 }
 
 TEST(TokenizerTest, InitTokenizer) {

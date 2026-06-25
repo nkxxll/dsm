@@ -36,7 +36,13 @@ static SourceSpan node_span(const AstNode &node) {
 
 static SourceSpan span_of(const Token &token) { return token_span(token); }
 
+static SourceSpan span_of(const std::optional<Token> &token) {
+  return token_span(token.value());
+}
+
 static SourceSpan span_of(const AstNode &node) { return node_span(node); }
+
+static SourceSpan span_of(const AstNodePtr &node) { return node_span(*node); }
 
 template <typename First, typename Last>
 static SourceSpan span_from(const First &first, const Last &last) {
@@ -53,10 +59,10 @@ static bool is_literal(const Token &token) {
          token.type == Type::True || token.type == Type::False;
 }
 
-static AstNodePtr parse_literal(Parser &p, const Token &token) {
+static AstNodePtr parse_literal(Parser &parser, const Token &token) {
   switch (token.type) {
   case Type::Numtoken: {
-    std::string text(token_text(p, token));
+    std::string text(token_text(parser, token));
     std::size_t parsed = 0;
     double value = std::stod(text, &parsed);
     if (parsed != text.size()) {
@@ -67,13 +73,14 @@ static AstNodePtr parse_literal(Parser &p, const Token &token) {
   case Type::Strtoken: {
     std::size_t start = token.pos;
     std::size_t length = token.length;
-    if (length >= 2 && p.source[start] == '"' &&
-        p.source[start + length - 1] == '"') {
+    if (length >= 2 && parser.source[start] == '"' &&
+        parser.source[start + length - 1] == '"') {
       start++;
       length -= 2;
     }
     return std::make_unique<StringLiteral>(
-        token_span(token), std::string_view(p.source).substr(start, length));
+        token_span(token),
+        std::string_view(parser.source).substr(start, length));
   }
   case Type::True:
   case Type::False:
@@ -128,18 +135,6 @@ std::optional<Operator> operator_from_token(Token token) {
     return Operator::Seconds;
   default:
     return std::nullopt;
-  }
-}
-
-AstNodePtr parse_statement_block(Parser &parser) {
-  StatementBlock sb;
-  for (;;) {
-    auto statement = parse_statement(parser);
-    sb.push_back(statement);
-    if (tokenzier_match_token(parser.tokenizer, Type::Semicolon).has_value()) {
-      continue;
-    }
-    break;
   }
 }
 
@@ -241,6 +236,20 @@ Token expect_token(Tokenizer &tokenizer, Type type) {
 
 ParserError::ParserError(const std::string &message, const Token &token)
     : std::runtime_error(parser_error_message(message, token)) {}
+
+AstNodePtr parse_statement_block(Parser &parser) {
+  std::vector<AstNodePtr> sb;
+  for (;;) {
+    auto statement = parse_statement(parser);
+    sb.push_back(std::move(statement));
+    if (tokenzier_match_token(parser.tokenizer, Type::Semicolon).has_value()) {
+      continue;
+    }
+    break;
+  }
+  auto span = span_from(sb.front(), sb.back());
+  return std::make_unique<StatementBlock>(span, std::move(sb));
+}
 
 AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
   auto token = tokenizer_next_token(parser.tokenizer);
@@ -376,4 +385,39 @@ AstNodePtr parser_expr(Parser &p) {
     throw ParserError("unexpected token after expression", next);
   }
   return ast;
+}
+
+AstNodePtr parse_statement(Parser &parser) {
+  if (auto open_brace = tokenzier_match_token(parser.tokenizer, Type::Lbrac)) {
+    auto sb = parse_statement_block(parser);
+    if (auto close_brace =
+            tokenzier_match_token(parser.tokenizer, Type::Rbrac)) {
+      return sb;
+    }
+    throw ParserError("expected closing brace and got this",
+                      tokenizer_next_token(parser.tokenizer));
+  }
+  if (auto ident = tokenzier_match_token(parser.tokenizer, Type::Identifier)) {
+    if (auto assign = tokenzier_match_token(parser.tokenizer, Type::Assign)) {
+      auto ident_span = token_span(ident.value());
+      auto ident_expression = std::make_unique<IdentifierExression>(
+          ident_span, token_text(parser, ident.value()));
+      auto expression = parser_expr_binding_power(parser, 0);
+      auto span = span_from(ident, expression);
+      return std::make_unique<AssignmentStatement>(
+          span, std::move(ident_expression), std::move(expression));
+    }
+  }
+  if (auto write = tokenzier_match_token(parser.tokenizer, Type::Write)) {
+    auto right_hand_side = parser_expr_binding_power(parser, 0);
+    auto span = SourceSpan{
+        .pos = write->pos,
+        .length = right_hand_side->pos + right_hand_side->length - write->pos,
+        .column = write->column,
+        .line = write->line,
+    };
+    return std::make_unique<WriteStatement>(span, std::move(right_hand_side));
+  }
+
+  return parser_expr_binding_power(parser, 0);
 }

@@ -54,6 +54,8 @@ enum class AstTag {
   PostfixExpression,
   FunctionCallExpression,
   WriteStatement,
+  AssignmentStatement,
+  StatementBlock,
 };
 
 struct SourceSpan {
@@ -77,7 +79,19 @@ struct AstNode {
 
 using AstNodePtr = std::unique_ptr<AstNode>;
 
-using StatementBlock = std::vector<AstNodePtr>;
+struct StatementBlock : AstNode {
+  StatementBlock(SourceSpan span, std::vector<AstNodePtr> block)
+      : AstNode(AstTag::StatementBlock, span), block(std::move(block)) {}
+  std::vector<AstNodePtr> block;
+};
+
+struct AssignmentStatement : AstNode {
+  AssignmentStatement(SourceSpan span, AstNodePtr ident, AstNodePtr expression)
+      : AstNode(AstTag::AssignmentStatement, span), ident(std::move(ident)),
+        expression(std::move(expression)) {}
+  AstNodePtr ident;
+  AstNodePtr expression;
+};
 
 struct WriteStatement : AstNode {
   WriteStatement(SourceSpan span, AstNodePtr right_hand_side)

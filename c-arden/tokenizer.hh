@@ -21,6 +21,8 @@ enum class Type {
   Rpar = ')',
   Lspar = '[',
   Rspar = ']',
+  Lbrac = '{',
+  Rbrac = '}',
   Comma = ',',
   Ampersand = '&',
   Semicolon = ';',
