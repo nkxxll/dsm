@@ -1,9 +1,13 @@
 #ifndef TOKENIZER_HH
 #define TOKENIZER_HH
 
+#include <array>
 #include <cstddef>
 #include <cstdio>
+#include <optional>
 #include <string_view>
+
+constexpr std::size_t TOKENIZER_LOOKAHEAD_CAPACITY = 1;
 
 enum class Type {
   Eof,
@@ -94,14 +98,6 @@ enum class Type {
   Week,
 };
 
-struct Tokenizer {
-  std::string_view input_file;
-  std::string_view input;
-  std::size_t pos;
-  std::size_t line;
-  std::size_t column;
-};
-
 struct Token {
   std::size_t pos;
   std::size_t length;
@@ -110,10 +106,21 @@ struct Token {
   Type type;
 };
 
+struct Tokenizer {
+  std::string_view input_file;
+  std::string_view input;
+  std::size_t pos;
+  std::size_t line;
+  std::size_t column;
+  std::array<Token, TOKENIZER_LOOKAHEAD_CAPACITY> lookahead_tokens{};
+  std::size_t lookahead_count = 0;
+};
+
 void init_tokenizer(Tokenizer &tokenizer, std::string_view input_file,
                     std::string_view input);
 void destroy_tokenizer(Tokenizer &tokenizer);
 Token tokenizer_next_token(Tokenizer &tokenizer);
+std::optional<Token> tokenzier_match_token(Tokenizer &tokenizer, Type type);
 /*
  * peeks the next token does not change the internal tokenizer state
  */

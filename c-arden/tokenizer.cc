@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <string>
 
 namespace {
@@ -12,6 +13,8 @@ static char tokenizer_advance(Tokenizer &tokenizer);
 static Token tokenizer_single_char_token(Tokenizer &tokenizer, Type type);
 static Token tokenizer_parse_number(Tokenizer &tokenizer);
 static Token tokenizer_parse_identifier(Tokenizer &tokenizer);
+static void tokenizer_advance_to_after_token(Tokenizer &tokenizer,
+                                             const Token &token);
 
 struct Keyword {
   std::string text;
@@ -186,6 +189,20 @@ static char tokenizer_advance(Tokenizer &tokenizer) {
   }
 
   return tokenizer_peek(tokenizer);
+}
+
+static void tokenizer_advance_to_after_token(Tokenizer &tokenizer,
+                                             const Token &token) {
+  tokenizer.pos = token.pos + token.length;
+  tokenizer.line = token.line;
+  tokenizer.column = token.column + token.length;
+
+  for (std::size_t i = 0; i < token.length; i++) {
+    char current = tokenizer.input[token.pos + i];
+    if (current == '\n' || current == '\r') {
+      tokenizer.line++;
+    }
+  }
 }
 
 static Token tokenizer_single_char_token(Tokenizer &tokenizer, Type type) {
@@ -444,20 +461,10 @@ void init_tokenizer(Tokenizer &tokenizer, std::string_view input_file,
   tokenizer.pos = 0;
   tokenizer.line = 1;
   tokenizer.column = 1;
+  tokenizer.lookahead_count = 0;
 }
 
-Token tokenizer_peek_token(Tokenizer &tokenizer) {
-  std::size_t pos = tokenizer.pos;
-  std::size_t line = tokenizer.line;
-  std::size_t column = tokenizer.column;
-  auto token = tokenizer_next_token(tokenizer);
-  tokenizer.pos = pos;
-  tokenizer.line = line;
-  tokenizer.column = column;
-  return token;
-}
-
-Token tokenizer_next_token(Tokenizer &tokenizer) {
+static Token tokenizer_read_token(Tokenizer &tokenizer) {
   for (;;) {
     char current = tokenizer_peek(tokenizer);
     if (std::isspace(current)) {
@@ -483,69 +490,123 @@ Token tokenizer_next_token(Tokenizer &tokenizer) {
                       Type::Eof);
   }
 
+  Token token;
   if (std::isdigit((unsigned char)current)) {
-    return tokenizer_parse_number(tokenizer);
-  }
-
-  if (is_identifier_start((unsigned char)current)) {
-    return tokenizer_parse_identifier(tokenizer);
-  }
-
-  if (current == '"') {
-    return tokenizer_parse_string(tokenizer);
-  }
-
-  switch (current) {
-  case '*':
-    if (tokenizer.pos + 1 < tokenizer.input.size() &&
-        tokenizer.input[tokenizer.pos + 1] == '*') {
-      return tokenizer_single_char_token(tokenizer, Type::Power);
-    }
-    return tokenizer_single_char_token(tokenizer, Type::Multipy);
-  case ':':
-    if (tokenizer.pos + 1 < tokenizer.input.size() &&
-        tokenizer.input[tokenizer.pos + 1] == '=') {
-      return tokenizer_single_char_token(tokenizer, Type::Assign);
-    }
-    break;
-  case '.':
-    if (tokenizer.pos + 2 < tokenizer.input.size() &&
-        tokenizer.input[tokenizer.pos + 1] == '.' &&
-        tokenizer.input[tokenizer.pos + 2] == '.') {
-      return tokenizer_single_char_token(tokenizer, Type::Range);
-    }
-    return tokenizer_single_char_token(tokenizer, Type::Dot);
-  case '<':
-    if (tokenizer.pos + 1 < tokenizer.input.size()) {
-      if (tokenizer.input[tokenizer.pos + 1] == '=') {
-        return tokenizer_single_char_token(tokenizer, Type::Lteq);
+    token = tokenizer_parse_number(tokenizer);
+  } else if (is_identifier_start((unsigned char)current)) {
+    token = tokenizer_parse_identifier(tokenizer);
+  } else if (current == '"') {
+    token = tokenizer_parse_string(tokenizer);
+  } else {
+    switch (current) {
+    case '*':
+      if (tokenizer.pos + 1 < tokenizer.input.size() &&
+          tokenizer.input[tokenizer.pos + 1] == '*') {
+        token = tokenizer_single_char_token(tokenizer, Type::Power);
+        break;
       }
-      if (tokenizer.input[tokenizer.pos + 1] == '>') {
-        return tokenizer_single_char_token(tokenizer, Type::Neq);
+      token = tokenizer_single_char_token(tokenizer, Type::Multipy);
+      break;
+    case ':':
+      if (tokenizer.pos + 1 < tokenizer.input.size() &&
+          tokenizer.input[tokenizer.pos + 1] == '=') {
+        token = tokenizer_single_char_token(tokenizer, Type::Assign);
+        break;
       }
+      token = tokenizer_single_char_token(tokenizer, Type::Unknown);
+      break;
+    case '.':
+      if (tokenizer.pos + 2 < tokenizer.input.size() &&
+          tokenizer.input[tokenizer.pos + 1] == '.' &&
+          tokenizer.input[tokenizer.pos + 2] == '.') {
+        token = tokenizer_single_char_token(tokenizer, Type::Range);
+        break;
+      }
+      token = tokenizer_single_char_token(tokenizer, Type::Dot);
+      break;
+    case '<':
+      if (tokenizer.pos + 1 < tokenizer.input.size()) {
+        if (tokenizer.input[tokenizer.pos + 1] == '=') {
+          token = tokenizer_single_char_token(tokenizer, Type::Lteq);
+          break;
+        }
+        if (tokenizer.input[tokenizer.pos + 1] == '>') {
+          token = tokenizer_single_char_token(tokenizer, Type::Neq);
+          break;
+        }
+      }
+      token = tokenizer_single_char_token(tokenizer, Type::Lt);
+      break;
+    case '>':
+      if (tokenizer.pos + 1 < tokenizer.input.size() &&
+          tokenizer.input[tokenizer.pos + 1] == '=') {
+        token = tokenizer_single_char_token(tokenizer, Type::Gteq);
+        break;
+      }
+      token = tokenizer_single_char_token(tokenizer, Type::Gt);
+      break;
+    case '+':
+    case '-':
+    case '/':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case ',':
+    case '&':
+    case ';':
+    case '=':
+      token = tokenizer_single_char_token(tokenizer, static_cast<Type>(current));
+      break;
+    default:
+      token = tokenizer_single_char_token(tokenizer, Type::Unknown);
+      break;
     }
-    return tokenizer_single_char_token(tokenizer, Type::Lt);
-  case '>':
-    if (tokenizer.pos + 1 < tokenizer.input.size() &&
-        tokenizer.input[tokenizer.pos + 1] == '=') {
-      return tokenizer_single_char_token(tokenizer, Type::Gteq);
-    }
-    return tokenizer_single_char_token(tokenizer, Type::Gt);
-  case '+':
-  case '-':
-  case '/':
-  case '(':
-  case ')':
-  case '[':
-  case ']':
-  case ',':
-  case '&':
-  case ';':
-  case '=':
-    return tokenizer_single_char_token(tokenizer, static_cast<Type>(current));
   }
 
-  return tokenizer_single_char_token(tokenizer, Type::Unknown);
+  return token;
+}
+
+Token tokenizer_peek_token(Tokenizer &tokenizer) {
+  if (tokenizer.lookahead_count == 0) {
+    std::size_t pos = tokenizer.pos;
+    std::size_t line = tokenizer.line;
+    std::size_t column = tokenizer.column;
+
+    tokenizer.lookahead_tokens[0] = tokenizer_read_token(tokenizer);
+    tokenizer.lookahead_count = 1;
+
+    tokenizer.pos = pos;
+    tokenizer.line = line;
+    tokenizer.column = column;
+  }
+
+  return tokenizer.lookahead_tokens[0];
+}
+
+Token tokenizer_next_token(Tokenizer &tokenizer) {
+  if (tokenizer.lookahead_count > 0) {
+    Token token = tokenizer.lookahead_tokens[0];
+    tokenizer_advance_to_after_token(tokenizer, token);
+    for (std::size_t i = 1; i < tokenizer.lookahead_count; i++) {
+      tokenizer.lookahead_tokens[i - 1] = tokenizer.lookahead_tokens[i];
+    }
+    tokenizer.lookahead_count--;
+    return token;
+  }
+
+  Token token = tokenizer_read_token(tokenizer);
+  return token;
+}
+
+std::optional<Token> tokenzier_match_token(Tokenizer &tokenizer, Type type) {
+  Token token = tokenizer_peek_token(tokenizer);
+  if (token.type != type) {
+    return std::nullopt;
+  }
+
+  tokenizer_next_token(tokenizer);
+  return token;
 }
 
 void destroy_tokenizer(Tokenizer &tokenizer) {
@@ -554,6 +615,7 @@ void destroy_tokenizer(Tokenizer &tokenizer) {
   tokenizer.pos = 0;
   tokenizer.line = 1;
   tokenizer.column = 1;
+  tokenizer.lookahead_count = 0;
 }
 
 void tokenizer_print_token(const Tokenizer &tokenizer, Token token) {

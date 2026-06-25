@@ -6,8 +6,18 @@ CPPFLAGS ?=
 LDFLAGS ?=
 LDLIBS ?=
 GTEST_LIBS ?= -lgtest -lgtest_main -pthread
+TEST_CPPFLAGS ?= $(CPPFLAGS)
+TEST_LDFLAGS ?= $(LDFLAGS)
 VALGRIND ?= valgrind
 VALGRIND_FLAGS ?= --leak-check=full --show-leak-kinds=all --track-origins=yes
+
+ifeq ($(shell uname -s),Darwin)
+HOMEBREW_PREFIX ?= $(shell brew --prefix 2>/dev/null)
+ifneq ($(HOMEBREW_PREFIX),)
+TEST_CPPFLAGS += -isystem $(HOMEBREW_PREFIX)/opt/googletest/include
+TEST_LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/googletest/lib
+endif
+endif
 
 BIN_DIR := bin
 BUILD_DIR := build
@@ -55,7 +65,7 @@ $(RELEASE_TARGET): $(RELEASE_OBJ) | $(BIN_DIR)
 	$(CXX) $(RELEASE_LDFLAGS) -o $@ $(RELEASE_OBJ) $(LDLIBS)
 
 $(TEST_TARGET): $(TEST_OBJ) | $(BIN_DIR)
-	$(CXX) $(LDFLAGS) -o $@ $(TEST_OBJ) $(GTEST_LIBS) $(LDLIBS)
+	$(CXX) $(TEST_LDFLAGS) -o $@ $(TEST_OBJ) $(GTEST_LIBS) $(LDLIBS)
 
 $(BUILD_DIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
@@ -71,7 +81,7 @@ $(RELEASE_BUILD_DIR)/%.o: %.cc
 
 $(TEST_BUILD_DIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(TEST_CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 $(BIN_DIR):
 	mkdir -p $@

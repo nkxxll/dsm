@@ -27,6 +27,27 @@ static SourceSpan token_span(const Token &token) {
                     .line = token.line};
 }
 
+static SourceSpan node_span(const AstNode &node) {
+  return SourceSpan{.pos = node.pos,
+                    .length = node.length,
+                    .column = node.column,
+                    .line = node.line};
+}
+
+static SourceSpan span_of(const Token &token) { return token_span(token); }
+
+static SourceSpan span_of(const AstNode &node) { return node_span(node); }
+
+template <typename First, typename Last>
+static SourceSpan span_from(const First &first, const Last &last) {
+  auto first_span = span_of(first);
+  auto last_span = span_of(last);
+  return SourceSpan{.pos = first_span.pos,
+                    .length = last_span.pos + last_span.length - first_span.pos,
+                    .column = first_span.column,
+                    .line = first_span.line};
+}
+
 static bool is_literal(const Token &token) {
   return token.type == Type::Numtoken || token.type == Type::Strtoken ||
          token.type == Type::True || token.type == Type::False;
@@ -191,14 +212,17 @@ std::pair<int, int> infix_binding_power(Operator op) {
   }
 }
 
-void assert_token_type(Token next_token, Type type) {
-  if (next_token.type != type) {
-    throw new ParserError(
-        std::format("Expected token of type {} but got token of type {}",
-                    token_type_to_string(type),
-                    token_type_to_string(next_token.type)),
-        next_token);
+Token expect_token(Tokenizer &tokenizer, Type type) {
+  if (auto token = tokenzier_match_token(tokenizer, type)) {
+    return *token;
   }
+
+  auto next_token = tokenizer_peek_token(tokenizer);
+  throw ParserError(
+      std::format("Expected token of type {} but got token of type {}",
+                  token_type_to_string(type),
+                  token_type_to_string(next_token.type)),
+      next_token);
 }
 
 } // namespace
@@ -223,8 +247,7 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
 
   if (token.type == Type::Lpar) {
     left_hand_side = parser_expr_binding_power(parser, 0);
-    auto next_token = tokenizer_next_token(parser.tokenizer);
-    assert_token_type(next_token, Type::Rpar);
+    expect_token(parser.tokenizer, Type::Rpar);
   }
 
   if (is_operator(token)) {
@@ -242,11 +265,7 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
     //
     auto right_hand_side =
         parser_expr_binding_power(parser, right_hand_side_binding_power);
-    auto span = SourceSpan{.pos = token.pos,
-                           .length = right_hand_side->pos +
-                                     right_hand_side->length - token.pos,
-                           .column = token.column,
-                           .line = token.line};
+    auto span = span_from(token, *right_hand_side);
     left_hand_side = std::make_unique<PrefixExpression>(
         span, op, std::move(right_hand_side));
   }
@@ -255,18 +274,10 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
     left_hand_side = std::make_unique<IdentifierExression>(
         token_span(token), token_text(parser, token));
 
-    auto peek = tokenizer_peek_token(parser.tokenizer);
-    if (peek.type == Type::Lpar) {
-      tokenizer_next_token(parser.tokenizer);
+    if (tokenzier_match_token(parser.tokenizer, Type::Lpar)) {
       auto args = parse_function_args(parser);
-      auto next_token = tokenizer_next_token(parser.tokenizer);
-      assert_token_type(next_token, Type::Rpar);
-      auto span = SourceSpan{
-          .pos = left_hand_side->pos,
-          .length = next_token.pos + next_token.length - left_hand_side->pos,
-          .column = left_hand_side->column,
-          .line = left_hand_side->line,
-      };
+      auto next_token = expect_token(parser.tokenizer, Type::Rpar);
+      auto span = span_from(*left_hand_side, next_token);
       left_hand_side = std::make_unique<FunctionCallExpression>(
           span, std::move(left_hand_side), std::move(args));
     }
@@ -291,11 +302,7 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
 
         tokenizer_next_token(parser.tokenizer);
 
-        auto span =
-            SourceSpan{.pos = left_hand_side->pos,
-                       .length = next.pos + next.length - left_hand_side->pos,
-                       .column = left_hand_side->column,
-                       .line = left_hand_side->line};
+        auto span = span_from(*left_hand_side, next);
         left_hand_side = std::make_unique<PostfixExpression>(
             span, op, std::move(left_hand_side));
         continue;
@@ -313,12 +320,7 @@ AstNodePtr parser_expr_binding_power(Parser &parser, int min_binding_power) {
         auto right_hand_side =
             parser_expr_binding_power(parser, right_hand_side_binding_power);
 
-        auto span =
-            SourceSpan{.pos = left_hand_side->pos,
-                       .length = right_hand_side->pos +
-                                 right_hand_side->length - left_hand_side->pos,
-                       .column = left_hand_side->column,
-                       .line = left_hand_side->line};
+        auto span = span_from(*left_hand_side, *right_hand_side);
         left_hand_side = std::make_unique<InfixExpression>(
             span, op, std::move(left_hand_side), std::move(right_hand_side));
         continue;
@@ -343,9 +345,7 @@ std::vector<AstNodePtr> parse_function_args(Parser &parser) {
   for (;;) {
     auto arg = parser_expr_binding_power(parser, 0);
     args.push_back(std::move(arg));
-    auto maybe_comma = tokenizer_peek_token(parser.tokenizer);
-    if (maybe_comma.type == Type::Comma) {
-      tokenizer_next_token(parser.tokenizer);
+    if (tokenzier_match_token(parser.tokenizer, Type::Comma)) {
       continue;
     }
     break;
