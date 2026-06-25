@@ -131,6 +131,18 @@ std::optional<Operator> operator_from_token(Token token) {
   }
 }
 
+AstNodePtr parse_statement_block(Parser &parser) {
+  StatementBlock sb;
+  for (;;) {
+    auto statement = parse_statement(parser);
+    sb.push_back(statement);
+    if (tokenzier_match_token(parser.tokenizer, Type::Semicolon).has_value()) {
+      continue;
+    }
+    break;
+  }
+}
+
 bool is_operator(Token token) {
   auto op = operator_from_token(token);
   return op.has_value();

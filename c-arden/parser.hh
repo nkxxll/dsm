@@ -53,6 +53,7 @@ enum class AstTag {
   PrefixExpression,
   PostfixExpression,
   FunctionCallExpression,
+  WriteStatement,
 };
 
 struct SourceSpan {
@@ -75,6 +76,15 @@ struct AstNode {
 };
 
 using AstNodePtr = std::unique_ptr<AstNode>;
+
+using StatementBlock = std::vector<AstNodePtr>;
+
+struct WriteStatement : AstNode {
+  WriteStatement(SourceSpan span, AstNodePtr right_hand_side)
+      : AstNode(AstTag::WriteStatement, span),
+        right_hand_side(std::move(right_hand_side)) {}
+  AstNodePtr right_hand_side;
+};
 
 struct InfixExpression : AstNode {
   InfixExpression(SourceSpan span, Operator op, AstNodePtr left_hand_side,
@@ -150,6 +160,8 @@ struct BooleanLiteral : AstNode {
 };
 
 Parser make_parser(std::string &source, Tokenizer &tokenizer);
-AstNodePtr parser_expr(Parser &p);
-AstNodePtr parser_expr_bp(Parser &p);
-std::vector<AstNodePtr> parse_function_args(Parser &p);
+AstNodePtr parser_expr(Parser &parser);
+AstNodePtr parser_expr_bp(Parser &parser);
+std::vector<AstNodePtr> parse_function_args(Parser &parser);
+AstNodePtr parse_statement_block(Parser &parser);
+AstNodePtr parse_statement(Parser &parser);
