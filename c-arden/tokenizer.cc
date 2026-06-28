@@ -86,6 +86,7 @@ static const Keyword keywords[] = {
     {"write", Type::Write},
     {"year", Type::Year},
     {"years", Type::Year},
+    {"return", Type::Return},
 };
 
 static bool is_identifier_start(unsigned char c) {
@@ -212,7 +213,7 @@ static Token tokenizer_single_char_token(Tokenizer &tokenizer, Type type) {
   std::size_t length = 1;
 
   if (type == Type::Assign || type == Type::Power || type == Type::Lteq ||
-      type == Type::Neq || type == Type::Gteq) {
+      type == Type::Neq || type == Type::Gteq || type == Type::DoubleColon) {
     length = 2;
   } else if (type == Type::Range) {
     length = 3;
@@ -307,6 +308,8 @@ const char *token_type_to_string(Type token_type) {
     return "Type::Comma";
   case Type::Ampersand:
     return "Type::Ampersand";
+  case Type::DoubleColon:
+    return "Type::DoubleColon";
   case Type::Semicolon:
     return "Type::Semicolon";
   case Type::Eq:
@@ -317,6 +320,9 @@ const char *token_type_to_string(Type token_type) {
     return "Type::Lt";
   case Type::Gt:
     return "Type::Gt";
+
+  case Type::Return:
+    return "Type::Return";
 
   case Type::Unknown:
     return "Type::Unknown";
@@ -513,6 +519,11 @@ static Token tokenizer_read_token(Tokenizer &tokenizer) {
         token = tokenizer_single_char_token(tokenizer, Type::Assign);
         break;
       }
+      if (tokenizer.pos + 1 < tokenizer.input.size() &&
+          tokenizer.input[tokenizer.pos + 1] == ':') {
+        token = tokenizer_single_char_token(tokenizer, Type::DoubleColon);
+        break;
+      }
       token = tokenizer_single_char_token(tokenizer, Type::Unknown);
       break;
     case '.':
@@ -552,11 +563,14 @@ static Token tokenizer_read_token(Tokenizer &tokenizer) {
     case ')':
     case '[':
     case ']':
+    case '{':
+    case '}':
     case ',':
     case '&':
     case ';':
     case '=':
-      token = tokenizer_single_char_token(tokenizer, static_cast<Type>(current));
+      token =
+          tokenizer_single_char_token(tokenizer, static_cast<Type>(current));
       break;
     default:
       token = tokenizer_single_char_token(tokenizer, Type::Unknown);

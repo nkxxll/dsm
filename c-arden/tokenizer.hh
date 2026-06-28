@@ -12,6 +12,7 @@ constexpr std::size_t TOKENIZER_LOOKAHEAD_CAPACITY = 1;
 enum class Type {
   Eof,
   Identifier,
+  Return,
 
   Plus = '+',
   Minus = '-',
@@ -39,6 +40,7 @@ enum class Type {
   Neq,
   Gteq,
   Range,
+  DoubleColon,
 
   Numtoken,
   Strtoken,

@@ -56,6 +56,9 @@ enum class AstTag {
   WriteStatement,
   AssignmentStatement,
   StatementBlock,
+  ListExpression,
+  FunctionDefinitionStatement,
+  ReturnStatement,
 };
 
 struct SourceSpan {
@@ -94,10 +97,11 @@ struct AssignmentStatement : AstNode {
 };
 
 struct WriteStatement : AstNode {
-  WriteStatement(SourceSpan span, AstNodePtr right_hand_side)
+  WriteStatement(SourceSpan span, AstNodePtr right_hand_side, bool trace)
       : AstNode(AstTag::WriteStatement, span),
-        right_hand_side(std::move(right_hand_side)) {}
+        right_hand_side(std::move(right_hand_side)), trace(trace) {}
   AstNodePtr right_hand_side;
+  bool trace;
 };
 
 struct InfixExpression : AstNode {
@@ -153,6 +157,28 @@ struct IdentifierExression : AstNode {
   std::string_view value;
 };
 
+struct ListExpresssion : AstNode {
+  ListExpresssion(SourceSpan span, std::vector<AstNodePtr> items)
+      : AstNode(AstTag::ListExpression, span), items(std::move(items)) {}
+  std::vector<AstNodePtr> items;
+};
+
+struct ReturnStatement : AstNode {
+  ReturnStatement(SourceSpan span, AstNodePtr body)
+      : AstNode(AstTag::ReturnStatement, span), value(std::move(body)) {}
+  AstNodePtr value;
+};
+
+struct FunctionDefinitionStatement : AstNode {
+  FunctionDefinitionStatement(SourceSpan span, std::vector<AstNodePtr> args,
+                              AstNodePtr name, AstNodePtr body)
+      : AstNode(AstTag::FunctionDefinitionStatement, span),
+        args(std::move(args)), name(std::move(name)), body(std::move(body)) {}
+  std::vector<AstNodePtr> args;
+  AstNodePtr name;
+  AstNodePtr body;
+};
+
 struct FunctionCallExpression : AstNode {
   FunctionCallExpression(SourceSpan span, AstNodePtr function_name,
                          std::vector<AstNodePtr> args)
@@ -175,7 +201,10 @@ struct BooleanLiteral : AstNode {
 
 Parser make_parser(std::string &source, Tokenizer &tokenizer);
 AstNodePtr parser_expr(Parser &parser);
-AstNodePtr parser_expr_bp(Parser &parser);
+AstNodePtr parser_expr_binding_power(Parser &parser, int binding_power);
 std::vector<AstNodePtr> parse_function_args(Parser &parser);
 AstNodePtr parse_statement_block(Parser &parser);
 AstNodePtr parse_statement(Parser &parser);
+AstNodePtr parse_function_definition(Parser &parser, Token ident);
+AstNodePtr parse_return_statment(Parser &parser, Token return_token);
+

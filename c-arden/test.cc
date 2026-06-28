@@ -58,6 +58,13 @@ static AstNodePtr parse_test_expr(std::string &input) {
   return parser_expr(parser);
 }
 
+static AstNodePtr parse_test_statement_block(std::string &input) {
+  Tokenizer tokenizer;
+  init_tokenizer(tokenizer, "test", input);
+  Parser parser = make_parser(input, tokenizer);
+  return parse_statement_block(parser);
+}
+
 static AstNodePtr parse_test_statement(std::string &input) {
   Tokenizer tokenizer;
   init_tokenizer(tokenizer, "test", input);
@@ -86,9 +93,8 @@ static IdentifierExression *expect_identifier(AstNode *node,
   return identifier;
 }
 
-static FunctionCallExpression *expect_function_call(AstNode *node,
-                                                    std::string_view name,
-                                                    size_t arg_count) {
+static FunctionCallExpression *
+expect_function_call(AstNode *node, std::string_view name, size_t arg_count) {
   EXPECT_EQ(node->tag, AstTag::FunctionCallExpression);
   auto *function_call = dynamic_cast<FunctionCallExpression *>(node);
   EXPECT_NE(function_call, nullptr);
@@ -434,6 +440,50 @@ TEST(ParserTest, RejectsEmptyExpression) {
   EXPECT_THROW(parse_test_expr(input), ParserError);
 }
 
+TEST(InterpreterTest, InterpretsTraceStatement) {
+  Environment env;
+
+  std::string number_input = "Trace 11";
+  testing::internal::CaptureStdout();
+  auto number_result = eval(env, parse_test_statement(number_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "Line 1: 11\n");
+  ASSERT_NE(number_result, nullptr);
+  EXPECT_EQ(number_result->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, InterpretsASimpleBuiltinFunctionTrace) {
+  Environment env;
+
+  std::string number_input = "trace(11)";
+  testing::internal::CaptureStdout();
+  auto number_result = eval(env, parse_test_statement(number_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "Line 1: 11\n");
+  ASSERT_NE(number_result, nullptr);
+  EXPECT_EQ(number_result->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, InterpretsASimpleBuiltinFunctionWrite) {
+  Environment env;
+
+  std::string number_input = "write(11)";
+  testing::internal::CaptureStdout();
+  auto number_result = eval(env, parse_test_statement(number_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "11\n");
+  ASSERT_NE(number_result, nullptr);
+  EXPECT_EQ(number_result->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, InterpretsASimpleStatementBlock) {
+  Environment env;
+
+  std::string number_input = "WRITE \"hello\";\n{\nWRITE 123.45;\n}";
+  testing::internal::CaptureStdout();
+  auto number_result = eval(env, parse_test_statement_block(number_input));
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "hello\n123.45\n");
+  ASSERT_NE(number_result, nullptr);
+  EXPECT_EQ(number_result->tag, ValueTag::Unit);
+}
+
 TEST(InterpreterTest, InterpretsWriteNumberAndStringStatements) {
   Environment env;
 
@@ -450,6 +500,129 @@ TEST(InterpreterTest, InterpretsWriteNumberAndStringStatements) {
   EXPECT_EQ(testing::internal::GetCapturedStdout(), "hello\n");
   ASSERT_NE(string_result, nullptr);
   EXPECT_EQ(string_result->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, InterpretsListAssignmentAndPrintsIt) {
+  Environment env;
+
+  testing::internal::CaptureStdout();
+  std::string assign_input = "a := [1, 2, 3, 4];\nwrite(a);";
+  auto assign_result = eval(env, parse_test_statement_block(assign_input));
+  ASSERT_NE(assign_result, nullptr);
+  EXPECT_EQ(assign_result->tag, ValueTag::Unit);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "[1, 2, 3, 4]\n");
+}
+
+TEST(InterpreterTest, InterpretsFunctionDefinition) {
+  Environment env;
+
+  std::string assign_input =
+      "new_function :: (a, b, c) {\nreturn a + b + c;\n}";
+  auto function_definition =
+      eval(env, parse_test_statement_block(assign_input));
+  ASSERT_NE(function_definition, nullptr);
+  EXPECT_EQ(function_definition->tag, ValueTag::Unit);
+}
+
+TEST(InterpreterTest, InterpretsFunctionDefinitionAndCall) {
+  Environment env;
+
+  std::string assign_input =
+      "new_function :: () {\nreturn 123;\n};\nwrite(new_function());";
+  testing::internal::CaptureStdout();
+  auto function_definition =
+      eval(env, parse_test_statement_block(assign_input));
+  ASSERT_NE(function_definition, nullptr);
+  EXPECT_EQ(function_definition->tag, ValueTag::Unit);
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "123\n");
+}
+
+TEST(InterpreterTest, InterpretsFunctionDefinitionFollowedByCallStatements) {
+  Environment env;
+
+  std::string input =
+      "hello_world :: (name) {\n"
+      "    write(\"Hello World\");\n"
+      "    write(name);\n"
+      "}\n"
+      "\n"
+      "hello_world(\"tom\");\n"
+      "hello_world(\"jane\");\n"
+      "hello_world(\"carmen\");\n";
+  testing::internal::CaptureStdout();
+  auto result = eval(env, parse_test_statement_block(input));
+
+  ASSERT_NE(result, nullptr);
+  EXPECT_EQ(result->tag, ValueTag::Unit);
+  EXPECT_EQ(testing::internal::GetCapturedStdout(),
+            "Hello World\n"
+            "tom\n"
+            "Hello World\n"
+            "jane\n"
+            "Hello World\n"
+            "carmen\n");
+}
+
+TEST(InterpreterTest, FunctionCallArgCountMustMatchDefinition) {
+  Environment env;
+
+  std::string input =
+      "arity_mismatch :: (a, b) {\n"
+      "return a;\n"
+      "};\n"
+      "write(arity_mismatch(1));";
+
+  try {
+    eval(env, parse_test_statement_block(input));
+    FAIL() << "expected RuntimeError";
+  } catch (const RuntimeError &error) {
+    std::string message = error.what();
+    EXPECT_NE(message.find("function 'arity_mismatch' expects 2 arguments but "
+                           "got 1"),
+              std::string::npos);
+  }
+}
+
+TEST(InterpreterTest, FunctionDefinitionsCurrentlyUseOnlyArgsAndLocals) {
+  Environment env;
+
+  // Function calls currently evaluate with the function's own environment only.
+  // That environment starts with the declared arguments and can be extended by
+  // assignments made inside the body; it does not capture globals or expose its
+  // locals back to the caller.
+  std::string uses_args_and_locals =
+      "function_env_args_and_locals :: (arg) {\n"
+      "local_value := arg;\n"
+      "return local_value;\n"
+      "};\n"
+      "write(function_env_args_and_locals(123));";
+  testing::internal::CaptureStdout();
+  auto function_result = eval(env, parse_test_statement_block(uses_args_and_locals));
+  ASSERT_NE(function_result, nullptr);
+  EXPECT_EQ(function_result->tag, ValueTag::Unit);
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "123\n");
+
+  std::string cannot_read_outer =
+      "outer_value := 7;\n"
+      "function_env_no_capture :: () {\n"
+      "return outer_value;\n"
+      "};\n"
+      "write(function_env_no_capture());";
+  EXPECT_THROW(eval(env, parse_test_statement_block(cannot_read_outer)),
+               RuntimeError);
+
+  std::string local_does_not_leak =
+      "function_env_hidden_local :: () {\n"
+      "hidden_local := 42;\n"
+      "return hidden_local;\n"
+      "};\n"
+      "write(function_env_hidden_local());\n"
+      "write(hidden_local);";
+  testing::internal::CaptureStdout();
+  EXPECT_THROW(eval(env, parse_test_statement_block(local_does_not_leak)),
+               RuntimeError);
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "42\n");
 }
 
 TEST(InterpreterTest, AssignmentValueCanBeWrittenMoreThanOnce) {
@@ -525,24 +698,26 @@ TEST(TokenizerTest, NextTokenAdvancesPosition) {
 // --- Ported from OCaml expect tests ---
 
 TEST(TokenizerTest, SimpleOperators) {
-  check_tokens("+-*/;:=,()[]&<><=>=<>", {
-                                            {Type::Plus, 1, 1, 1},
-                                            {Type::Minus, 1, 2, 1},
-                                            {Type::Multipy, 1, 3, 1},
-                                            {Type::Divide, 1, 4, 1},
-                                            {Type::Semicolon, 1, 5, 1},
-                                            {Type::Assign, 2, 6, 1},
-                                            {Type::Comma, 1, 8, 1},
-                                            {Type::Lpar, 1, 9, 1},
-                                            {Type::Rpar, 1, 10, 1},
-                                            {Type::Lspar, 1, 11, 1},
-                                            {Type::Rspar, 1, 12, 1},
-                                            {Type::Ampersand, 1, 13, 1},
-                                            {Type::Neq, 2, 14, 1},
-                                            {Type::Lteq, 2, 16, 1},
-                                            {Type::Gteq, 2, 18, 1},
-                                            {Type::Neq, 2, 20, 1},
-                                        });
+  check_tokens("+-*/;:=,()[]{}&<><=>=<>", {
+                                              {Type::Plus, 1, 1, 1},
+                                              {Type::Minus, 1, 2, 1},
+                                              {Type::Multipy, 1, 3, 1},
+                                              {Type::Divide, 1, 4, 1},
+                                              {Type::Semicolon, 1, 5, 1},
+                                              {Type::Assign, 2, 6, 1},
+                                              {Type::Comma, 1, 8, 1},
+                                              {Type::Lpar, 1, 9, 1},
+                                              {Type::Rpar, 1, 10, 1},
+                                              {Type::Lspar, 1, 11, 1},
+                                              {Type::Rspar, 1, 12, 1},
+                                              {Type::Lbrac, 1, 13, 1},
+                                              {Type::Rbrac, 1, 14, 1},
+                                              {Type::Ampersand, 1, 15, 1},
+                                              {Type::Neq, 2, 16, 1},
+                                              {Type::Lteq, 2, 18, 1},
+                                              {Type::Gteq, 2, 20, 1},
+                                              {Type::Neq, 2, 22, 1},
+                                          });
 }
 
 TEST(TokenizerTest, OperatorsWithWhitespace) {

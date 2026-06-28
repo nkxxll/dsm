@@ -1,6 +1,9 @@
+#include "interpreter.hh"
+#include "parser.hh"
 #include "tokenizer.hh"
 
 #include <cstdio>
+#include <exception>
 #include <fstream>
 #include <iterator>
 #include <string>
@@ -23,11 +26,28 @@ int main(int argc, char *argv[]) {
   Tokenizer tokenizer{};
   init_tokenizer(tokenizer, input_file, input);
 
-  Token token{};
-  while ((token = tokenizer_next_token(tokenizer)).type != Type::Eof) {
-    std::printf("Token: %s '", token_type_to_string(token.type));
-    tokenizer_print_token(tokenizer, token);
-    std::printf("' at %zu:%zu\n", token.line, token.column);
+  try {
+    Parser parser = make_parser(input, tokenizer);
+    auto ast = parse_statement_block(parser);
+    auto next = tokenizer_next_token(tokenizer);
+    if (next.type != Type::Eof) {
+      throw ParserError("unexpected token after statement block", next);
+    }
+
+    Environment env;
+    eval(env, std::move(ast));
+  } catch (const ParserError &error) {
+    std::fprintf(stderr, "Parse error: %s\n", error.what());
+    destroy_tokenizer(tokenizer);
+    return 1;
+  } catch (const RuntimeError &error) {
+    std::fprintf(stderr, "Runtime error: %s\n", error.what());
+    destroy_tokenizer(tokenizer);
+    return 1;
+  } catch (const std::exception &error) {
+    std::fprintf(stderr, "Error: %s\n", error.what());
+    destroy_tokenizer(tokenizer);
+    return 1;
   }
 
   destroy_tokenizer(tokenizer);

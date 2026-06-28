@@ -1,0 +1,8 @@
+hello_world :: (name) {
+    write("Hello World");
+    write(name);
+}
+
+hello_world("tom");
+hello_world("jane");
+hello_world("carmen");
