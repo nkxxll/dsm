@@ -440,6 +440,11 @@ TEST(ParserTest, RejectsEmptyExpression) {
   EXPECT_THROW(parse_test_expr(input), ParserError);
 }
 
+TEST(ParserTest, RejectsMissingSemicolonBetweenStatements) {
+  std::string input = "WRITE 1\nWRITE 2;";
+  EXPECT_THROW(parse_test_statement_block(input), ParserError);
+}
+
 TEST(InterpreterTest, InterpretsTraceStatement) {
   Environment env;
 
