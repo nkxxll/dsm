@@ -1,3 +1,4 @@
+#include "compiler.hh"
 #include "interpreter.hh"
 #include "parser.hh"
 #include "tokenizer.hh"
@@ -56,6 +57,13 @@ static AstNodePtr parse_test_expr(std::string &input) {
   init_tokenizer(tokenizer, "test", input);
   Parser parser = make_parser(input, tokenizer);
   return parser_expr(parser);
+}
+
+static CompilerResult compile_test_expr(std::string &input) {
+  auto expr = parse_test_expr(input);
+  CompilerResult result;
+  compile_program(result, *expr);
+  return result;
 }
 
 static AstNodePtr parse_test_statement_block(std::string &input) {
@@ -443,6 +451,44 @@ TEST(ParserTest, RejectsEmptyExpression) {
 TEST(ParserTest, RejectsMissingSemicolonBetweenStatements) {
   std::string input = "WRITE 1\nWRITE 2;";
   EXPECT_THROW(parse_test_statement_block(input), ParserError);
+}
+
+TEST(CompilerTest, EmitsInfixArithmeticOpcodes) {
+  std::string input = "1 + 2 * 3";
+  auto result = compile_test_expr(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 5u);
+  EXPECT_EQ(result.program.main.instructions[0].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[1].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[2].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[3].op, OpCode::Multiply);
+  EXPECT_EQ(result.program.main.instructions[4].op, OpCode::Add);
+}
+
+TEST(CompilerTest, EmitsPrefixArithmeticOpcodes) {
+  std::string input = "-2 ** 10";
+  auto result = compile_test_expr(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 4u);
+  EXPECT_EQ(result.program.main.instructions[0].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[1].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[2].op, OpCode::Power);
+  EXPECT_EQ(result.program.main.instructions[3].op, OpCode::Negate);
+}
+
+TEST(CompilerTest, EmitsPostfixDurationOpcodes) {
+  std::string input = "2 hours / 5 minutes";
+  auto result = compile_test_expr(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 5u);
+  EXPECT_EQ(result.program.main.instructions[0].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[1].op, OpCode::ToHours);
+  EXPECT_EQ(result.program.main.instructions[2].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[3].op, OpCode::ToMinutes);
+  EXPECT_EQ(result.program.main.instructions[4].op, OpCode::Divide);
 }
 
 TEST(InterpreterTest, InterpretsTraceStatement) {
