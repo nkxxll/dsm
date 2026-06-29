@@ -59,6 +59,8 @@ enum class AstTag {
   ListExpression,
   FunctionDefinitionStatement,
   ReturnStatement,
+  IfStatement,
+  ForStatement,
 };
 
 struct SourceSpan {
@@ -163,6 +165,28 @@ struct ListExpresssion : AstNode {
   std::vector<AstNodePtr> items;
 };
 
+struct ForStatement : AstNode {
+  ForStatement(SourceSpan span,
+              AstNodePtr list_expression,
+              AstNodePtr block)
+      : AstNode(AstTag::ForStatement, span), list_expression(std::move(list_expression)),
+        block(std::move(block)) {}
+
+  AstNodePtr list_expression;
+  AstNodePtr block;
+};
+
+struct IfStatement : AstNode {
+  IfStatement(SourceSpan span,
+              std::vector<std::pair<AstNodePtr, AstNodePtr>> if_else,
+              std::optional<AstNodePtr> else_statement)
+      : AstNode(AstTag::IfStatement, span), if_else(std::move(if_else)),
+        else_statement(std::move(else_statement)) {}
+
+  std::vector<std::pair<AstNodePtr, AstNodePtr>> if_else;
+  std::optional<AstNodePtr> else_statement;
+};
+
 struct ReturnStatement : AstNode {
   ReturnStatement(SourceSpan span, AstNodePtr body)
       : AstNode(AstTag::ReturnStatement, span), value(std::move(body)) {}
@@ -207,4 +231,5 @@ AstNodePtr parse_statement_block(Parser &parser);
 AstNodePtr parse_statement(Parser &parser);
 AstNodePtr parse_function_definition(Parser &parser, Token ident);
 AstNodePtr parse_return_statment(Parser &parser, Token return_token);
-
+AstNodePtr parse_if_statement(Parser &parser, Token if_token);
+AstNodePtr parse_for_statement(Parser &parser, Token token);

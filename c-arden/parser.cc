@@ -36,10 +36,6 @@ static SourceSpan node_span(const AstNode &node) {
 
 static SourceSpan span_of(const Token &token) { return token_span(token); }
 
-static SourceSpan span_of(const std::optional<Token> &token) {
-  return token_span(token.value());
-}
-
 static SourceSpan span_of(const AstNode &node) { return node_span(node); }
 
 static SourceSpan span_of(const AstNodePtr &node) { return node_span(*node); }
@@ -520,7 +516,103 @@ AstNodePtr parse_return_statment(Parser &parser, Token return_token) {
   return return_statement;
 }
 
+AstNodePtr parse_if_statement(Parser &parser, Token if_token) {
+  // if <expresssion> { <statement_block> }
+  std::vector<std::pair<AstNodePtr, AstNodePtr>> if_else;
+  auto expression = parser_expr_binding_power(parser, 0);
+  auto maybe_lbrac = tokenzier_match_token(parser.tokenizer, Type::Lbrac);
+  if (!maybe_lbrac.has_value()) {
+    throw ParserError("expected { after if here ", if_token);
+  }
+
+  auto block = parse_statement_block(parser);
+
+  auto maybe_rbrac = tokenzier_match_token(parser.tokenizer, Type::Rbrac);
+  if (!maybe_rbrac.has_value()) {
+    throw ParserError("expected } after if here ", if_token);
+  }
+
+  if_else.push_back(std::pair(std::move(expression), std::move(block)));
+
+  Token if_else_end = maybe_rbrac.value();
+  while (auto else_token =
+             tokenzier_match_token(parser.tokenizer, Type::Elseif)) {
+    auto expression = parser_expr_binding_power(parser, 0);
+    auto maybe_lbrac = tokenzier_match_token(parser.tokenizer, Type::Lbrac);
+
+    if (!maybe_lbrac.has_value()) {
+      throw ParserError("expected { after elseif here ", else_token.value());
+    }
+
+    auto block = parse_statement_block(parser);
+
+    maybe_rbrac = tokenzier_match_token(parser.tokenizer, Type::Rbrac);
+    if (!maybe_rbrac.has_value()) {
+      throw ParserError("expected } after elseif here ", else_token.value());
+    } else {
+      if_else_end = maybe_rbrac.value();
+    }
+
+    if_else.push_back(std::pair(std::move(expression), std::move(block)));
+  }
+
+  auto else_token = tokenzier_match_token(parser.tokenizer, Type::Else);
+  std::optional<AstNodePtr> else_block = std::nullopt;
+  if (else_token.has_value()) {
+    maybe_lbrac = tokenzier_match_token(parser.tokenizer, Type::Lbrac);
+    if (!maybe_lbrac.has_value()) {
+      throw ParserError("expected { after if here ", if_token);
+    }
+
+    else_block = parse_statement_block(parser);
+
+    maybe_rbrac = tokenzier_match_token(parser.tokenizer, Type::Rbrac);
+    if (!maybe_rbrac.has_value()) {
+      throw ParserError("expected } after else here ", else_token.value());
+    } else {
+      if_else_end = maybe_rbrac.value();
+    }
+  }
+
+  AstNodePtr if_statement;
+  auto span = span_from(if_token, if_else_end);
+  if_statement = std::make_unique<IfStatement>(span, std::move(if_else),
+                                               std::move(else_block));
+  return if_statement;
+}
+
+AstNodePtr parse_for_statement(Parser &parser, Token token) {
+  /*
+   * for list {
+   *  write(it);
+   * }
+   */
+  auto expression = parser_expr_binding_power(parser, 0);
+
+  auto maybe_lbrac = tokenzier_match_token(parser.tokenizer, Type::Lbrac);
+  if (!maybe_lbrac.has_value()) {
+    throw ParserError("expected { after if here ", token);
+  }
+
+  auto block = parse_statement_block(parser);
+
+  auto maybe_rbrac = tokenzier_match_token(parser.tokenizer, Type::Rbrac);
+  if (!maybe_rbrac.has_value()) {
+    throw ParserError("expected } after if here ", token);
+  }
+
+  auto span = span_from(token, maybe_rbrac.value());
+  return std::make_unique<ForStatement>(span, std::move(expression),
+                                        std::move(block));
+}
+
 AstNodePtr parse_statement(Parser &parser) {
+  if (auto for_token = tokenzier_match_token(parser.tokenizer, Type::For)) {
+    return parse_for_statement(parser, for_token.value());
+  }
+  if (auto if_token = tokenzier_match_token(parser.tokenizer, Type::If)) {
+    return parse_if_statement(parser, if_token.value());
+  }
   if (auto maybe_return_token =
           tokenzier_match_token(parser.tokenizer, Type::Return)) {
     return parse_return_statment(parser, maybe_return_token.value());

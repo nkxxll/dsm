@@ -2,6 +2,7 @@
 #include "interpreter.hh"
 #include "parser.hh"
 #include "tokenizer.hh"
+#include "vm.hh"
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -63,6 +64,16 @@ static CompilerResult compile_test_expr(std::string &input) {
   auto expr = parse_test_expr(input);
   CompilerResult result;
   compile_program(result, *expr);
+  return result;
+}
+
+static CompilerResult compile_test_statement_block(std::string &input) {
+  Tokenizer tokenizer;
+  init_tokenizer(tokenizer, "test", input);
+  Parser parser = make_parser(input, tokenizer);
+  auto block = parse_statement_block(parser);
+  CompilerResult result;
+  compile_program(result, *block);
   return result;
 }
 
@@ -141,6 +152,18 @@ static PostfixExpression *expect_postfix(AstNode *node, Operator op) {
     EXPECT_EQ(postfix->op, op);
   }
   return postfix;
+}
+
+static IfStatement *expect_if_statement(AstNode *node, size_t branch_count,
+                                        bool has_else) {
+  EXPECT_EQ(node->tag, AstTag::IfStatement);
+  auto *if_statement = dynamic_cast<IfStatement *>(node);
+  EXPECT_NE(if_statement, nullptr);
+  if (if_statement != nullptr) {
+    EXPECT_EQ(if_statement->if_else.size(), branch_count);
+    EXPECT_EQ(if_statement->else_statement.has_value(), has_else);
+  }
+  return if_statement;
 }
 
 TEST(ParserTest, ParsesAtomExpressions) {
@@ -443,6 +466,52 @@ TEST(ParserTest, ParsesDurationArithmeticFromExamples) {
   expect_number(seconds->left_hand_side.get(), 12.0);
 }
 
+TEST(ParserTest, ParsesIfStatement) {
+  std::string input = "IF true { WRITE 1; }";
+  auto node = parse_test_statement(input);
+
+  auto *if_statement = expect_if_statement(node.get(), 1, false);
+  ASSERT_NE(if_statement, nullptr);
+  EXPECT_EQ(if_statement->line, 1u);
+  EXPECT_EQ(if_statement->column, 1u);
+
+  auto *condition = dynamic_cast<BooleanLiteral *>(
+      if_statement->if_else[0].first.get());
+  ASSERT_NE(condition, nullptr);
+  EXPECT_TRUE(condition->value);
+
+  auto *block = dynamic_cast<StatementBlock *>(
+      if_statement->if_else[0].second.get());
+  ASSERT_NE(block, nullptr);
+  ASSERT_EQ(block->block.size(), 1u);
+  EXPECT_EQ(block->block[0]->tag, AstTag::WriteStatement);
+}
+
+TEST(ParserTest, ParsesIfElseifElseStatement) {
+  std::string input =
+      "IF false { WRITE 1; } elseif true { WRITE 2; } else { WRITE 3; }";
+  auto node = parse_test_statement(input);
+
+  auto *if_statement = expect_if_statement(node.get(), 2, true);
+  ASSERT_NE(if_statement, nullptr);
+
+  auto *first_condition = dynamic_cast<BooleanLiteral *>(
+      if_statement->if_else[0].first.get());
+  ASSERT_NE(first_condition, nullptr);
+  EXPECT_FALSE(first_condition->value);
+
+  auto *second_condition = dynamic_cast<BooleanLiteral *>(
+      if_statement->if_else[1].first.get());
+  ASSERT_NE(second_condition, nullptr);
+  EXPECT_TRUE(second_condition->value);
+
+  auto *else_block = dynamic_cast<StatementBlock *>(
+      if_statement->else_statement->get());
+  ASSERT_NE(else_block, nullptr);
+  ASSERT_EQ(else_block->block.size(), 1u);
+  EXPECT_EQ(else_block->block[0]->tag, AstTag::WriteStatement);
+}
+
 TEST(ParserTest, RejectsEmptyExpression) {
   std::string input;
   EXPECT_THROW(parse_test_expr(input), ParserError);
@@ -489,6 +558,355 @@ TEST(CompilerTest, EmitsPostfixDurationOpcodes) {
   EXPECT_EQ(result.program.main.instructions[2].op, OpCode::PushConstant);
   EXPECT_EQ(result.program.main.instructions[3].op, OpCode::ToMinutes);
   EXPECT_EQ(result.program.main.instructions[4].op, OpCode::Divide);
+}
+
+TEST(CompilerTest, EmitsFunctionDefinitionBytecode) {
+  std::string input = "add :: (a, b) { return a + b; };";
+  auto result = compile_test_statement_block(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.functions.size(), 1u);
+  const auto &function = result.program.functions[0];
+  EXPECT_EQ(function.name, "add");
+  ASSERT_EQ(function.parameters.size(), 2u);
+  EXPECT_EQ(function.parameters[0], "a");
+  EXPECT_EQ(function.parameters[1], "b");
+  ASSERT_EQ(function.chunk.instructions.size(), 4u);
+  EXPECT_EQ(function.chunk.instructions[0].op, OpCode::LoadLocal);
+  EXPECT_EQ(function.chunk.instructions[0].operand, 0u);
+  EXPECT_EQ(function.chunk.instructions[1].op, OpCode::LoadLocal);
+  EXPECT_EQ(function.chunk.instructions[1].operand, 1u);
+  EXPECT_EQ(function.chunk.instructions[2].op, OpCode::Add);
+  EXPECT_EQ(function.chunk.instructions[3].op, OpCode::Return);
+  EXPECT_TRUE(result.program.main.instructions.empty());
+}
+
+TEST(CompilerTest, FunctionAssignmentDeclaresLocalBytecode) {
+  std::string input = "identity :: (a) { local := a; return local; };";
+  auto result = compile_test_statement_block(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.functions.size(), 1u);
+  const auto &function = result.program.functions[0];
+  ASSERT_EQ(function.chunk.instructions.size(), 4u);
+  EXPECT_EQ(function.chunk.instructions[0].op, OpCode::LoadLocal);
+  EXPECT_EQ(function.chunk.instructions[0].operand, 0u);
+  EXPECT_EQ(function.chunk.instructions[1].op, OpCode::StoreLocal);
+  EXPECT_EQ(function.chunk.instructions[1].operand, 1u);
+  EXPECT_EQ(function.chunk.instructions[2].op, OpCode::LoadLocal);
+  EXPECT_EQ(function.chunk.instructions[2].operand, 1u);
+  EXPECT_EQ(function.chunk.instructions[3].op, OpCode::Return);
+}
+
+TEST(CompilerTest, EmitsIndexedFunctionCallBytecode) {
+  std::string input = "add :: (a, b) { return a + b; }; add(1, 2);";
+  auto result = compile_test_statement_block(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.functions.size(), 1u);
+  ASSERT_EQ(result.program.main.instructions.size(), 3u);
+  EXPECT_EQ(result.program.main.instructions[0].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[1].op, OpCode::PushConstant);
+  EXPECT_EQ(result.program.main.instructions[2].op, OpCode::CallFunction);
+  EXPECT_EQ(result.program.main.instructions[2].operand, 0u);
+  EXPECT_EQ(result.program.main.instructions[2].operand2, 2u);
+}
+
+TEST(CompilerTest, ResolvesForwardFunctionCallsInStatementBlock) {
+  std::string input = "answer(); answer :: () { return 42; };";
+  auto result = compile_test_statement_block(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.functions.size(), 1u);
+  ASSERT_EQ(result.program.main.instructions.size(), 1u);
+  EXPECT_EQ(result.program.main.instructions[0].op, OpCode::CallFunction);
+  EXPECT_EQ(result.program.main.instructions[0].operand, 0u);
+  EXPECT_EQ(result.program.main.instructions[0].operand2, 0u);
+}
+
+TEST(CompilerTest, EmitsBuiltinFunctionCallBytecode) {
+  std::string input = "write(11); is_number(11); is_list([1, 2]);";
+  auto result = compile_test_statement_block(input);
+
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 8u);
+  EXPECT_EQ(result.program.main.instructions[1].op, OpCode::CallBuiltin);
+  EXPECT_EQ(result.program.main.instructions[1].operand, 0u);
+  EXPECT_EQ(result.program.main.instructions[1].operand2, 1u);
+  EXPECT_EQ(result.program.main.instructions[3].op, OpCode::CallBuiltin);
+  EXPECT_EQ(result.program.main.instructions[3].operand, 2u);
+  EXPECT_EQ(result.program.main.instructions[7].op, OpCode::CallBuiltin);
+  EXPECT_EQ(result.program.main.instructions[7].operand, 3u);
+}
+
+TEST(VmTest, MakeVmReferencesProgramFunctions) {
+  std::string input = "add :: (a, b) { return a + b; };";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  auto vm = make_vm(result.program);
+
+  EXPECT_EQ(vm.program, &result.program);
+  EXPECT_TRUE(vm.stack.empty());
+  EXPECT_TRUE(vm.frames.empty());
+  EXPECT_TRUE(vm.globals.empty());
+  ASSERT_EQ(vm.builtins.size(), 4u);
+  EXPECT_EQ(vm.builtins[0].name, "write");
+  ASSERT_EQ(vm.functions.size(), 1u);
+  EXPECT_EQ(&vm.functions[0], &result.program.functions[0]);
+  EXPECT_EQ(vm.functions[0].name, "add");
+  ASSERT_EQ(vm.functions[0].parameters.size(), 2u);
+  EXPECT_EQ(vm.functions[0].parameters[0], "a");
+  EXPECT_EQ(vm.functions[0].parameters[1], "b");
+  ASSERT_EQ(vm.functions[0].chunk.instructions.size(), 4u);
+  EXPECT_EQ(vm.functions[0].chunk.instructions[2].op, OpCode::Add);
+}
+
+TEST(VmTest, MakeVmUsesInitialGlobalsAndBuiltins) {
+  std::string input = "1";
+  auto result = compile_test_expr(input);
+  ASSERT_TRUE(result.ok());
+
+  VmGlobals globals;
+  globals.emplace("answer", VmValue{.tag = VmValueTag::Number, .data = 42.0});
+  VmBuiltins builtins;
+  builtins.push_back(VmBuiltin{
+      .name = "noop",
+      .arity = 0,
+      .function = [](Vm &, std::span<const VmValue>, BytecodeSourceLocation) {
+        return VmResult{
+            .value = VmValue{.tag = VmValueTag::Unit, .data = std::monostate{}},
+            .errors = {}};
+      }});
+
+  auto vm = make_vm(result.program, std::move(globals), std::move(builtins));
+
+  EXPECT_EQ(vm.program, &result.program);
+  ASSERT_EQ(vm.globals.size(), 1u);
+  EXPECT_EQ(vm.globals.at("answer").tag, VmValueTag::Number);
+  EXPECT_DOUBLE_EQ(std::get<double>(vm.globals.at("answer").data), 42.0);
+  ASSERT_EQ(vm.builtins.size(), 1u);
+  EXPECT_EQ(vm.builtins[0].name, "noop");
+  EXPECT_EQ(vm.builtins[0].arity, 0);
+}
+
+TEST(VmTest, StoreGlobalPopsStackValueIntoGlobals) {
+  std::string input = "answer := 42;";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 2u);
+  ASSERT_EQ(result.program.main.instructions[1].op, OpCode::StoreGlobal);
+
+  auto vm = make_vm(result.program);
+  vm.stack.push_back(result.program.main.constants[0]);
+
+  auto store_result = vm_store_global(vm, result.program.main,
+                                      result.program.main.instructions[1]);
+
+  EXPECT_TRUE(store_result.errors.empty());
+  EXPECT_TRUE(vm.stack.empty());
+  ASSERT_EQ(vm.globals.size(), 1u);
+  ASSERT_NE(vm.globals.find("answer"), vm.globals.end());
+  EXPECT_EQ(vm.globals.at("answer").tag, VmValueTag::Number);
+  EXPECT_DOUBLE_EQ(std::get<double>(vm.globals.at("answer").data), 42.0);
+}
+
+TEST(VmTest, LoadGlobalPushesGlobalValueOntoStack) {
+  std::string input = "answer := 42;";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+  ASSERT_EQ(result.program.main.instructions.size(), 2u);
+  ASSERT_EQ(result.program.main.instructions[1].op, OpCode::StoreGlobal);
+
+  auto vm = make_vm(result.program);
+  vm.globals.emplace("answer", VmValue::number(42.0));
+  auto load = result.program.main.instructions[1];
+  load.op = OpCode::LoadGlobal;
+
+  auto load_result = vm_load_global(vm, result.program.main, load);
+
+  EXPECT_TRUE(load_result.errors.empty());
+  ASSERT_EQ(vm.stack.size(), 1u);
+  EXPECT_EQ(vm.stack[0].tag, VmValueTag::Number);
+  EXPECT_DOUBLE_EQ(std::get<double>(vm.stack[0].data), 42.0);
+}
+
+static void expect_vm_binary_number(OpCode op, double left, double right,
+                                    double expected) {
+  std::string input = "1 + 1";
+  auto result = compile_test_expr(input);
+  ASSERT_TRUE(result.ok());
+  ASSERT_FALSE(result.program.main.instructions.empty());
+
+  auto instruction = result.program.main.instructions.back();
+  instruction.op = op;
+
+  auto vm = make_vm(result.program);
+  vm.stack.push_back(VmValue::number(left));
+  vm.stack.push_back(VmValue::number(right));
+
+  auto binary_result = vm_binary(vm, instruction);
+
+  EXPECT_TRUE(binary_result.errors.empty());
+  EXPECT_FALSE(binary_result.value.has_value());
+  ASSERT_EQ(vm.stack.size(), 1u);
+  EXPECT_EQ(vm.stack[0].tag, VmValueTag::Number);
+  EXPECT_DOUBLE_EQ(std::get<double>(vm.stack[0].data), expected);
+}
+
+TEST(VmTest, EvaluatesInfixArithmeticOperations) {
+  expect_vm_binary_number(OpCode::Add, 6.0, 3.0, 9.0);
+  expect_vm_binary_number(OpCode::Subtract, 6.0, 3.0, 3.0);
+  expect_vm_binary_number(OpCode::Multiply, 6.0, 3.0, 18.0);
+  expect_vm_binary_number(OpCode::Divide, 6.0, 3.0, 2.0);
+  expect_vm_binary_number(OpCode::Power, 2.0, 3.0, 8.0);
+}
+
+static void expect_vm_unary_number(OpCode op, double input, double expected) {
+  std::string source = "1";
+  auto result = compile_test_expr(source);
+  ASSERT_TRUE(result.ok());
+
+  auto instruction = result.program.main.instructions.back();
+  instruction.op = op;
+
+  auto vm = make_vm(result.program);
+  vm.stack.push_back(VmValue::number(input));
+
+  VmResult unary_result;
+  switch (op) {
+  case OpCode::Negate:
+    unary_result = vm_negate(vm, instruction);
+    break;
+  case OpCode::ToYears:
+    unary_result = vm_to_years(vm, instruction);
+    break;
+  case OpCode::ToMonths:
+    unary_result = vm_to_months(vm, instruction);
+    break;
+  case OpCode::ToWeeks:
+    unary_result = vm_to_weeks(vm, instruction);
+    break;
+  case OpCode::ToDays:
+    unary_result = vm_to_days(vm, instruction);
+    break;
+  case OpCode::ToHours:
+    unary_result = vm_to_hours(vm, instruction);
+    break;
+  case OpCode::ToMinutes:
+    unary_result = vm_to_minutes(vm, instruction);
+    break;
+  case OpCode::ToSeconds:
+    unary_result = vm_to_seconds(vm, instruction);
+    break;
+  default:
+    FAIL() << "unsupported unary opcode";
+  }
+
+  EXPECT_TRUE(unary_result.errors.empty());
+  EXPECT_FALSE(unary_result.value.has_value());
+  ASSERT_EQ(vm.stack.size(), 1u);
+  EXPECT_EQ(vm.stack[0].tag, VmValueTag::Number);
+  EXPECT_DOUBLE_EQ(std::get<double>(vm.stack[0].data), expected);
+}
+
+TEST(VmTest, EvaluatesNegateOperation) {
+  expect_vm_unary_number(OpCode::Negate, 42.0, -42.0);
+}
+
+TEST(VmTest, ConvertsDurationsToSeconds) {
+  expect_vm_unary_number(OpCode::ToYears, 1.0, 31536000.0);
+  expect_vm_unary_number(OpCode::ToMonths, 1.0, 2592000.0);
+  expect_vm_unary_number(OpCode::ToWeeks, 1.0, 604800.0);
+  expect_vm_unary_number(OpCode::ToDays, 1.0, 86400.0);
+  expect_vm_unary_number(OpCode::ToHours, 1.0, 3600.0);
+  expect_vm_unary_number(OpCode::ToMinutes, 1.0, 60.0);
+  expect_vm_unary_number(OpCode::ToSeconds, 1.0, 1.0);
+}
+
+TEST(VmTest, RunsWriteAndTraceBuiltins) {
+  std::string input = "write(11); trace(\"hello\");";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  testing::internal::CaptureStdout();
+  auto run_result = run_program(result.program);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "11\nLine 1: hello\n");
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Unit);
+}
+
+TEST(VmTest, RunsTypePredicateBuiltins) {
+  std::string input = "is_number(11); is_list([1, 2]);";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  auto run_result = run_program(result.program);
+
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Bool);
+  EXPECT_TRUE(std::get<bool>(run_result.value->data));
+}
+
+TEST(VmTest, RunsIfStatement) {
+  std::string input =
+      "IF true { write(1); }";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  testing::internal::CaptureStdout();
+  auto run_result = run_program(result.program);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "1\n");
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Unit);
+}
+
+TEST(VmTest, RunsIfElseifElseStatement) {
+  std::string input =
+      "IF false { write(1); } elseif true { write(2); } else { write(3); }";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  testing::internal::CaptureStdout();
+  auto run_result = run_program(result.program);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "2\n");
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Unit);
+}
+
+TEST(VmTest, RunsIfElseStatementWhenConditionIsTrue) {
+  std::string input = "IF true { write(1); } else { write(2); }";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  testing::internal::CaptureStdout();
+  auto run_result = run_program(result.program);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "1\n");
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Unit);
+}
+
+TEST(VmTest, RunsIfElseStatementWhenConditionIsFalse) {
+  std::string input = "IF false { write(1); } else { write(2); }";
+  auto result = compile_test_statement_block(input);
+  ASSERT_TRUE(result.ok());
+
+  testing::internal::CaptureStdout();
+  auto run_result = run_program(result.program);
+
+  EXPECT_EQ(testing::internal::GetCapturedStdout(), "2\n");
+  EXPECT_TRUE(run_result.ok());
+  ASSERT_TRUE(run_result.value.has_value());
+  EXPECT_EQ(run_result.value->tag, VmValueTag::Unit);
 }
 
 TEST(InterpreterTest, InterpretsTraceStatement) {
